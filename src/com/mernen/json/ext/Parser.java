@@ -2155,7 +2155,12 @@ case 5:
 	}
 
 	@JRubyMethod(name = "source")
+<<<<<<< HEAD:src/com/mernen/json/ext/Parser.java
 	public IRubyObject getSource() {
 		return vSource;
+=======
+	public IRubyObject source_get() {
+		return vSource.dup();
+>>>>>>> Implemented getter/setter methods on Generator::State; changed Parser#source method naming to conform to conventions:src/com/mernen/json/ext/Parser.java
 	}
 }
