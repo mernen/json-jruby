@@ -25,3 +25,4 @@ def ss.to_str; '["3","\ufeff\u0041\n",["",[]],-3,4,5.0e2]' end
 def ss.to_str; '{"int" : "3","str":"\ufeff\u0041\n","hash":{"":{}},"list":[[[{}]]],"int2":-3,"float":4.1,"float2":5.0e2}' end
 >>>>>>> Implemented Object (Hash) support:test.rb
 p JSON::Ext::Parser.new(ss, {}).parse
+p JSON.parse('[[[[[[[[[[[[[[[[[[[["Too deep"]]]]]]]]]]]]]]]]]]]]')
