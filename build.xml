@@ -6,11 +6,35 @@
 		<fileset dir="${basedir}/src" />
 	</path>
 
+<<<<<<< HEAD:build.xml
+=======
+	<property name="jruby.dir" value="${basedir}/../jruby/lib/jruby.jar" />
+	<property name="build.dir" value="${basedir}/bin" />
+	<property name="lib.dir" value="${basedir}/lib" />
+
+>>>>>>> Added clean target to build.xml:build.xml
 	<property name="src.java" value="src"/>
 	<path id="build.classpath">
 		<fileset dir="/home/daniel/Dev/jruby/lib" includes="jruby.jar" />
 	</path>
 
+<<<<<<< HEAD:build.xml
+=======
+	<target name="clean" description="Cleans build files">
+		<delete dir="${build.dir}" />
+		<delete file="${lib.dir}/json.jar" />
+	</target>
+
+	<target name="prepare">
+		<mkdir dir="${build.dir}" />
+		<mkdir dir="${lib.dir}" />
+	</target>
+
+	<target name="build" depends="prepare,ragel">
+		<javac classpath="${jruby.dir}" srcdir="${src.java}" destdir="${basedir}/bin" optimize="true" />
+	</target>
+
+>>>>>>> Added clean target to build.xml:build.xml
 	<target name="ragel">
 		<exec executable="ragel" failonerror="true">
 			<arg value="-J" />
