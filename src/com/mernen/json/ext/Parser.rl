@@ -32,7 +32,6 @@ public class Parser extends RubyObject {
 	private IRubyObject vSource;
 	private int sourcePtr;
 	private int len;
-	private ByteList memo;
 	private IRubyObject createId;
 	private int maxNesting;
 	private int currentNesting;
@@ -57,6 +56,19 @@ public class Parser extends RubyObject {
 		}
 	};
 
+<<<<<<< HEAD:src/com/mernen/json/ext/Parser.rl
+=======
+	static class ParserResult {
+		IRubyObject result;
+		int p;
+
+		ParserResult(IRubyObject result, int p) {
+			this.result = result;
+			this.p = p;
+		}
+	}
+
+>>>>>>> Added string support:src/com/mernen/json/ext/Parser.rl
 	static void load(Ruby runtime) {
 		runtime.getLoadService().require("json/common");
 
@@ -195,6 +207,16 @@ public class Parser extends RubyObject {
 			}
 			fbreak;
 		}
+		action parse_string {
+			ParserResult res = parseString(data, fpc, pe);
+			if (res == null) {
+				fbreak;
+			}
+			else {
+				result = res.result;
+				fexec res.p - 1 /*+1*/;
+			}
+		}
 		action parse_array {
 			currentNesting++;
 			ParserResult res = parseArray(data, fpc, pe);
@@ -217,6 +239,7 @@ public class Parser extends RubyObject {
 		          VNaN @parse_nan |
 		          VInfinity @parse_infinity |
 		          begin_number >parse_number |
+		          begin_string >parse_string |
 		          begin_array >parse_array
 		        ) %*exit;
 	}%%
@@ -229,7 +252,7 @@ public class Parser extends RubyObject {
 		%% write exec;
 
 		if (cs >= JSON_value_first_final && result != null) {
-			return new ParserResult(result, p - 1/*+1*/);
+			return new ParserResult(result, p);
 		}
 		else {
 			return null;
@@ -279,7 +302,6 @@ public class Parser extends RubyObject {
 
 	ParserResult parseFloat(byte[] data, int p, int pe) {
 		int cs = EVIL;
-		IRubyObject result = null;
 
 		%% write init;
 		int memo = p;
@@ -296,20 +318,137 @@ public class Parser extends RubyObject {
 	}
 
 	%%{
+		machine JSON_string;
+		include JSON_common;
+
+		write data;
+
+		action parse_string {
+			result = stringUnescape(memo + 1, p);
+			if (result == null) {
+				fbreak;
+			}
+			else {
+				fexec p +1;
+			}
+		}
+
+		action exit { fbreak; }
+
+		main := '"'
+		        ( ( ^(["\\]|0..0x1f)
+		          | '\\'["\\/bfnrt]
+		          | '\\u'[0-9a-fA-F]{4}
+		          | '\\'^(["\\/bfnrtu]|0..0x1f)
+		          )* %parse_string
+		        ) '"' @exit;
+	}%%
+
+	ParserResult parseString(byte[] data, int p, int pe) {
+		int cs = EVIL;
+		RubyString result = null;
+
+		%% write init;
+		int memo = p;
+		%% write exec;
+
+		if (cs >= JSON_string_first_final && result != null) {
+			return new ParserResult(result, p + 1);
+		}
+		else {
+			return null;
+		}
+	}
+
+	private RubyString stringUnescape(int start, int end) {
+		// using Java's StringBuffer as it's so much easier to deal with once
+		// unicode escapes come into play
+		// FIXME: maybe preallocating some room would improve performance?
+		StringBuffer sb = new StringBuffer();
+		boolean hasUnicode = false;
+
+		for (int i = start; i < end; ) {
+			char c = source.charAt(i);
+			if (c == '\\') {
+				i++;
+				if (i >= end) {
+					return null;
+				}
+				c = source.charAt(i);
+				switch (c) {
+					case '"':
+					case '\\':
+						sb.append(c);
+						i++;
+						break;
+					case 'b':
+						sb.append('\b');
+						i++;
+						break;
+					case 'f':
+						sb.append('\f');
+						i++;
+						break;
+					case 'n':
+						sb.append('\n');
+						i++;
+						break;
+					case 'r':
+						sb.append('\r');
+						i++;
+						break;
+					case 't':
+						sb.append('\t');
+						i++;
+						break;
+					case 'u':
+						i++;
+						if (i > end - 4) {
+							return null;
+						}
+						else {
+							int code = Integer.parseInt(source.subSequence(i, i + 4).toString(), 16);
+							sb.append((char)code);
+							i += 4;
+						}
+						hasUnicode = true;
+						break;
+					default:
+						sb.append(c);
+						i++;
+				}
+			}
+			else {
+				int j = i;
+				while (j < end && source.charAt(j) != '\\') j++;
+				sb.append(source.subSequence(i, j));
+				i = j;
+			}
+		}
+		if (hasUnicode) {
+			// treat the original string as valid UTF-8, return UTF-8
+			return RubyString.newUnicodeString(getRuntime(), sb.toString());
+		}
+		else {
+			// ignore encoding
+			return getRuntime().newString(sb.toString());
+		}
+	}
+
+	%%{
 		machine JSON_array;
 		include JSON_common;
 
 		write data;
 
 		action parse_value {
-			IRubyObject v;
 			ParserResult res = parseValue(data, fpc, pe);
 			if (res == null) {
 				fbreak;
 			}
 			else {
 				result.append(res.result);
-				fexec res.p;
+				fexec res.p - 1 /*+1*/;
 			}
 		}
 
@@ -358,12 +497,12 @@ public class Parser extends RubyObject {
 		action parse_array {
 			this.currentNesting = 1;
 			ParserResult res = parseArray(data, fpc, pe);
-			result = res.result;
 			if (res == null) {
 				fbreak;
 			}
 			else {
-				fexec res.p;
+				result = res.result;
+				fexec res.p - 1 +1;
 			}
 		}
 
