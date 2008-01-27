@@ -22,6 +22,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
 public class Parser extends RubyObject {
+	private static final long serialVersionUID = 2782556972195914229L;
+
 	private RubyString vSource;
 	private ByteList source;
 	private int len;

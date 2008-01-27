@@ -71,4 +71,38 @@ abstract class Utils {
 		return new RaiseException(runtime, (RubyClass)runtime.getClassFromPath("JSON::" + className),
 		                          message, false);
 	}
+
+	/**
+	 * Invokes <code>to_json</code> on the given object and ensures it
+	 * returns a RubyString
+	 * @param object The object to convert to JSON
+	 * @param args Parameters to pass to the method call
+	 * @return The {@link RubyString String} containing the
+	 *         JSON representation of the object
+	 */
+	static RubyString toJson(IRubyObject object, IRubyObject... args) {
+		Ruby runtime = object.getRuntime();
+		IRubyObject result = object.callMethod(runtime.getCurrentContext(), "to_json", args);
+		if (result instanceof RubyString) {
+			return (RubyString)result;
+		}
+		throw runtime.newTypeError("to_json must return a String");
+	}
+
+	/**
+	 * Repeats a sequence of bytes a determined number of times
+	 * @param a The byte array to repeat
+	 * @param n The number of times to repeat the sequence
+	 * @return A new byte array, of length <code>bytes.length * times</code>,
+	 *         with the given array repeated <code>n</code> times
+	 */
+	static byte[] repeat(byte[] a, int n) {
+		int len = a.length;
+		int resultLen = len * n;
+		byte[] result = new byte[resultLen];
+		for (int pos = 0; pos < resultLen; pos += len) {
+			System.arraycopy(a, 0, result, pos, len);
+		}
+		return result;
+	}
 }

@@ -23,6 +23,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
 public class Parser extends RubyObject {
+	private static final long serialVersionUID = 2782556972195914229L;
+
 	private RubyString vSource;
 	private ByteList source;
 	private int len;
@@ -69,7 +71,7 @@ public class Parser extends RubyObject {
 		MINUS_INFINITY = jsonModule.getConstant("MinusInfinity");
 	}
 
-	// line 97 "src/json/ext/Parser.rl"
+	// line 99 "src/json/ext/Parser.rl"
 
 
 	@JRubyMethod(name = "new", required = 1, optional = 1, meta = true)
@@ -137,7 +139,7 @@ public class Parser extends RubyObject {
 	}
 
 	
-// line 141 "src/json/ext/Parser.java"
+// line 143 "src/json/ext/Parser.java"
 private static byte[] init__JSON_value_actions_0()
 {
 	return new byte [] {
@@ -250,7 +252,7 @@ static final int JSON_value_error = 0;
 
 static final int JSON_value_en_main = 1;
 
-// line 265 "src/json/ext/Parser.rl"
+// line 267 "src/json/ext/Parser.rl"
 
 
 	ParserResult parseValue(byte[] data, int p, int pe) {
@@ -258,13 +260,13 @@ static final int JSON_value_en_main = 1;
 		IRubyObject result = null;
 
 		
-// line 262 "src/json/ext/Parser.java"
+// line 264 "src/json/ext/Parser.java"
 	{
 	cs = JSON_value_start;
 	}
-// line 272 "src/json/ext/Parser.rl"
+// line 274 "src/json/ext/Parser.rl"
 		
-// line 268 "src/json/ext/Parser.java"
+// line 270 "src/json/ext/Parser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -290,12 +292,12 @@ case 1:
 	while ( _nacts-- > 0 ) {
 		switch ( _JSON_value_actions[_acts++] ) {
 	case 9:
-// line 251 "src/json/ext/Parser.rl"
+// line 253 "src/json/ext/Parser.rl"
 	{
 			{ p += 1; _goto_targ = 5; if (true)  continue _goto;}
 		}
 	break;
-// line 299 "src/json/ext/Parser.java"
+// line 301 "src/json/ext/Parser.java"
 		}
 	}
 
@@ -358,25 +360,25 @@ case 1:
 			switch ( _JSON_value_actions[_acts++] )
 			{
 	case 0:
-// line 169 "src/json/ext/Parser.rl"
+// line 171 "src/json/ext/Parser.rl"
 	{
 			result = getRuntime().getNil();
 		}
 	break;
 	case 1:
-// line 172 "src/json/ext/Parser.rl"
+// line 174 "src/json/ext/Parser.rl"
 	{
 			result = getRuntime().getFalse();
 		}
 	break;
 	case 2:
-// line 175 "src/json/ext/Parser.rl"
+// line 177 "src/json/ext/Parser.rl"
 	{
 			result = getRuntime().getTrue();
 		}
 	break;
 	case 3:
-// line 178 "src/json/ext/Parser.rl"
+// line 180 "src/json/ext/Parser.rl"
 	{
 			if (allowNaN) {
 				result = NAN;
@@ -387,7 +389,7 @@ case 1:
 		}
 	break;
 	case 4:
-// line 186 "src/json/ext/Parser.rl"
+// line 188 "src/json/ext/Parser.rl"
 	{
 			if (allowNaN) {
 				result = INFINITY;
@@ -398,7 +400,7 @@ case 1:
 		}
 	break;
 	case 5:
-// line 194 "src/json/ext/Parser.rl"
+// line 196 "src/json/ext/Parser.rl"
 	{
 			if (pe > p + 9 && source.subSequence(p, p + 9).toString().equals(JSON_MINUS_INFINITY)) {
 				if (allowNaN) {
@@ -424,7 +426,7 @@ case 1:
 		}
 	break;
 	case 6:
-// line 217 "src/json/ext/Parser.rl"
+// line 219 "src/json/ext/Parser.rl"
 	{
 			ParserResult res = parseString(data, p, pe);
 			if (res == null) {
@@ -437,7 +439,7 @@ case 1:
 		}
 	break;
 	case 7:
-// line 227 "src/json/ext/Parser.rl"
+// line 229 "src/json/ext/Parser.rl"
 	{
 			currentNesting++;
 			ParserResult res = parseArray(data, p, pe);
@@ -452,7 +454,7 @@ case 1:
 		}
 	break;
 	case 8:
-// line 239 "src/json/ext/Parser.rl"
+// line 241 "src/json/ext/Parser.rl"
 	{
 			currentNesting++;
 			ParserResult res = parseObject(data, p, pe);
@@ -466,7 +468,7 @@ case 1:
 			}
 		}
 	break;
-// line 470 "src/json/ext/Parser.java"
+// line 472 "src/json/ext/Parser.java"
 			}
 		}
 	}
@@ -485,7 +487,7 @@ case 5:
 	}
 	break; }
 	}
-// line 273 "src/json/ext/Parser.rl"
+// line 275 "src/json/ext/Parser.rl"
 
 		if (cs >= JSON_value_first_final && result != null) {
 			return new ParserResult(result, p);
@@ -496,7 +498,7 @@ case 5:
 	}
 
 	
-// line 500 "src/json/ext/Parser.java"
+// line 502 "src/json/ext/Parser.java"
 private static byte[] init__JSON_integer_actions_0()
 {
 	return new byte [] {
@@ -594,21 +596,21 @@ static final int JSON_integer_error = 0;
 
 static final int JSON_integer_en_main = 1;
 
-// line 290 "src/json/ext/Parser.rl"
+// line 292 "src/json/ext/Parser.rl"
 
 
 	ParserResult parseInteger(byte[] data, int p, int pe) {
 		int cs = EVIL;
 
 		
-// line 605 "src/json/ext/Parser.java"
+// line 607 "src/json/ext/Parser.java"
 	{
 	cs = JSON_integer_start;
 	}
-// line 296 "src/json/ext/Parser.rl"
+// line 298 "src/json/ext/Parser.rl"
 		int memo = p;
 		
-// line 612 "src/json/ext/Parser.java"
+// line 614 "src/json/ext/Parser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -689,10 +691,10 @@ case 1:
 			switch ( _JSON_integer_actions[_acts++] )
 			{
 	case 0:
-// line 287 "src/json/ext/Parser.rl"
+// line 289 "src/json/ext/Parser.rl"
 	{ { p += 1; _goto_targ = 5; if (true)  continue _goto;} }
 	break;
-// line 696 "src/json/ext/Parser.java"
+// line 698 "src/json/ext/Parser.java"
 			}
 		}
 	}
@@ -711,7 +713,7 @@ case 5:
 	}
 	break; }
 	}
-// line 298 "src/json/ext/Parser.rl"
+// line 300 "src/json/ext/Parser.rl"
 
 		if (cs >= JSON_integer_first_final) {
 			RubyString expr = getRuntime().newString((ByteList)source.subSequence(memo, p - 1));
@@ -724,7 +726,7 @@ case 5:
 	}
 
 	
-// line 728 "src/json/ext/Parser.java"
+// line 730 "src/json/ext/Parser.java"
 private static byte[] init__JSON_float_actions_0()
 {
 	return new byte [] {
@@ -825,21 +827,21 @@ static final int JSON_float_error = 0;
 
 static final int JSON_float_en_main = 1;
 
-// line 321 "src/json/ext/Parser.rl"
+// line 323 "src/json/ext/Parser.rl"
 
 
 	ParserResult parseFloat(byte[] data, int p, int pe) {
 		int cs = EVIL;
 
 		
-// line 836 "src/json/ext/Parser.java"
+// line 838 "src/json/ext/Parser.java"
 	{
 	cs = JSON_float_start;
 	}
-// line 327 "src/json/ext/Parser.rl"
+// line 329 "src/json/ext/Parser.rl"
 		int memo = p;
 		
-// line 843 "src/json/ext/Parser.java"
+// line 845 "src/json/ext/Parser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -920,10 +922,10 @@ case 1:
 			switch ( _JSON_float_actions[_acts++] )
 			{
 	case 0:
-// line 315 "src/json/ext/Parser.rl"
+// line 317 "src/json/ext/Parser.rl"
 	{ { p += 1; _goto_targ = 5; if (true)  continue _goto;} }
 	break;
-// line 927 "src/json/ext/Parser.java"
+// line 929 "src/json/ext/Parser.java"
 			}
 		}
 	}
@@ -942,7 +944,7 @@ case 5:
 	}
 	break; }
 	}
-// line 329 "src/json/ext/Parser.rl"
+// line 331 "src/json/ext/Parser.rl"
 
 		if (cs >= JSON_float_first_final) {
 			RubyString expr = getRuntime().newString((ByteList)source.subSequence(memo, p - 1));
@@ -955,7 +957,7 @@ case 5:
 	}
 
 	
-// line 959 "src/json/ext/Parser.java"
+// line 961 "src/json/ext/Parser.java"
 private static byte[] init__JSON_string_actions_0()
 {
 	return new byte [] {
@@ -1056,7 +1058,7 @@ static final int JSON_string_error = 0;
 
 static final int JSON_string_en_main = 1;
 
-// line 365 "src/json/ext/Parser.rl"
+// line 367 "src/json/ext/Parser.rl"
 
 
 	ParserResult parseString(byte[] data, int p, int pe) {
@@ -1064,14 +1066,14 @@ static final int JSON_string_en_main = 1;
 		RubyString result = null;
 
 		
-// line 1068 "src/json/ext/Parser.java"
+// line 1070 "src/json/ext/Parser.java"
 	{
 	cs = JSON_string_start;
 	}
-// line 372 "src/json/ext/Parser.rl"
+// line 374 "src/json/ext/Parser.rl"
 		int memo = p;
 		
-// line 1075 "src/json/ext/Parser.java"
+// line 1077 "src/json/ext/Parser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -1152,7 +1154,7 @@ case 1:
 			switch ( _JSON_string_actions[_acts++] )
 			{
 	case 0:
-// line 346 "src/json/ext/Parser.rl"
+// line 348 "src/json/ext/Parser.rl"
 	{
 			result = stringUnescape(memo + 1, p);
 			if (result == null) {
@@ -1164,10 +1166,10 @@ case 1:
 		}
 	break;
 	case 1:
-// line 356 "src/json/ext/Parser.rl"
+// line 358 "src/json/ext/Parser.rl"
 	{ { p += 1; _goto_targ = 5; if (true)  continue _goto;} }
 	break;
-// line 1171 "src/json/ext/Parser.java"
+// line 1173 "src/json/ext/Parser.java"
 			}
 		}
 	}
@@ -1186,7 +1188,7 @@ case 5:
 	}
 	break; }
 	}
-// line 374 "src/json/ext/Parser.rl"
+// line 376 "src/json/ext/Parser.rl"
 
 		if (cs >= JSON_string_first_final && result != null) {
 			return new ParserResult(result, p + 1);
@@ -1274,7 +1276,7 @@ case 5:
 	}
 
 	
-// line 1278 "src/json/ext/Parser.java"
+// line 1280 "src/json/ext/Parser.java"
 private static byte[] init__JSON_array_actions_0()
 {
 	return new byte [] {
@@ -1386,7 +1388,7 @@ static final int JSON_array_error = 0;
 
 static final int JSON_array_en_main = 1;
 
-// line 490 "src/json/ext/Parser.rl"
+// line 492 "src/json/ext/Parser.rl"
 
 
 	ParserResult parseArray(byte[] data, int p, int pe) {
@@ -1400,13 +1402,13 @@ static final int JSON_array_en_main = 1;
 		RubyArray result = getRuntime().newArray();
 
 		
-// line 1404 "src/json/ext/Parser.java"
+// line 1406 "src/json/ext/Parser.java"
 	{
 	cs = JSON_array_start;
 	}
-// line 503 "src/json/ext/Parser.rl"
+// line 505 "src/json/ext/Parser.rl"
 		
-// line 1410 "src/json/ext/Parser.java"
+// line 1412 "src/json/ext/Parser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -1487,7 +1489,7 @@ case 1:
 			switch ( _JSON_array_actions[_acts++] )
 			{
 	case 0:
-// line 466 "src/json/ext/Parser.rl"
+// line 468 "src/json/ext/Parser.rl"
 	{
 			ParserResult res = parseValue(data, p, pe);
 			if (res == null) {
@@ -1500,10 +1502,10 @@ case 1:
 		}
 	break;
 	case 1:
-// line 477 "src/json/ext/Parser.rl"
+// line 479 "src/json/ext/Parser.rl"
 	{ { p += 1; _goto_targ = 5; if (true)  continue _goto;} }
 	break;
-// line 1507 "src/json/ext/Parser.java"
+// line 1509 "src/json/ext/Parser.java"
 			}
 		}
 	}
@@ -1522,7 +1524,7 @@ case 5:
 	}
 	break; }
 	}
-// line 504 "src/json/ext/Parser.rl"
+// line 506 "src/json/ext/Parser.rl"
 
 		if (cs >= JSON_array_first_final) {
 			return new ParserResult(result, p/*+1*/);
@@ -1534,7 +1536,7 @@ case 5:
 	}
 
 	
-// line 1538 "src/json/ext/Parser.java"
+// line 1540 "src/json/ext/Parser.java"
 private static byte[] init__JSON_object_actions_0()
 {
 	return new byte [] {
@@ -1656,7 +1658,7 @@ static final int JSON_object_error = 0;
 
 static final int JSON_object_en_main = 1;
 
-// line 552 "src/json/ext/Parser.rl"
+// line 554 "src/json/ext/Parser.rl"
 
 
 	ParserResult parseObject(byte[] data, int p, int pe) {
@@ -1671,13 +1673,13 @@ static final int JSON_object_en_main = 1;
 		RubyHash result = RubyHash.newHash(getRuntime());
 
 		
-// line 1675 "src/json/ext/Parser.java"
+// line 1677 "src/json/ext/Parser.java"
 	{
 	cs = JSON_object_start;
 	}
-// line 566 "src/json/ext/Parser.rl"
+// line 568 "src/json/ext/Parser.rl"
 		
-// line 1681 "src/json/ext/Parser.java"
+// line 1683 "src/json/ext/Parser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -1758,7 +1760,7 @@ case 1:
 			switch ( _JSON_object_actions[_acts++] )
 			{
 	case 0:
-// line 520 "src/json/ext/Parser.rl"
+// line 522 "src/json/ext/Parser.rl"
 	{
 			ParserResult res = parseValue(data, p, pe);
 			if (res == null) {
@@ -1771,7 +1773,7 @@ case 1:
 		}
 	break;
 	case 1:
-// line 531 "src/json/ext/Parser.rl"
+// line 533 "src/json/ext/Parser.rl"
 	{
 			ParserResult res = parseString(data, p, pe);
 			if (res == null) {
@@ -1784,10 +1786,10 @@ case 1:
 		}
 	break;
 	case 2:
-// line 542 "src/json/ext/Parser.rl"
+// line 544 "src/json/ext/Parser.rl"
 	{ { p += 1; _goto_targ = 5; if (true)  continue _goto;} }
 	break;
-// line 1791 "src/json/ext/Parser.java"
+// line 1793 "src/json/ext/Parser.java"
 			}
 		}
 	}
@@ -1806,7 +1808,7 @@ case 5:
 	}
 	break; }
 	}
-// line 567 "src/json/ext/Parser.rl"
+// line 569 "src/json/ext/Parser.rl"
 
 		if (cs >= JSON_object_first_final) {
 			ParserResult res = new ParserResult(result, p /*+1*/);
@@ -1827,7 +1829,7 @@ case 5:
 	}
 
 	
-// line 1831 "src/json/ext/Parser.java"
+// line 1833 "src/json/ext/Parser.java"
 private static byte[] init__JSON_actions_0()
 {
 	return new byte [] {
@@ -1930,7 +1932,7 @@ static final int JSON_error = 0;
 
 static final int JSON_en_main = 1;
 
-// line 620 "src/json/ext/Parser.rl"
+// line 622 "src/json/ext/Parser.rl"
 
 
 	@JRubyMethod(name = "parse")
@@ -1941,15 +1943,15 @@ static final int JSON_en_main = 1;
 		byte[] data = source.bytes();
 
 		
-// line 1945 "src/json/ext/Parser.java"
+// line 1947 "src/json/ext/Parser.java"
 	{
 	cs = JSON_start;
 	}
-// line 630 "src/json/ext/Parser.rl"
+// line 632 "src/json/ext/Parser.rl"
 		p = 0;
 		pe = len;
 		
-// line 1953 "src/json/ext/Parser.java"
+// line 1955 "src/json/ext/Parser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -2030,7 +2032,7 @@ case 1:
 			switch ( _JSON_actions[_acts++] )
 			{
 	case 0:
-// line 592 "src/json/ext/Parser.rl"
+// line 594 "src/json/ext/Parser.rl"
 	{
 			currentNesting = 1;
 			ParserResult res = parseObject(data, p, pe);
@@ -2044,7 +2046,7 @@ case 1:
 		}
 	break;
 	case 1:
-// line 604 "src/json/ext/Parser.rl"
+// line 606 "src/json/ext/Parser.rl"
 	{
 			currentNesting = 1;
 			ParserResult res = parseArray(data, p, pe);
@@ -2057,7 +2059,7 @@ case 1:
 			}
 		}
 	break;
-// line 2061 "src/json/ext/Parser.java"
+// line 2063 "src/json/ext/Parser.java"
 			}
 		}
 	}
@@ -2076,7 +2078,7 @@ case 5:
 	}
 	break; }
 	}
-// line 633 "src/json/ext/Parser.rl"
+// line 635 "src/json/ext/Parser.rl"
 
 		if (cs >= JSON_first_final && p == pe) {
 			return result;

@@ -19,6 +19,8 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class GeneratorState extends RubyObject {
+	private static final long serialVersionUID = -5070972964324653291L;
+
 	private RubyString indent;
 	private RubyString space;
 	private RubyString spaceBefore;
@@ -238,35 +240,35 @@ public class GeneratorState extends RubyObject {
 		return result;
 	}
 
-	RubyString getMemo() {
+	public RubyString getMemo() {
 		return memo;
 	}
 
-	void setMemo(RubyString memo) {
+	public void setMemo(RubyString memo) {
 		this.memo = memo;
 	}
 
-	int getDepth() {
+	public int getDepth() {
 		return depth;
 	}
 
-	void setDepth(int depth) {
+	public void setDepth(int depth) {
 		this.depth = depth;
 	}
 
-	boolean getStateFlag() {
+	public boolean getStateFlag() {
 		return flag;
 	}
 
-	void setStateFlag(boolean flag) {
+	public void setStateFlag(boolean flag) {
 		this.flag = flag;
 	}
 
-	int getMaxNesting() {
+	public int getMaxNesting() {
 		return maxNesting;
 	}
 
-	boolean checkCircular() {
+	public boolean checkCircular() {
 		return checkCircular;
 	}
 }

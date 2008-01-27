@@ -5,16 +5,16 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
-
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
+import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.util.ByteList;
@@ -123,10 +123,130 @@ class GeneratorMethodsLoader {
 			}
 		});
 
+		defineToJson("Hash", new ToJsonCallback() {
+			public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
+				RubyHash self = vSelf.convertToHash();
+				Ruby runtime = self.getRuntime();
+				args = Arity.scanArgs(runtime, args, 0, 2);
+				IRubyObject vState = args[0];
+
+				if (vState.isNil()) {
+					final RubyString result = runtime.newString();
+					result.cat((byte)'{');
+					self.visitAll(new RubyHash.Visitor() {
+						private boolean firstPair = true;
+						@Override
+						public void visit(IRubyObject key, IRubyObject value) {
+							// XXX key == Qundef???
+							if (firstPair) {
+								firstPair = false;
+							}
+							else {
+								result.cat((byte)',');
+							}
+
+							RubyString jsonKey = Utils.toJson(key.asString());
+							result.cat(((RubyString)jsonKey).getByteList());
+							result.infectBy(jsonKey);
+							result.cat((byte)':');
+
+							RubyString jsonValue = Utils.toJson(value);
+							result.cat(jsonValue.getByteList());
+							result.infectBy(jsonValue);
+						}
+					});
+					result.cat((byte)'}');
+					return result;
+				}
+				else {
+					GeneratorState state = Utils.asState(vState);
+					IRubyObject vDepth = args[1].isNil() ? runtime.newFixnum(0) : args[1];
+					RubyString result;
+
+					if (!args[1].isNil()) {
+						checkMaxNesting(state, RubyNumeric.fix2int(args[1]));
+					}
+					if (state.checkCircular()) {
+						if (state.hasSeen(self)) {
+							throw Utils.newException(runtime, E_CIRCULAR_DATA_STRUCTURE_CLASS,
+								"circular data structures not supported!");
+						}
+						state.remember(self);
+						result = transform(self, state, vDepth);
+						state.forget(self);
+					}
+					else {
+						result = transform(self, state, vDepth);
+					}
+
+					return result;
+				}
+			}
+
+			private RubyString transform(RubyHash self, final GeneratorState state, IRubyObject vDepth) {
+				Ruby runtime = self.getRuntime();
+				final int depth = RubyNumeric.fix2int(vDepth) + 1;
+				final RubyString result = runtime.newString();
+
+				final byte[] objectNl = state.object_nl_get().getBytes();
+				final byte[] indent = Utils.repeat(state.indent_get().getBytes(), depth);
+				final byte[] spaceBefore = state.space_before_get().getBytes();
+				final byte[] space = state.space_get().getBytes();
+				final RubyFixnum subDepth = runtime.newFixnum(depth);
+
+				state.setMemo(result);
+				state.setDepth(depth);
+				state.setStateFlag(false);
+				result.cat((byte)'{');
+				result.cat(objectNl);
+				self.visitAll(new RubyHash.Visitor() {
+					private boolean firstPair = true;
+					@Override
+					public void visit(IRubyObject key, IRubyObject value) {
+						// XXX key == Qundef???
+						if (firstPair) {
+							firstPair = false;
+						}
+						else {
+							result.cat((byte)',');
+							result.cat(objectNl);
+						}
+						if (objectNl.length != 0) {
+							result.cat(indent);
+						}
+						RubyString keyJson = Utils.toJson(key.asString(), state, subDepth);
+						result.cat(keyJson.getByteList());
+						result.infectBy(keyJson);
+						result.cat(spaceBefore);
+						result.cat((byte)':');
+						result.cat(space);
+						
+						RubyString valueJson = Utils.toJson(value.asString(), state, subDepth);
+						state.setStateFlag(true);
+						result.cat(valueJson.getByteList());
+						result.infectBy(valueJson);
+						state.setDepth(depth);
+						state.setMemo(result);
+					}
+				});
+				if (objectNl.length != 0) {
+					result.cat(objectNl);
+					if (indent.length != 0) {
+						result.modify(result.getByteList().length() + indent.length * depth);
+						for (int i = 0; i < depth; i++) {
+							result.cat(indent);
+						}
+					}
+				}
+				result.cat((byte)'}');
+
+				return result;
+			}
+		});
+
 		defineToJson("Array", new ToJsonCallback() {
 			public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
-				vSelf.checkArrayType();
-				RubyArray self = (RubyArray)vSelf;
+				RubyArray self = vSelf.convertToArray();
 				Ruby runtime = self.getRuntime();
 				args = Arity.scanArgs(runtime, args, 0, 2);
 				IRubyObject state = args[0];
@@ -143,7 +263,7 @@ class GeneratorMethodsLoader {
 						if (i > 0) {
 							result.cat((byte)',');
 						}
-						IRubyObject elementStr = element.callMethod(runtime.getCurrentContext(), "to_json");
+						IRubyObject elementStr = Utils.toJson(element);
 						result.append(elementStr);
 					}
 					result.cat((byte)']');
@@ -157,7 +277,6 @@ class GeneratorMethodsLoader {
 
 			private RubyString transform(RubyArray self, GeneratorState state, IRubyObject vDepth) {
 				Ruby runtime = self.getRuntime();
-				ThreadContext context = runtime.getCurrentContext();
 				RubyString result = runtime.newString();
 				int depth = vDepth.isNil() ? 0 : RubyNumeric.fix2int(vDepth);
 
@@ -198,7 +317,7 @@ class GeneratorMethodsLoader {
 					boolean firstItem = true;
 					for (IRubyObject element : self.toJavaArrayMaybeUnsafe()) {
 						if (state.hasSeen(element)) {
-							throw Utils.newException(self.getRuntime(), E_CIRCULAR_DATA_STRUCTURE_CLASS,
+							throw Utils.newException(runtime, E_CIRCULAR_DATA_STRUCTURE_CLASS,
 								"circular data structures not supported!");
 						}
 						result.infectBy(element);
@@ -209,8 +328,7 @@ class GeneratorMethodsLoader {
 							result.cat(delim);
 						}
 						result.cat(shift);
-						IRubyObject elemJson = element.callMethod(context, "to_json",
-							new IRubyObject[] {state, RubyNumeric.int2fix(runtime, depth + 1)});
+						IRubyObject elemJson = Utils.toJson(element, state, RubyNumeric.int2fix(runtime, depth + 1));
 						result.cat(elemJson.convertToString().getByteList());
 					}
 
@@ -236,8 +354,7 @@ class GeneratorMethodsLoader {
 							result.cat(delim);
 						}
 						result.cat(shift);
-						IRubyObject elemJson = element.callMethod(context, "to_json",
-							new IRubyObject[] {state, RubyNumeric.int2fix(runtime, depth + 1)});
+						IRubyObject elemJson = Utils.toJson(element, state, RubyNumeric.int2fix(runtime, depth + 1));
 						result.cat(elemJson.convertToString().getByteList());
 					}
 
