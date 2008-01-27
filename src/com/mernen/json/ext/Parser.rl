@@ -6,7 +6,11 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+<<<<<<< HEAD:src/com/mernen/json/ext/Parser.rl
 import org.jruby.RubyException;
+=======
+import org.jruby.RubyFloat;
+>>>>>>> Added support for floating-point numbers:src/com/mernen/json/ext/Parser.rl
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -40,6 +44,12 @@ public class Parser extends RubyObject {
 	private final IRubyObject INFINITY;
 	private final IRubyObject MINUS_INFINITY;
 
+<<<<<<< HEAD:src/com/mernen/json/ext/Parser.rl
+=======
+	private static final int EVIL = 0x666;
+	private static final String JSON_MINUS_INFINITY = "-Infinity";
+
+>>>>>>> Added support for floating-point numbers:src/com/mernen/json/ext/Parser.rl
 	private static final ObjectAllocator PARSER_ALLOCATOR = new ObjectAllocator() {
 		public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
 			return new Parser(runtime, klazz);
@@ -123,6 +133,222 @@ public class Parser extends RubyObject {
 		return hash.fastARef(RubySymbol.newSymbol(getRuntime(), key));
 	}
 
+<<<<<<< HEAD:src/com/mernen/json/ext/Parser.rl
+=======
+	private RaiseException unexpectedToken(int start, int end) {
+		return new RaiseException(getRuntime(), parserErrorClass,
+			"unexpected token at '" + source.subSequence(start, end) + "'", false);
+	}
+
+	%%{
+		machine JSON_value;
+		include JSON_common;
+
+		write data;
+
+		action parse_null {
+			result = getRuntime().getNil();
+		}
+		action parse_false {
+			result = getRuntime().getFalse();
+		}
+		action parse_true {
+			result = getRuntime().getTrue();
+		}
+		action parse_nan {
+			if (allowNaN) {
+				result = NAN;
+			}
+			else {
+				throw unexpectedToken(p - 2, pe);
+			}
+		}
+		action parse_infinity {
+			if (allowNaN) {
+				result = INFINITY;
+			}
+			else {
+				throw unexpectedToken(p - 8, pe);
+			}
+		}
+		action parse_number {
+			if (pe > fpc + 9 && source.subSequence(fpc, fpc + 9).toString().equals(JSON_MINUS_INFINITY)) {
+				if (allowNaN) {
+					result = MINUS_INFINITY;
+					fexec p + 9 /*+1*/;
+					fbreak;
+				}
+				else {
+					throw unexpectedToken(p, pe);
+				}
+			}
+			ParserResult res = parseFloat(data, fpc, pe);
+			if (res != null) {
+				result = res.result;
+				fexec res.p - 1 /*+1*/;
+			}
+			res = parseInteger(data, fpc, pe);
+			if (res != null) {
+				result = res.result;
+				fexec res.p - 1 /*+1*/;
+			}
+			fbreak;
+		}
+		action parse_array {
+			currentNesting++;
+			ParserResult res = parseArray(data, fpc, pe);
+			currentNesting--;
+			if (res == null) {
+				fbreak;
+			}
+			else {
+				result = res.result;
+				fexec res.p;
+			}
+		}
+		action exit {
+			fbreak;
+		}
+
+		main := ( Vnull @parse_null |
+		          Vfalse @parse_false |
+		          Vtrue @parse_true |
+		          VNaN @parse_nan |
+		          VInfinity @parse_infinity |
+		          begin_number >parse_number |
+		          begin_array >parse_array
+		        ) %*exit;
+	}%%
+
+	ParserResult parseValue(byte[] data, int p, int pe) {
+		int cs = EVIL;
+		IRubyObject result = null;
+
+		%% write init;
+		%% write exec;
+
+		if (cs >= JSON_value_first_final && result != null) {
+			return new ParserResult(result, p - 1/*+1*/);
+		}
+		else {
+			return null;
+		}
+	}
+
+	%%{
+		machine JSON_float;
+		include JSON_common;
+
+		write data;
+
+		action exit { fbreak; }
+
+		main := '-'?
+		        ( ( ( '0' | [1-9][0-9]* ) '.' [0-9]+ ( [Ee] [+\-]?[0-9]+ )? )
+		        | ( ( '0' | [1-9][0-9]* ) ( [Ee] [+\-]? [0-9]+ ) ) )
+		        ( ^[0-9Ee.\-] @exit );
+	}%%
+
+	ParserResult parseFloat(byte[] data, int p, int pe) {
+		int cs = EVIL;
+		IRubyObject result = null;
+
+		%% write init;
+		int memo = p;
+		%% write exec;
+
+		if (cs >= JSON_float_first_final) {
+			RubyString expr = getRuntime().newString((ByteList)source.subSequence(memo, p - 1));
+			RubyFloat number = RubyFloat.str2fnum(getRuntime(), expr, true);
+			return new ParserResult(number, p + 1);
+		}
+		else {
+			return null;
+		}
+	}
+
+	ParserResult parseInteger(byte[] data, int p, int pe) {
+		return null;
+	}
+
+	%%{
+		machine JSON_array;
+		include JSON_common;
+
+		write data;
+
+		action parse_value {
+			IRubyObject v;
+			ParserResult res = parseValue(data, fpc, pe);
+			if (res == null) {
+				fbreak;
+			}
+			else {
+				result.append(res.result);
+				fexec res.p;
+			}
+		}
+
+		action exit { fbreak; }
+
+		next_element = value_separator ignore* begin_value >parse_value;
+
+		main := begin_array
+		        ignore*
+		        ( ( begin_value >parse_value
+		            ignore* )
+		          ( ignore*
+		            next_element
+		            ignore* )* )?
+		        ignore*
+		        end_array @exit;
+	}%%
+
+	ParserResult parseArray(byte[] data, int p, int pe) {
+		int cs = EVIL;
+
+		if (maxNesting > 0 && currentNesting > maxNesting) {
+			throw new RaiseException(getRuntime(), nestingErrorClass,
+				"nesting of " + currentNesting + " is too deep", false);
+		}
+		RubyArray result = getRuntime().newArray();
+
+		%% write init;
+		%% write exec;
+
+		if (cs >= JSON_array_first_final) {
+			return new ParserResult(result, p/*+1*/);
+		}
+		else {
+			throw new RaiseException(getRuntime(), parserErrorClass,
+				"unexpected token at '" + source.subSequence(p, pe) + "'", false);
+		}
+	}
+
+	%%{
+		machine JSON;
+		include JSON_common;
+
+		write data;
+
+		action parse_array {
+			this.currentNesting = 1;
+			ParserResult res = parseArray(data, fpc, pe);
+			result = res.result;
+			if (res == null) {
+				fbreak;
+			}
+			else {
+				fexec res.p;
+			}
+		}
+
+		main := ignore*
+		        ( begin_array >parse_array )
+		        ignore*;
+	}%%
+
+>>>>>>> Added support for floating-point numbers:src/com/mernen/json/ext/Parser.rl
 	@JRubyMethod(name = "parse")
 	public IRubyObject parse() {
 		return RubyArray.newArray(getRuntime());
