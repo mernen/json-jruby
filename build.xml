@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<project default="ragel" basedir="." name="JSON-JRuby">
+	<description>A port of Florian Frank's native json library for Ruby</description>
+
+	<path id="src.java">
+		<fileset dir="${basedir}/src" />
+	</path>
+
+	<property name="src.java" value="src"/>
+	<path id="build.classpath">
+		<fileset dir="/home/daniel/Dev/jruby/lib" includes="jruby.jar" />
+	</path>
+
+	<target name="ragel">
+		<exec executable="ragel" dir="${basedir}/src/com/mernen/json/ext">
+			<arg value="-J" />
+			<arg value="Parser.rl" />
+		</exec>
+		<javac srcdir="${src.java}" classpathref="build.classpath" />
+	</target>
+</project>
