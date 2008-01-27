@@ -8,12 +8,10 @@ import java.nio.charset.CodingErrorAction;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyClass;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -38,9 +36,8 @@ class GeneratorMethodsLoader {
 		protected void checkMaxNesting(GeneratorState state, int depth) {
 			int currentNesting = 1 + depth;
 			if (state.getMaxNesting() != 0 && currentNesting > state.getMaxNesting()) {
-				RubyModule eNestingError = state.getRuntime().getClassFromPath(E_NESTING_ERROR_CLASS);
-				throw new RaiseException(state.getRuntime(), (RubyClass)eNestingError,
-					"nesting of " + currentNesting + " is too deep", false);
+				throw Utils.newException(state.getRuntime(), E_NESTING_ERROR_CLASS,
+					"nesting of " + currentNesting + " is too deep");
 			}
 		}
 	}
@@ -273,7 +270,8 @@ class GeneratorMethodsLoader {
 						return vSelf.asString();
 					}
 					else {
-						throw Utils.newException(vSelf.getRuntime(), E_GENERATOR_ERROR_CLASS, vSelf.toString() + " not allowed in JSON");
+						throw Utils.newException(vSelf.getRuntime(), E_GENERATOR_ERROR_CLASS,
+						                         vSelf + " not allowed in JSON");
 					}
 				}
 				else {
