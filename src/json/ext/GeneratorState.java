@@ -12,6 +12,7 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class GeneratorState extends RubyObject {
@@ -36,6 +37,40 @@ public class GeneratorState extends RubyObject {
 
 	public GeneratorState(Ruby runtime, RubyClass metaClass) {
 		super(runtime, metaClass);
+	}
+
+	@JRubyMethod(name = "from_state", required = 1, meta = true)
+	public static IRubyObject from_state(IRubyObject clazzParam, IRubyObject opts, Block block) {
+		RubyModule clazz = (RubyModule)clazzParam;
+		if (clazz.isInstance(opts)) {
+			return (GeneratorState)opts;
+		}
+		if (clazz.getRuntime().getHash().isInstance(opts)) {
+			return (GeneratorState)clazz.callMethod(clazz.getRuntime().getCurrentContext(), "new", opts);
+		}
+		return (GeneratorState)clazz.callMethod(clazz.getRuntime().getCurrentContext(), "new");
+	}
+
+	@JRubyMethod(name = "initialize", rest = true, visibility = Visibility.PRIVATE)
+	public IRubyObject initialize(IRubyObject[] args) {
+		Ruby runtime = getRuntime();
+		indent = runtime.newString();
+		space = runtime.newString();
+		spaceBefore = runtime.newString();
+		arrayNl = runtime.newString();
+		objectNl = runtime.newString();
+		if (args.length == 0 || args[0].isNil()) {
+			checkCircular = true;
+			allowNaN = false;
+			maxNesting = 19;
+		}
+		else {
+			configure(args[0]);
+		}
+		seen = RubyHash.newHash(runtime);
+		memo = null;
+		depth = runtime.newFixnum(0);
+		return this;
 	}
 
 	@JRubyMethod(name = "indent")

@@ -18,6 +18,8 @@ public class GeneratorService implements BasicLibraryService {
 		RubyClass stateClass = generatorModule.defineClassUnder("State", runtime.getObject(), GeneratorState.ALLOCATOR);
 		stateClass.defineAnnotatedMethods(GeneratorState.class);
 
+		RubyModule methodsModule = generatorModule.defineModuleUnder("GeneratorMethods");
+
 		return true;
 	}
 }
