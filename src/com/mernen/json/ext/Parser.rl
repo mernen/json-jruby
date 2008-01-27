@@ -12,6 +12,7 @@ import org.jruby.RubyException;
 import org.jruby.RubyFloat;
 >>>>>>> Added support for floating-point numbers:src/com/mernen/json/ext/Parser.rl
 import org.jruby.RubyHash;
+import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
@@ -236,6 +237,33 @@ public class Parser extends RubyObject {
 	}
 
 	%%{
+		machine JSON_integer;
+
+		write data;
+
+		action exit { fbreak; }
+
+		main := '-'? ( '0' | [1-9][0-9]* ) ( ^[0-9] @exit );
+	}%%
+
+	ParserResult parseInteger(byte[] data, int p, int pe) {
+		int cs = EVIL;
+
+		%% write init;
+		int memo = p;
+		%% write exec;
+
+		if (cs >= JSON_integer_first_final) {
+			RubyString expr = getRuntime().newString((ByteList)source.subSequence(memo, p - 1));
+			RubyInteger number = RubyNumeric.str2inum(getRuntime(), expr, 10, true);
+			return new ParserResult(number, p + 1);
+		}
+		else {
+			return null;
+		}
+	}
+
+	%%{
 		machine JSON_float;
 		include JSON_common;
 
@@ -259,16 +287,12 @@ public class Parser extends RubyObject {
 
 		if (cs >= JSON_float_first_final) {
 			RubyString expr = getRuntime().newString((ByteList)source.subSequence(memo, p - 1));
-			RubyFloat number = RubyFloat.str2fnum(getRuntime(), expr, true);
+			RubyFloat number = RubyNumeric.str2fnum(getRuntime(), expr, true);
 			return new ParserResult(number, p + 1);
 		}
 		else {
 			return null;
 		}
-	}
-
-	ParserResult parseInteger(byte[] data, int p, int pe) {
-		return null;
 	}
 
 	%%{
