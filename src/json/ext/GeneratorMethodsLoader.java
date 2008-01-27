@@ -6,7 +6,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 
-import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
@@ -17,7 +16,7 @@ import org.jruby.runtime.callback.Callback;
 
 class GeneratorMethodsLoader {
 //	private Ruby runtime;
-	RubyModule generatorMethods;
+	RubyModule parentModule;
 
 	private abstract static class ToJsonCallback implements Callback {
 		public Arity getArity() {
@@ -26,11 +25,10 @@ class GeneratorMethodsLoader {
 	}
 
 	private static Callback stringToJson = new ToJsonCallback() {
-		public IRubyObject execute(IRubyObject recv, IRubyObject[] args,
-				Block block) {
+		public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
 			// using convertToString as a safety guard measure
-			char[] chars = decodeString(recv.convertToString());
-			RubyString result = recv.getRuntime().newString();
+			char[] chars = decodeString(self.convertToString());
+			RubyString result = self.getRuntime().newString();
 			result.modify(chars.length);
 			result.cat((byte)'"');
 			for (char c : chars) {
@@ -96,9 +94,8 @@ class GeneratorMethodsLoader {
 		}
 	};
 
-	GeneratorMethodsLoader(Ruby runtime) {
-//		this.runtime = runtime;
-		generatorMethods = runtime.getClassFromPath("JSON::Ext::Generator::GeneratorMethods");
+	GeneratorMethodsLoader(RubyModule module) {
+		this.parentModule = module;
 	}
 
 	void apply() {
@@ -107,6 +104,7 @@ class GeneratorMethodsLoader {
 				return stringToJson.execute(recv.asString(), args, block);
 			}
 		});
+
 		setMethod("Array", new ToJsonCallback() {
 			public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
 				recv.checkStringType();
@@ -142,9 +140,40 @@ class GeneratorMethodsLoader {
 				return recv.getRuntime().newString();
 			}
 		});
+
+		// XXX this method does the same as Object#to_json, only possibly slower
+		/*
+		setMethod("Integer", new ToJsonCallback() {
+			public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
+				return recv.callMethod(recv.getRuntime().getCurrentContext(), "to_s");
+			}
+		});
+		*/
+
+		setMethod("TrueClass", new ToJsonCallback() {
+			public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
+				return recv.getRuntime().newString("true");
+			}
+		});
+
+		setMethod("FalseClass", new ToJsonCallback() {
+			public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
+				return recv.getRuntime().newString("false");
+			}
+		});
+
+		setMethod("NilClass", new ToJsonCallback() {
+			public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
+				return recv.getRuntime().newString("null");
+			}
+		});
 	}
 
 	private void setMethod(String moduleName, Callback method) {
-		generatorMethods.defineModuleUnder(moduleName).defineMethod("to_json", method);
+		setMethod(moduleName, "to_json", method);
+	}
+
+	private void setMethod(String moduleName, String methodName, Callback method) {
+		parentModule.defineModuleUnder(moduleName).defineMethod(methodName, method);
 	}
 }
