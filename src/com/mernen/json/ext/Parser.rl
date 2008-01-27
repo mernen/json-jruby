@@ -45,7 +45,6 @@ public class Parser extends RubyObject {
 	private int currentNesting;
 	private boolean allowNaN;
 
-	private final RubyModule jsonModule;
 	private final RubyClass parserErrorClass;
 	private final RubyClass nestingErrorClass;
 	private final IRubyObject NAN;
@@ -81,16 +80,15 @@ public class Parser extends RubyObject {
 		runtime.getLoadService().require("json/common");
 
 		RubyModule jsonModule = runtime.defineModule("JSON");
-		RubyModule jsonExtModule = runtime.defineModuleUnder("Ext", jsonModule);
-		RubyClass parserClass = runtime.defineClassUnder("Parser", runtime.getObject(),
-		                                                 PARSER_ALLOCATOR, jsonExtModule);
+		RubyModule jsonExtModule = jsonModule.defineModuleUnder("Ext");
+		RubyClass parserClass = jsonExtModule.defineClassUnder("Parser", runtime.getObject(), PARSER_ALLOCATOR);
 		parserClass.defineAnnotatedMethods(Parser.class);
 	}
 
 	public Parser(Ruby runtime, RubyClass metaClass) {
 		super(runtime, metaClass);
 
-		jsonModule = runtime.getModule("JSON");
+		RubyModule jsonModule = runtime.getModule("JSON");
 
 		parserErrorClass = jsonModule.getClass("ParserError");
 		nestingErrorClass = jsonModule.getClass("NestingError");
@@ -125,20 +123,28 @@ public class Parser extends RubyObject {
 			RubyHash opts = args[1].convertToHash();
 
 			IRubyObject maxNesting = getSymItem(opts, "max_nesting");
-			this.maxNesting = maxNesting == null ? 0 : RubyNumeric.fix2int(maxNesting);
+			if (maxNesting == null) {
+				this.maxNesting = 19;
+			}
+			else if (!maxNesting.isTrue()) {
+				this.maxNesting = 0;
+			}
+			else {
+				this.maxNesting = RubyNumeric.fix2int(maxNesting);
+			}
 
 			IRubyObject allowNaN = getSymItem(opts, "allow_nan");
 			this.allowNaN = allowNaN != null && allowNaN.isTrue();
 
 			IRubyObject createAdditions = getSymItem(opts, "create_additions");
 			this.createId = createAdditions == null || createAdditions.isTrue() ?
-				jsonModule.callMethod(context, "create_id") :
+				getRuntime().getModule("JSON").callMethod(context, "create_id") :
 				getRuntime().getNil();
 		}
 		else {
 			this.maxNesting = 19;
 			this.allowNaN = false;
-			this.createId = jsonModule.callMethod(context, "create_id");
+			this.createId = getRuntime().getModule("JSON").callMethod(context, "create_id");
 		}
 
 		this.currentNesting = 0;
@@ -196,7 +202,7 @@ public class Parser extends RubyObject {
 			if (pe > fpc + 9 && source.subSequence(fpc, fpc + 9).toString().equals(JSON_MINUS_INFINITY)) {
 				if (allowNaN) {
 					result = MINUS_INFINITY;
-					fexec p + 9 /*+1*/;
+					fexec p + 10;
 					fbreak;
 				}
 				else {
