@@ -1,9 +1,12 @@
 package com.mernen.json.ext;
 
 <<<<<<< HEAD:src/com/mernen/json/ext/Parser.rl
+<<<<<<< HEAD:src/com/mernen/json/ext/Parser.rl
 import java.util.Arrays;
 =======
 import java.io.UnsupportedEncodingException;
+=======
+>>>>>>> Implemented Object (Hash) support:src/com/mernen/json/ext/Parser.rl
 import java.nio.charset.Charset;
 >>>>>>> Reimplemented stringUnescape to use Ruby strings and encode \u escapes as UTF-8:src/com/mernen/json/ext/Parser.rl
 
@@ -234,6 +237,18 @@ public class Parser extends RubyObject {
 				fexec res.p;
 			}
 		}
+		action parse_object {
+			currentNesting++;
+			ParserResult res = parseObject(data, fpc, pe);
+			currentNesting--;
+			if (res == null) {
+				fbreak;
+			}
+			else {
+				result = res.result;
+				fexec res.p;
+			}
+		}
 		action exit {
 			fbreak;
 		}
@@ -245,7 +260,8 @@ public class Parser extends RubyObject {
 		          VInfinity @parse_infinity |
 		          begin_number >parse_number |
 		          begin_string >parse_string |
-		          begin_array >parse_array
+		          begin_array >parse_array |
+		          begin_object >parse_object
 		        ) %*exit;
 	}%%
 
@@ -481,6 +497,7 @@ public class Parser extends RubyObject {
 			throw new RaiseException(getRuntime(), nestingErrorClass,
 				"nesting of " + currentNesting + " is too deep", false);
 		}
+
 		RubyArray result = getRuntime().newArray();
 
 		%% write init;
@@ -496,13 +513,97 @@ public class Parser extends RubyObject {
 	}
 
 	%%{
+		machine JSON_object;
+		include JSON_common;
+
+		write data;
+
+		action parse_value {
+			ParserResult res = parseValue(data, fpc, pe);
+			if (res == null) {
+				fbreak;
+			}
+			else {
+				result.op_aset(lastName, res.result);
+				fexec res.p - 1 /*+1*/;
+			}
+		}
+
+		action parse_name {
+			ParserResult res = parseString(data, fpc, pe);
+			if (res == null) {
+				fbreak;
+			}
+			else {
+				lastName = res.result;
+				fexec res.p - 1 /*+1*/;
+			}
+		}
+
+		action exit { fbreak; }
+
+		a_pair = ignore*
+		         begin_name >parse_name
+		         ignore* name_separator ignore*
+		         begin_value >parse_value;
+
+		main := begin_object
+		        (a_pair (ignore* value_separator a_pair)*)?
+		        ignore* end_object @exit;
+	}%%
+
+	ParserResult parseObject(byte[] data, int p, int pe) {
+		int cs = EVIL;
+		IRubyObject lastName = null;
+
+		if (maxNesting > 0 && currentNesting > maxNesting) {
+			throw new RaiseException(getRuntime(), nestingErrorClass,
+				"nesting of " + currentNesting + " is too deep", false);
+		}
+
+		RubyHash result = RubyHash.newHash(getRuntime());
+
+		%% write init;
+		%% write exec;
+
+		if (cs >= JSON_object_first_final) {
+			ParserResult res = new ParserResult(result, p /*+1*/);
+			if (createId.isTrue()) {
+				IRubyObject klassName = result.op_aref(createId);
+				if (!klassName.isNil()) {
+					RubyModule klass = getRuntime().getClassFromPath(klassName.asJavaString());
+					if (klass.callMethod(getRuntime().getCurrentContext(), "json_creatable?").isTrue()) {
+						res.result = klass.callMethod(getRuntime().getCurrentContext(), "json_create", result);
+					}
+				}
+			}
+			return res;
+		}
+		else {
+			return null;
+		}
+	}
+
+	%%{
 		machine JSON;
 		include JSON_common;
 
 		write data;
 
+		action parse_object {
+			currentNesting = 1;
+			ParserResult res = parseObject(data, fpc, pe);
+			if (res == null) {
+				fbreak;
+			}
+			else {
+				result = res.result;
+				fexec res.p - 1 +1;
+			}
+		}
+
 		action parse_array {
-			this.currentNesting = 1;
+			currentNesting = 1;
 			ParserResult res = parseArray(data, fpc, pe);
 			if (res == null) {
 				fbreak;
@@ -514,7 +615,8 @@ public class Parser extends RubyObject {
 		}
 
 		main := ignore*
-		        ( begin_array >parse_array )
+		        ( begin_object >parse_object
+		        | begin_array >parse_array )
 		        ignore*;
 	}%%
 
