@@ -1,24 +1,11 @@
 package json.ext;
 
-<<<<<<< HEAD:src/com/mernen/json/ext/Parser.rl
-<<<<<<< HEAD:src/com/mernen/json/ext/Parser.rl
-import java.util.Arrays;
-=======
-import java.io.UnsupportedEncodingException;
-=======
->>>>>>> Implemented Object (Hash) support:src/com/mernen/json/ext/Parser.rl
 import java.nio.charset.Charset;
->>>>>>> Reimplemented stringUnescape to use Ruby strings and encode \u escapes as UTF-8:src/com/mernen/json/ext/Parser.rl
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
-<<<<<<< HEAD:src/com/mernen/json/ext/Parser.rl
-import org.jruby.RubyException;
-=======
 import org.jruby.RubyFloat;
->>>>>>> Added support for floating-point numbers:src/com/mernen/json/ext/Parser.rl
 import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
@@ -27,7 +14,6 @@ import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -36,8 +22,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
 public class Parser extends RubyObject {
-	private IRubyObject vSource;
-	private int sourcePtr;
+	private RubyString vSource;
+	private ByteList source;
 	private int len;
 	private IRubyObject createId;
 	private int maxNesting;
@@ -50,24 +36,15 @@ public class Parser extends RubyObject {
 	private final IRubyObject INFINITY;
 	private final IRubyObject MINUS_INFINITY;
 
-<<<<<<< HEAD:src/com/mernen/json/ext/Parser.rl
-=======
 	private static final int EVIL = 0x666;
 	private static final String JSON_MINUS_INFINITY = "-Infinity";
 
-<<<<<<< HEAD:src/com/mernen/json/ext/Parser.rl
->>>>>>> Added support for floating-point numbers:src/com/mernen/json/ext/Parser.rl
-	private static final ObjectAllocator PARSER_ALLOCATOR = new ObjectAllocator() {
-=======
 	static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
->>>>>>> Moved com.mernen.json.ext to json.ext; implemented proper loading services (ParserService, GeneratorService):src/json/ext/Parser.rl
 		public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
 			return new Parser(runtime, klazz);
 		}
 	};
 
-<<<<<<< HEAD:src/com/mernen/json/ext/Parser.rl
-=======
 	static class ParserResult {
 		IRubyObject result;
 		int p;
@@ -78,19 +55,6 @@ public class Parser extends RubyObject {
 		}
 	}
 
-<<<<<<< HEAD:src/com/mernen/json/ext/Parser.rl
->>>>>>> Added string support:src/com/mernen/json/ext/Parser.rl
-	static void load(Ruby runtime) {
-		runtime.getLoadService().require("json/common");
-
-		RubyModule jsonModule = runtime.defineModule("JSON");
-		RubyModule jsonExtModule = jsonModule.defineModuleUnder("Ext");
-		RubyClass parserClass = jsonExtModule.defineClassUnder("Parser", runtime.getObject(), PARSER_ALLOCATOR);
-		parserClass.defineAnnotatedMethods(Parser.class);
-	}
-
-=======
->>>>>>> Moved com.mernen.json.ext to json.ext; implemented proper loading services (ParserService, GeneratorService):src/json/ext/Parser.rl
 	public Parser(Ruby runtime, RubyClass metaClass) {
 		super(runtime, metaClass);
 
@@ -103,6 +67,34 @@ public class Parser extends RubyObject {
 		INFINITY = jsonModule.getConstant("Infinity");
 		MINUS_INFINITY = jsonModule.getConstant("MinusInfinity");
 	}
+
+	%%{
+		machine JSON_common;
+
+		cr                  = '\n';
+		cr_neg              = [^\n];
+		ws                  = [ \t\r\n];
+		c_comment           = '/*' ( any* - (any* '*/' any* ) ) '*/';
+		cpp_comment         = '//' cr_neg* cr;
+		comment             = c_comment | cpp_comment;
+		ignore              = ws | comment;
+		name_separator      = ':';
+		value_separator     = ',';
+		Vnull               = 'null';
+		Vfalse              = 'false';
+		Vtrue               = 'true';
+		VNaN                = 'NaN';
+		VInfinity           = 'Infinity';
+		VMinusInfinity      = '-Infinity';
+		begin_value         = [nft"\-[{NI] | digit;
+		begin_object        = '{';
+		end_object          = '}';
+		begin_array         = '[';
+		end_array           = ']';
+		begin_string        = '"';
+		begin_name          = begin_string;
+		begin_number        = digit | '-';
+	}%%
 
 	@JRubyMethod(name = "new", required = 1, optional = 1, meta = true)
 	public static IRubyObject newInstance(IRubyObject clazz, IRubyObject[] args, Block block) {
@@ -117,7 +109,8 @@ public class Parser extends RubyObject {
 	             visibility = Visibility.PRIVATE)
 	public IRubyObject initialize(IRubyObject[] args) {
 		RubyString source = args[0].convertToString();
-		int len = source.getByteList().length();
+		ByteList sourceBytes = source.getByteList();
+		int len = sourceBytes.length();
 
 		if (len < 2) {
 			throw new RaiseException(getRuntime(), parserErrorClass,
@@ -156,21 +149,12 @@ public class Parser extends RubyObject {
 		this.currentNesting = 0;
 
 		this.len = len;
-		this.sourcePtr = 0;
+		this.source = sourceBytes;
 		this.vSource = source;
 
 		return this;
 	}
 
-<<<<<<< HEAD:src/json/ext/Parser.rl
-	private IRubyObject getSymItem(RubyHash hash, String key) {
-		return hash.fastARef(RubySymbol.newSymbol(getRuntime(), key));
-	}
-
-<<<<<<< HEAD:src/com/mernen/json/ext/Parser.rl
-=======
-=======
->>>>>>> Moved some convenience functions into Utils; finished implementing Array#to_json; implemented several methods on GeneratorState, including #configure:src/json/ext/Parser.rl
 	private RaiseException unexpectedToken(int start, int end) {
 		return new RaiseException(getRuntime(), parserErrorClass,
 			"unexpected token at '" + source.subSequence(start, end) + "'", false);
@@ -635,19 +619,29 @@ public class Parser extends RubyObject {
 		        ignore*;
 	}%%
 
->>>>>>> Added support for floating-point numbers:src/com/mernen/json/ext/Parser.rl
 	@JRubyMethod(name = "parse")
 	public IRubyObject parse() {
-		return RubyArray.newArray(getRuntime());
+		int cs = EVIL;
+		int p, pe;
+		IRubyObject result = getRuntime().getNil();
+		byte[] data = source.bytes();
+
+		%% write init;
+		p = 0;
+		pe = len;
+		%% write exec;
+
+		if (cs >= JSON_first_final && p == pe) {
+			return result;
+		}
+		else {
+			throw new RaiseException(getRuntime(), parserErrorClass,
+				"unexpected token at '" + source.subSequence(p, pe) + "'", false);
+		}
 	}
 
 	@JRubyMethod(name = "source")
-<<<<<<< HEAD:src/com/mernen/json/ext/Parser.rl
-	public IRubyObject getSource() {
-		return vSource;
-=======
 	public IRubyObject source_get() {
 		return vSource.dup();
->>>>>>> Implemented getter/setter methods on Generator::State; changed Parser#source method naming to conform to conventions:src/com/mernen/json/ext/Parser.rl
 	}
 }
