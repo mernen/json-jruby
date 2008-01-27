@@ -147,6 +147,10 @@ public class GeneratorState extends RubyObject {
 		return max_nesting;
 	}
 
+	public boolean allowNaN() {
+		return allowNaN;
+	}
+
 	@JRubyMethod(name = "allow_nan?")
 	public RubyBoolean allow_nan_p() {
 		return getRuntime().newBoolean(allowNaN);

@@ -1,6 +1,9 @@
 package json.ext;
 
+import org.jruby.Ruby;
+import org.jruby.RubyClass;
 import org.jruby.RubyHash;
+import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
@@ -15,7 +18,7 @@ abstract class Utils {
 	 * @return The item in the {@link RubyHash Hash}, or the Hash's
 	 *         {@link RubyHash#default_value_get(IRubyObject[]) default} if not found
 	 */
-	final static IRubyObject getSymItem(RubyHash hash, String key) {
+	static IRubyObject getSymItem(RubyHash hash, String key) {
 		return hash.op_aref(hash.getRuntime().newSymbol(key));
 	}
 
@@ -27,7 +30,7 @@ abstract class Utils {
 	 * @return The item in the {@link RubyHash Hash},
 	 *         or <code>null</code> if not found
 	 */
-	final static IRubyObject fastGetSymItem(RubyHash hash, String key) {
+	static IRubyObject fastGetSymItem(RubyHash hash, String key) {
 		return hash.fastARef(hash.getRuntime().newSymbol(key));
 	}
 
@@ -44,9 +47,28 @@ abstract class Utils {
 	 *                        evaluate to <code>false</code> and can't be
 	 *                        converted to string
 	 */
-	final static RubyString getSymString(RubyHash hash, String key)
+	static RubyString getSymString(RubyHash hash, String key)
 			throws RaiseException {
 		IRubyObject value = fastGetSymItem(hash, key);
 		return value != null && value.isTrue() ? value.convertToString() : null;
+	}
+
+	/**
+	 * Safe {@link GeneratorState} type-checking
+	 * @param vState The value to be checked
+	 * @return The same parameter given, assured to be a GeneratorState
+	 */
+	static GeneratorState asState(IRubyObject vState) {
+		if (vState instanceof GeneratorState) {
+			return (GeneratorState)vState;
+		}
+		RubyModule generatorState = vState.getRuntime().getClassFromPath("JSON::Ext::Generator::State");
+		assert generatorState.getJavaClass() == GeneratorState.class;
+		throw vState.getRuntime().newTypeError(vState, (RubyClass)generatorState);
+	}
+
+	static RaiseException newException(Ruby runtime, String className, String message) {
+		return new RaiseException(runtime, (RubyClass)runtime.getClassFromPath("JSON::" + className),
+		                          message, false);
 	}
 }

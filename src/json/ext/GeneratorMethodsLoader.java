@@ -9,6 +9,7 @@ import java.nio.charset.CodingErrorAction;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
@@ -22,8 +23,9 @@ import org.jruby.util.ByteList;
 
 class GeneratorMethodsLoader {
 	private final static String
-		E_CIRCULAR_DATA_STRUCTURE_CLASS = "JSON::CircularDataStructure",
-		E_NESTING_ERROR_CLASS = "JSON::NestingError";
+		E_CIRCULAR_DATA_STRUCTURE_CLASS = "CircularDataStructure",
+		E_NESTING_ERROR_CLASS = "NestingError",
+		E_GENERATOR_ERROR_CLASS = "GeneratorError";
 
 //	private Ruby runtime;
 	RubyModule parentModule;
@@ -31,19 +33,6 @@ class GeneratorMethodsLoader {
 	private abstract static class ToJsonCallback implements Callback {
 		public Arity getArity() {
 			return Arity.OPTIONAL;
-		}
-
-		/**
-		 * Safe GeneratorState type-checking
-		 * @param vState The unknown parameter you received
-		 * @return The same parameter given, assured to be a GeneratorState
-		 */
-		protected GeneratorState getState(IRubyObject vState) {
-			if (!(vState instanceof GeneratorState)) {
-				RubyModule generatorState = vState.getRuntime().getClassFromPath("JSON::Ext::Generator::State");
-				throw vState.getRuntime().newTypeError(vState, (RubyClass)generatorState);
-			}
-			return (GeneratorState)vState;
 		}
 
 		protected void checkMaxNesting(GeneratorState state, int depth) {
@@ -131,13 +120,13 @@ class GeneratorMethodsLoader {
 	}
 
 	void apply() {
-		setMethod("Object", new ToJsonCallback() {
+		defineToJson("Object", new ToJsonCallback() {
 			public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
 				return stringToJson.execute(recv.asString(), args, block);
 			}
 		});
 
-		setMethod("Array", new ToJsonCallback() {
+		defineToJson("Array", new ToJsonCallback() {
 			public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
 				vSelf.checkArrayType();
 				RubyArray self = (RubyArray)vSelf;
@@ -163,18 +152,17 @@ class GeneratorMethodsLoader {
 					result.cat((byte)']');
 				}
 				else {
-					result = transform(self, state, depth);
+					result = transform(self, Utils.asState(state), depth);
 				}
 				result.infectBy(vSelf);
 				return result;
 			}
 
-			private RubyString transform(RubyArray self, IRubyObject vState, IRubyObject vDepth) {
+			private RubyString transform(RubyArray self, GeneratorState state, IRubyObject vDepth) {
 				Ruby runtime = self.getRuntime();
 				ThreadContext context = runtime.getCurrentContext();
 				RubyString result = runtime.newString();
 				int depth = vDepth.isNil() ? 0 : RubyNumeric.fix2int(vDepth);
-				GeneratorState state = getState(vState);
 
 				ByteList shift;
 		        ByteList indentUnit = state.indent_get().getByteList();
@@ -213,9 +201,8 @@ class GeneratorMethodsLoader {
 					boolean firstItem = true;
 					for (IRubyObject element : self.toJavaArrayMaybeUnsafe()) {
 						if (state.hasSeen(element)) {
-							throw new RaiseException(self.getRuntime(),
-								(RubyClass)self.getRuntime().getClassFromPath(E_CIRCULAR_DATA_STRUCTURE_CLASS),
-								"circular data structures not supported!", false);
+							throw Utils.newException(self.getRuntime(), E_CIRCULAR_DATA_STRUCTURE_CLASS,
+								"circular data structures not supported!");
 						}
 						result.infectBy(element);
 						if (firstItem) {
@@ -269,39 +256,58 @@ class GeneratorMethodsLoader {
 			}
 		});
 
-		// XXX this method does the same as Object#to_json, only possibly slower
-		/*
-		setMethod("Integer", new ToJsonCallback() {
+		defineToJson("Integer", new ToJsonCallback() {
 			public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
 				return recv.callMethod(recv.getRuntime().getCurrentContext(), "to_s");
 			}
 		});
-		*/
 
-		setMethod("TrueClass", new ToJsonCallback() {
+		defineToJson("Float", new ToJsonCallback() {
+			public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
+				double value = RubyFloat.num2dbl(vSelf);
+
+				if (Double.isInfinite(value) || Double.isNaN(value)) {
+					GeneratorState state = args.length > 0 ? Utils.asState(args[0]) : null;
+					if (state == null || state.allowNaN()) {
+						// XXX wouldn't it be better to hardcode a representation?
+						return vSelf.asString();
+					}
+					else {
+						throw Utils.newException(vSelf.getRuntime(), E_GENERATOR_ERROR_CLASS, vSelf.toString() + " not allowed in JSON");
+					}
+				}
+				else {
+					return vSelf.asString();
+				}
+			}
+		});
+
+		defineToJson("String", stringToJson);
+
+		defineToJson("TrueClass", new ToJsonCallback() {
 			public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
 				return recv.getRuntime().newString("true");
 			}
 		});
 
-		setMethod("FalseClass", new ToJsonCallback() {
+		defineToJson("FalseClass", new ToJsonCallback() {
 			public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
 				return recv.getRuntime().newString("false");
 			}
 		});
 
-		setMethod("NilClass", new ToJsonCallback() {
+		defineToJson("NilClass", new ToJsonCallback() {
 			public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
 				return recv.getRuntime().newString("null");
 			}
 		});
 	}
 
-	private void setMethod(String moduleName, Callback method) {
-		setMethod(moduleName, "to_json", method);
+	private void defineToJson(String moduleName, Callback method) {
+		defineMethod(moduleName, "to_json", method);
 	}
 
-	private void setMethod(String moduleName, String methodName, Callback method) {
+	private void defineMethod(String moduleName, String methodName, Callback method) {
 		parentModule.defineModuleUnder(moduleName).defineMethod(methodName, method);
 	}
 }
