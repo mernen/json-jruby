@@ -1225,6 +1225,7 @@ case 5:
 	}
 
 	private RubyString stringUnescape(int start, int end) {
+		Charset utf8 = null;
 		// FIXME: maybe preallocating some room would improve performance?
 		RubyString result = getRuntime().newString();
 
@@ -1275,8 +1276,10 @@ case 5:
 								result.cat((byte)code);
 							}
 							else {
-    							byte[] repr;
-    							repr = new String(new char[] {(char)code}).getBytes(Charset.forName("UTF-8"));
+								if (utf8 == null) { // lazy-load UTF-8 charset
+									utf8 = Charset.forName("UTF-8");
+								}
+    							byte[] repr = new String(new char[] {(char)code}).getBytes(utf8);
     							result.cat(repr);
 							}
 							i += 4;
@@ -1298,7 +1301,7 @@ case 5:
 	}
 
 	
-// line 1268 "src/com/mernen/json/ext/Parser.java"
+// line 1271 "src/com/mernen/json/ext/Parser.java"
 private static byte[] init__JSON_array_actions_0()
 {
 	return new byte [] {
@@ -1410,7 +1413,7 @@ static final int JSON_array_error = 0;
 
 static final int JSON_array_en_main = 1;
 
-// line 482 "src/com/mernen/json/ext/Parser.rl"
+// line 485 "src/com/mernen/json/ext/Parser.rl"
 
 
 	ParserResult parseArray(byte[] data, int p, int pe) {
@@ -1423,13 +1426,13 @@ static final int JSON_array_en_main = 1;
 		RubyArray result = getRuntime().newArray();
 
 		
-// line 1393 "src/com/mernen/json/ext/Parser.java"
+// line 1396 "src/com/mernen/json/ext/Parser.java"
 	{
 	cs = JSON_array_start;
 	}
-// line 494 "src/com/mernen/json/ext/Parser.rl"
+// line 497 "src/com/mernen/json/ext/Parser.rl"
 		
-// line 1399 "src/com/mernen/json/ext/Parser.java"
+// line 1402 "src/com/mernen/json/ext/Parser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -1510,7 +1513,7 @@ case 1:
 			switch ( _JSON_array_actions[_acts++] )
 			{
 	case 0:
-// line 458 "src/com/mernen/json/ext/Parser.rl"
+// line 461 "src/com/mernen/json/ext/Parser.rl"
 	{
 			ParserResult res = parseValue(data, p, pe);
 			if (res == null) {
@@ -1523,10 +1526,10 @@ case 1:
 		}
 	break;
 	case 1:
-// line 469 "src/com/mernen/json/ext/Parser.rl"
+// line 472 "src/com/mernen/json/ext/Parser.rl"
 	{ { p += 1; _goto_targ = 5; if (true)  continue _goto;} }
 	break;
-// line 1496 "src/com/mernen/json/ext/Parser.java"
+// line 1499 "src/com/mernen/json/ext/Parser.java"
 			}
 		}
 	}
@@ -1545,7 +1548,7 @@ case 5:
 	}
 	break; }
 	}
-// line 495 "src/com/mernen/json/ext/Parser.rl"
+// line 498 "src/com/mernen/json/ext/Parser.rl"
 
 		if (cs >= JSON_array_first_final) {
 			return new ParserResult(result, p/*+1*/);
@@ -1557,7 +1560,7 @@ case 5:
 	}
 
 	
-// line 1527 "src/com/mernen/json/ext/Parser.java"
+// line 1530 "src/com/mernen/json/ext/Parser.java"
 private static byte[] init__JSON_actions_0()
 {
 	return new byte [] {
@@ -1657,7 +1660,7 @@ static final int JSON_error = 0;
 
 static final int JSON_en_main = 1;
 
-// line 526 "src/com/mernen/json/ext/Parser.rl"
+// line 529 "src/com/mernen/json/ext/Parser.rl"
 
 
 >>>>>>> Added support for floating-point numbers:src/com/mernen/json/ext/Parser.java
@@ -1672,15 +1675,15 @@ static final int JSON_en_main = 1;
 		byte[] data = source.bytes();
 
 		
-// line 1638 "src/com/mernen/json/ext/Parser.java"
+// line 1641 "src/com/mernen/json/ext/Parser.java"
 	{
 	cs = JSON_start;
 	}
-// line 536 "src/com/mernen/json/ext/Parser.rl"
+// line 539 "src/com/mernen/json/ext/Parser.rl"
 		p = 0;
 		pe = len;
 		
-// line 1646 "src/com/mernen/json/ext/Parser.java"
+// line 1649 "src/com/mernen/json/ext/Parser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -1761,7 +1764,7 @@ case 1:
 			switch ( _JSON_actions[_acts++] )
 			{
 	case 0:
-// line 511 "src/com/mernen/json/ext/Parser.rl"
+// line 514 "src/com/mernen/json/ext/Parser.rl"
 	{
 			this.currentNesting = 1;
 			ParserResult res = parseArray(data, p, pe);
@@ -1774,7 +1777,7 @@ case 1:
 			}
 		}
 	break;
-// line 1740 "src/com/mernen/json/ext/Parser.java"
+// line 1743 "src/com/mernen/json/ext/Parser.java"
 			}
 		}
 	}
@@ -1793,7 +1796,7 @@ case 5:
 	}
 	break; }
 	}
-// line 539 "src/com/mernen/json/ext/Parser.rl"
+// line 542 "src/com/mernen/json/ext/Parser.rl"
 
 		if (cs >= JSON_first_final && p == pe) {
 			return result;

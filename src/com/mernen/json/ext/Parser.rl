@@ -417,8 +417,8 @@ public class Parser extends RubyObject {
 								result.cat((byte)code);
 							}
 							else {
-								if (charset == null) { // lazy-load UTF-8 charset
-									charset = Charset.forName("UTF-8");
+								if (utf8 == null) { // lazy-load UTF-8 charset
+									utf8 = Charset.forName("UTF-8");
 								}
     							byte[] repr = new String(new char[] {(char)code}).getBytes(utf8);
     							result.cat(repr);
