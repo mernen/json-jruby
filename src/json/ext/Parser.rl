@@ -25,7 +25,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
-import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
@@ -129,7 +128,7 @@ public class Parser extends RubyObject {
 		if (args.length > 1) {
 			RubyHash opts = args[1].convertToHash();
 
-			IRubyObject maxNesting = getSymItem(opts, "max_nesting");
+			IRubyObject maxNesting = Utils.fastGetSymItem(opts, "max_nesting");
 			if (maxNesting == null) {
 				this.maxNesting = 19;
 			}
@@ -140,10 +139,10 @@ public class Parser extends RubyObject {
 				this.maxNesting = RubyNumeric.fix2int(maxNesting);
 			}
 
-			IRubyObject allowNaN = getSymItem(opts, "allow_nan");
+			IRubyObject allowNaN = Utils.fastGetSymItem(opts, "allow_nan");
 			this.allowNaN = allowNaN != null && allowNaN.isTrue();
 
-			IRubyObject createAdditions = getSymItem(opts, "create_additions");
+			IRubyObject createAdditions = Utils.fastGetSymItem(opts, "create_additions");
 			this.createId = createAdditions == null || createAdditions.isTrue() ?
 				getRuntime().getModule("JSON").callMethod(context, "create_id") :
 				getRuntime().getNil();
@@ -163,12 +162,15 @@ public class Parser extends RubyObject {
 		return this;
 	}
 
+<<<<<<< HEAD:src/json/ext/Parser.rl
 	private IRubyObject getSymItem(RubyHash hash, String key) {
 		return hash.fastARef(RubySymbol.newSymbol(getRuntime(), key));
 	}
 
 <<<<<<< HEAD:src/com/mernen/json/ext/Parser.rl
 =======
+=======
+>>>>>>> Moved some convenience functions into Utils; finished implementing Array#to_json; implemented several methods on GeneratorState, including #configure:src/json/ext/Parser.rl
 	private RaiseException unexpectedToken(int start, int end) {
 		return new RaiseException(getRuntime(), parserErrorClass,
 			"unexpected token at '" + source.subSequence(start, end) + "'", false);

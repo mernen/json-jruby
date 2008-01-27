@@ -1,5 +1,8 @@
 package json.ext;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -22,9 +25,9 @@ public class GeneratorState extends RubyObject {
 	private RubyString objectNl;
 	private RubyString arrayNl;
 	private boolean checkCircular;
-	private RubyHash seen;
+	private Set<Long> seen;
 	private RubyString memo;
-	private RubyInteger depth;
+	private int depth;
 	private int maxNesting;
 	private boolean flag;
 	private boolean allowNaN;
@@ -67,9 +70,9 @@ public class GeneratorState extends RubyObject {
 		else {
 			configure(args[0]);
 		}
-		seen = RubyHash.newHash(runtime);
+		seen = new HashSet<Long>();
 		memo = null;
-		depth = runtime.newFixnum(0);
+		depth = 0;
 		return this;
 	}
 
@@ -149,24 +152,70 @@ public class GeneratorState extends RubyObject {
 		return getRuntime().newBoolean(allowNaN);
 	}
 
+	private static long getId(IRubyObject object) {
+		return object.getRuntime().getObjectSpace().idOf(object);
+	}
+
+	public boolean hasSeen(IRubyObject object) {
+		return seen.contains(getId(object));
+	}
+
 	@JRubyMethod(name = "seen?", required = 1)
 	public IRubyObject seen_p(IRubyObject object) {
-		return seen.op_aref(object.id());
+		return hasSeen(object) ? getRuntime().getTrue() : getRuntime().getNil();
+	}
+
+	public void remember(IRubyObject object) {
+		seen.add(getId(object));
 	}
 
 	@JRubyMethod(name = "remember", required = 1)
-	public IRubyObject remember(IRubyObject object) {
-		return seen.op_aset(object.id(), getRuntime().getTrue());
+	public IRubyObject rb_remember(IRubyObject object) {
+		remember(object);
+		return getRuntime().getTrue();
 	}
 
 	@JRubyMethod(name = "forget", required = 1)
 	public IRubyObject forget(IRubyObject object) {
-		return seen.delete(object.id(), Block.NULL_BLOCK);
+		return seen.remove(getId(object)) ? getRuntime().getTrue() : getRuntime().getNil();
 	}
 
 	@JRubyMethod(name = "configure", required = 1)
-	public GeneratorState configure(IRubyObject opts) {
-		// TODO
+	public GeneratorState configure(IRubyObject vOpts) {
+		RubyHash opts;
+		if (vOpts.respondsTo("to_hash")) {
+			opts = vOpts.convertToHash();
+		}
+		else {
+			opts = vOpts.callMethod(getRuntime().getCurrentContext(), "to_h").convertToHash();
+		}
+
+		RubyString vIndent = Utils.getSymString(opts, "indent");
+		if (vIndent != null) indent = vIndent;
+
+		RubyString vSpace = Utils.getSymString(opts, "space");
+		if (vSpace != null) space = vSpace;
+
+		RubyString vSpaceBefore = Utils.getSymString(opts, "space_before");
+		if (vSpaceBefore != null) spaceBefore = vSpaceBefore;
+
+		RubyString vArrayNl = Utils.getSymString(opts, "array_nl");
+		if (vArrayNl != null) arrayNl = vArrayNl;
+
+		RubyString vObjectNl = Utils.getSymString(opts, "object_nl");
+		if (vObjectNl != null) objectNl = vObjectNl;
+
+		IRubyObject vCheckCircular = Utils.fastGetSymItem(opts, "check_circular");
+		checkCircular = vCheckCircular == null ? true : vCheckCircular.isTrue();
+
+		IRubyObject vMaxNesting = Utils.fastGetSymItem(opts, "max_nesting");
+		if (vMaxNesting != null) {
+			maxNesting = vMaxNesting.isTrue() ? RubyNumeric.fix2int(vMaxNesting) : 0;
+		}
+
+		IRubyObject vAllowNaN = Utils.fastGetSymItem(opts, "allow_nan");
+		allowNaN = vAllowNaN != null && vAllowNaN.isTrue();
+
 		return this;
 	}
 
@@ -183,5 +232,37 @@ public class GeneratorState extends RubyObject {
 		result.op_aset(getRuntime().newSymbol("allow_nan"), allow_nan_p());
 		result.op_aset(getRuntime().newSymbol("max_nesting"), max_nesting_get());
 		return result;
+	}
+
+	RubyString getMemo() {
+		return memo;
+	}
+
+	void setMemo(RubyString memo) {
+		this.memo = memo;
+	}
+
+	int getDepth() {
+		return depth;
+	}
+
+	void setDepth(int depth) {
+		this.depth = depth;
+	}
+
+	boolean getStateFlag() {
+		return flag;
+	}
+
+	void setStateFlag(boolean flag) {
+		this.flag = flag;
+	}
+
+	int getMaxNesting() {
+		return maxNesting;
+	}
+
+	boolean checkCircular() {
+		return checkCircular;
 	}
 }
