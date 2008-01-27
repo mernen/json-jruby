@@ -3,12 +3,13 @@
  */
 package com.mernen.json.ext.test;
 
+import json.ext.Init;
+import json.ext.Parser;
+
 import org.jruby.Ruby;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.mernen.json.ext.Init;
-import com.mernen.json.ext.Parser;
 
 /**
  * @author mernen
@@ -24,7 +25,7 @@ public class ParserTest {
 	}
 
 	/**
-	 * Test method for {@link com.mernen.json.ext.Parser#parse()}.
+	 * Test method for {@link json.ext.Parser#parse()}.
 	 */
 	@Test
 	public void testParse() {

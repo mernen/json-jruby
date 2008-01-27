@@ -1,4 +1,4 @@
-package com.mernen.json.ext;
+package json.ext;
 
 <<<<<<< HEAD:src/com/mernen/json/ext/Parser.rl
 <<<<<<< HEAD:src/com/mernen/json/ext/Parser.rl
@@ -56,8 +56,12 @@ public class Parser extends RubyObject {
 	private static final int EVIL = 0x666;
 	private static final String JSON_MINUS_INFINITY = "-Infinity";
 
+<<<<<<< HEAD:src/com/mernen/json/ext/Parser.rl
 >>>>>>> Added support for floating-point numbers:src/com/mernen/json/ext/Parser.rl
 	private static final ObjectAllocator PARSER_ALLOCATOR = new ObjectAllocator() {
+=======
+	static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
+>>>>>>> Moved com.mernen.json.ext to json.ext; implemented proper loading services (ParserService, GeneratorService):src/json/ext/Parser.rl
 		public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
 			return new Parser(runtime, klazz);
 		}
@@ -75,6 +79,7 @@ public class Parser extends RubyObject {
 		}
 	}
 
+<<<<<<< HEAD:src/com/mernen/json/ext/Parser.rl
 >>>>>>> Added string support:src/com/mernen/json/ext/Parser.rl
 	static void load(Ruby runtime) {
 		runtime.getLoadService().require("json/common");
@@ -85,6 +90,8 @@ public class Parser extends RubyObject {
 		parserClass.defineAnnotatedMethods(Parser.class);
 	}
 
+=======
+>>>>>>> Moved com.mernen.json.ext to json.ext; implemented proper loading services (ParserService, GeneratorService):src/json/ext/Parser.rl
 	public Parser(Ruby runtime, RubyClass metaClass) {
 		super(runtime, metaClass);
 

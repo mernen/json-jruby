@@ -1,4 +1,4 @@
-package com.mernen.json.ext;
+package json.ext;
 
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
@@ -28,18 +28,11 @@ public class GeneratorState extends RubyObject {
 	private boolean flag;
 	private boolean allowNaN;
 
-	private static final ObjectAllocator STATE_ALLOCATOR = new ObjectAllocator() {
+	static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
 		public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
 			return new GeneratorState(runtime, klazz);
 		}
 	};
-
-	static void load(Ruby runtime) {
-		RubyModule generatorModule = runtime.getClassFromPath("JSON::Ext::Generator");
-		RubyClass stateClass = generatorModule.defineClassUnder("State", runtime.getObject(), STATE_ALLOCATOR);
-
-		stateClass.defineAnnotatedMethods(GeneratorState.class);
-	}
 
 	public GeneratorState(Ruby runtime, RubyClass metaClass) {
 		super(runtime, metaClass);

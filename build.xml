@@ -38,7 +38,7 @@
 	<target name="ragel">
 		<exec executable="ragel" failonerror="true">
 			<arg value="-J" />
-			<arg value="${src.java}/com/mernen/json/ext/Parser.rl" />
+			<arg value="${src.java}/json/ext/Parser.rl" />
 		</exec>
 	</target>
 </project>
