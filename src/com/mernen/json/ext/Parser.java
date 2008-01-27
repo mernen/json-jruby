@@ -1,7 +1,12 @@
 // line 1 "src/com/mernen/json/ext/Parser.rl"
 package com.mernen.json.ext;
 
+<<<<<<< HEAD:src/com/mernen/json/ext/Parser.java
 import java.util.Arrays;
+=======
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+>>>>>>> Reimplemented stringUnescape to use Ruby strings and encode \u escapes as UTF-8:src/com/mernen/json/ext/Parser.java
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -96,6 +101,7 @@ public class Parser extends RubyObject {
 <<<<<<< HEAD:src/com/mernen/json/ext/Parser.java
 <<<<<<< HEAD:src/com/mernen/json/ext/Parser.java
 <<<<<<< HEAD:src/com/mernen/json/ext/Parser.java
+<<<<<<< HEAD:src/com/mernen/json/ext/Parser.java
 =======
 =======
 >>>>>>> Added string support:src/com/mernen/json/ext/Parser.java
@@ -106,6 +112,9 @@ public class Parser extends RubyObject {
 >>>>>>> Added support for integers:src/com/mernen/json/ext/Parser.java
 =======
 >>>>>>> Added string support:src/com/mernen/json/ext/Parser.java
+=======
+	// line 110 "src/com/mernen/json/ext/Parser.rl"
+>>>>>>> Reimplemented stringUnescape to use Ruby strings and encode \u escapes as UTF-8:src/com/mernen/json/ext/Parser.java
 
 
 >>>>>>> Added support for floating-point numbers:src/com/mernen/json/ext/Parser.java
@@ -171,7 +180,7 @@ public class Parser extends RubyObject {
 	}
 
 	
-// line 147 "src/com/mernen/json/ext/Parser.java"
+// line 150 "src/com/mernen/json/ext/Parser.java"
 private static byte[] init__JSON_value_actions_0()
 {
 	return new byte [] {
@@ -284,7 +293,7 @@ static final int JSON_value_error = 0;
 
 static final int JSON_value_en_main = 1;
 
-// line 258 "src/com/mernen/json/ext/Parser.rl"
+// line 261 "src/com/mernen/json/ext/Parser.rl"
 
 
 	ParserResult parseValue(byte[] data, int p, int pe) {
@@ -292,13 +301,13 @@ static final int JSON_value_en_main = 1;
 		IRubyObject result = null;
 
 		
-// line 268 "src/com/mernen/json/ext/Parser.java"
+// line 271 "src/com/mernen/json/ext/Parser.java"
 	{
 	cs = JSON_value_start;
 	}
-// line 265 "src/com/mernen/json/ext/Parser.rl"
+// line 268 "src/com/mernen/json/ext/Parser.rl"
 		
-// line 274 "src/com/mernen/json/ext/Parser.java"
+// line 277 "src/com/mernen/json/ext/Parser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -324,12 +333,12 @@ case 1:
 	while ( _nacts-- > 0 ) {
 		switch ( _JSON_value_actions[_acts++] ) {
 	case 8:
-// line 245 "src/com/mernen/json/ext/Parser.rl"
+// line 248 "src/com/mernen/json/ext/Parser.rl"
 	{
 			{ p += 1; _goto_targ = 5; if (true)  continue _goto;}
 		}
 	break;
-// line 305 "src/com/mernen/json/ext/Parser.java"
+// line 308 "src/com/mernen/json/ext/Parser.java"
 		}
 	}
 
@@ -392,25 +401,25 @@ case 1:
 			switch ( _JSON_value_actions[_acts++] )
 			{
 	case 0:
-// line 175 "src/com/mernen/json/ext/Parser.rl"
+// line 178 "src/com/mernen/json/ext/Parser.rl"
 	{
 			result = getRuntime().getNil();
 		}
 	break;
 	case 1:
-// line 178 "src/com/mernen/json/ext/Parser.rl"
+// line 181 "src/com/mernen/json/ext/Parser.rl"
 	{
 			result = getRuntime().getFalse();
 		}
 	break;
 	case 2:
-// line 181 "src/com/mernen/json/ext/Parser.rl"
+// line 184 "src/com/mernen/json/ext/Parser.rl"
 	{
 			result = getRuntime().getTrue();
 		}
 	break;
 	case 3:
-// line 184 "src/com/mernen/json/ext/Parser.rl"
+// line 187 "src/com/mernen/json/ext/Parser.rl"
 	{
 			if (allowNaN) {
 				result = NAN;
@@ -421,7 +430,7 @@ case 1:
 		}
 	break;
 	case 4:
-// line 192 "src/com/mernen/json/ext/Parser.rl"
+// line 195 "src/com/mernen/json/ext/Parser.rl"
 	{
 			if (allowNaN) {
 				result = INFINITY;
@@ -432,7 +441,7 @@ case 1:
 		}
 	break;
 	case 5:
-// line 200 "src/com/mernen/json/ext/Parser.rl"
+// line 203 "src/com/mernen/json/ext/Parser.rl"
 	{
 			if (pe > p + 9 && source.subSequence(p, p + 9).toString().equals(JSON_MINUS_INFINITY)) {
 				if (allowNaN) {
@@ -458,7 +467,7 @@ case 1:
 		}
 	break;
 	case 6:
-// line 223 "src/com/mernen/json/ext/Parser.rl"
+// line 226 "src/com/mernen/json/ext/Parser.rl"
 	{
 			ParserResult res = parseString(data, p, pe);
 			if (res == null) {
@@ -471,7 +480,7 @@ case 1:
 		}
 	break;
 	case 7:
-// line 233 "src/com/mernen/json/ext/Parser.rl"
+// line 236 "src/com/mernen/json/ext/Parser.rl"
 	{
 			currentNesting++;
 			ParserResult res = parseArray(data, p, pe);
@@ -485,7 +494,7 @@ case 1:
 			}
 		}
 	break;
-// line 461 "src/com/mernen/json/ext/Parser.java"
+// line 464 "src/com/mernen/json/ext/Parser.java"
 			}
 		}
 	}
@@ -504,7 +513,7 @@ case 5:
 	}
 	break; }
 	}
-// line 266 "src/com/mernen/json/ext/Parser.rl"
+// line 269 "src/com/mernen/json/ext/Parser.rl"
 
 		if (cs >= JSON_value_first_final && result != null) {
 			return new ParserResult(result, p);
@@ -515,7 +524,7 @@ case 5:
 	}
 
 	
-// line 491 "src/com/mernen/json/ext/Parser.java"
+// line 494 "src/com/mernen/json/ext/Parser.java"
 private static byte[] init__JSON_integer_actions_0()
 {
 	return new byte [] {
@@ -613,21 +622,21 @@ static final int JSON_integer_error = 0;
 
 static final int JSON_integer_en_main = 1;
 
-// line 283 "src/com/mernen/json/ext/Parser.rl"
+// line 286 "src/com/mernen/json/ext/Parser.rl"
 
 
 	ParserResult parseInteger(byte[] data, int p, int pe) {
 		int cs = EVIL;
 
 		
-// line 596 "src/com/mernen/json/ext/Parser.java"
+// line 599 "src/com/mernen/json/ext/Parser.java"
 	{
 	cs = JSON_integer_start;
 	}
-// line 289 "src/com/mernen/json/ext/Parser.rl"
+// line 292 "src/com/mernen/json/ext/Parser.rl"
 		int memo = p;
 		
-// line 603 "src/com/mernen/json/ext/Parser.java"
+// line 606 "src/com/mernen/json/ext/Parser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -708,10 +717,10 @@ case 1:
 			switch ( _JSON_integer_actions[_acts++] )
 			{
 	case 0:
-// line 280 "src/com/mernen/json/ext/Parser.rl"
+// line 283 "src/com/mernen/json/ext/Parser.rl"
 	{ { p += 1; _goto_targ = 5; if (true)  continue _goto;} }
 	break;
-// line 687 "src/com/mernen/json/ext/Parser.java"
+// line 690 "src/com/mernen/json/ext/Parser.java"
 			}
 		}
 	}
@@ -730,7 +739,7 @@ case 5:
 	}
 	break; }
 	}
-// line 291 "src/com/mernen/json/ext/Parser.rl"
+// line 294 "src/com/mernen/json/ext/Parser.rl"
 
 		if (cs >= JSON_integer_first_final) {
 			RubyString expr = getRuntime().newString((ByteList)source.subSequence(memo, p - 1));
@@ -743,7 +752,7 @@ case 5:
 	}
 
 	
-// line 719 "src/com/mernen/json/ext/Parser.java"
+// line 722 "src/com/mernen/json/ext/Parser.java"
 private static byte[] init__JSON_float_actions_0()
 {
 	return new byte [] {
@@ -844,21 +853,21 @@ static final int JSON_float_error = 0;
 
 static final int JSON_float_en_main = 1;
 
-// line 314 "src/com/mernen/json/ext/Parser.rl"
+// line 317 "src/com/mernen/json/ext/Parser.rl"
 
 
 	ParserResult parseFloat(byte[] data, int p, int pe) {
 		int cs = EVIL;
 
 		
-// line 827 "src/com/mernen/json/ext/Parser.java"
+// line 830 "src/com/mernen/json/ext/Parser.java"
 	{
 	cs = JSON_float_start;
 	}
-// line 320 "src/com/mernen/json/ext/Parser.rl"
+// line 323 "src/com/mernen/json/ext/Parser.rl"
 		int memo = p;
 		
-// line 834 "src/com/mernen/json/ext/Parser.java"
+// line 837 "src/com/mernen/json/ext/Parser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -939,10 +948,10 @@ case 1:
 			switch ( _JSON_float_actions[_acts++] )
 			{
 	case 0:
-// line 308 "src/com/mernen/json/ext/Parser.rl"
+// line 311 "src/com/mernen/json/ext/Parser.rl"
 	{ { p += 1; _goto_targ = 5; if (true)  continue _goto;} }
 	break;
-// line 918 "src/com/mernen/json/ext/Parser.java"
+// line 921 "src/com/mernen/json/ext/Parser.java"
 			}
 		}
 	}
@@ -961,7 +970,7 @@ case 5:
 	}
 	break; }
 	}
-// line 322 "src/com/mernen/json/ext/Parser.rl"
+// line 325 "src/com/mernen/json/ext/Parser.rl"
 
 		if (cs >= JSON_float_first_final) {
 			RubyString expr = getRuntime().newString((ByteList)source.subSequence(memo, p - 1));
@@ -974,7 +983,7 @@ case 5:
 	}
 
 	
-// line 950 "src/com/mernen/json/ext/Parser.java"
+// line 953 "src/com/mernen/json/ext/Parser.java"
 private static byte[] init__JSON_string_actions_0()
 {
 	return new byte [] {
@@ -1075,7 +1084,7 @@ static final int JSON_string_error = 0;
 
 static final int JSON_string_en_main = 1;
 
-// line 358 "src/com/mernen/json/ext/Parser.rl"
+// line 361 "src/com/mernen/json/ext/Parser.rl"
 
 
 	ParserResult parseString(byte[] data, int p, int pe) {
@@ -1083,14 +1092,14 @@ static final int JSON_string_en_main = 1;
 		RubyString result = null;
 
 		
-// line 1059 "src/com/mernen/json/ext/Parser.java"
+// line 1062 "src/com/mernen/json/ext/Parser.java"
 	{
 	cs = JSON_string_start;
 	}
-// line 365 "src/com/mernen/json/ext/Parser.rl"
+// line 368 "src/com/mernen/json/ext/Parser.rl"
 		int memo = p;
 		
-// line 1066 "src/com/mernen/json/ext/Parser.java"
+// line 1069 "src/com/mernen/json/ext/Parser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -1171,7 +1180,7 @@ case 1:
 			switch ( _JSON_string_actions[_acts++] )
 			{
 	case 0:
-// line 339 "src/com/mernen/json/ext/Parser.rl"
+// line 342 "src/com/mernen/json/ext/Parser.rl"
 	{
 			result = stringUnescape(memo + 1, p);
 			if (result == null) {
@@ -1183,10 +1192,10 @@ case 1:
 		}
 	break;
 	case 1:
-// line 349 "src/com/mernen/json/ext/Parser.rl"
+// line 352 "src/com/mernen/json/ext/Parser.rl"
 	{ { p += 1; _goto_targ = 5; if (true)  continue _goto;} }
 	break;
-// line 1162 "src/com/mernen/json/ext/Parser.java"
+// line 1165 "src/com/mernen/json/ext/Parser.java"
 			}
 		}
 	}
@@ -1205,7 +1214,7 @@ case 5:
 	}
 	break; }
 	}
-// line 367 "src/com/mernen/json/ext/Parser.rl"
+// line 370 "src/com/mernen/json/ext/Parser.rl"
 
 		if (cs >= JSON_string_first_final && result != null) {
 			return new ParserResult(result, p + 1);
@@ -1216,11 +1225,8 @@ case 5:
 	}
 
 	private RubyString stringUnescape(int start, int end) {
-		// using Java's StringBuffer as it's so much easier to deal with once
-		// unicode escapes come into play
 		// FIXME: maybe preallocating some room would improve performance?
-		StringBuffer sb = new StringBuffer();
-		boolean hasUnicode = false;
+		RubyString result = getRuntime().newString();
 
 		for (int i = start; i < end; ) {
 			char c = source.charAt(i);
@@ -1233,65 +1239,66 @@ case 5:
 				switch (c) {
 					case '"':
 					case '\\':
-						sb.append(c);
+						result.cat((byte)c);
 						i++;
 						break;
 					case 'b':
-						sb.append('\b');
+						result.cat((byte)'\b');
 						i++;
 						break;
 					case 'f':
-						sb.append('\f');
+						result.cat((byte)'\f');
 						i++;
 						break;
 					case 'n':
-						sb.append('\n');
+						result.cat((byte)'\n');
 						i++;
 						break;
 					case 'r':
-						sb.append('\r');
+						result.cat((byte)'\r');
 						i++;
 						break;
 					case 't':
-						sb.append('\t');
+						result.cat((byte)'\t');
 						i++;
 						break;
 					case 'u':
+						// XXX append the UTF-8 representation of characters for now;
+						//     once JRuby supports Ruby 1.9, this might change
 						i++;
 						if (i > end - 4) {
 							return null;
 						}
 						else {
 							int code = Integer.parseInt(source.subSequence(i, i + 4).toString(), 16);
-							sb.append((char)code);
+							if (code < 128) { // ASCII character
+								result.cat((byte)code);
+							}
+							else {
+    							byte[] repr;
+    							repr = new String(new char[] {(char)code}).getBytes(Charset.forName("UTF-8"));
+    							result.cat(repr);
+							}
 							i += 4;
 						}
-						hasUnicode = true;
 						break;
 					default:
-						sb.append(c);
+						result.cat((byte)c);
 						i++;
 				}
 			}
 			else {
 				int j = i;
 				while (j < end && source.charAt(j) != '\\') j++;
-				sb.append(source.subSequence(i, j));
+				result.cat(source.unsafeBytes(), i, j - i);
 				i = j;
 			}
 		}
-		if (hasUnicode) {
-			// treat the original string as valid UTF-8, return UTF-8
-			return RubyString.newUnicodeString(getRuntime(), sb.toString());
-		}
-		else {
-			// ignore encoding
-			return getRuntime().newString(sb.toString());
-		}
+		return result;
 	}
 
 	
-// line 1267 "src/com/mernen/json/ext/Parser.java"
+// line 1268 "src/com/mernen/json/ext/Parser.java"
 private static byte[] init__JSON_array_actions_0()
 {
 	return new byte [] {
@@ -1403,7 +1410,7 @@ static final int JSON_array_error = 0;
 
 static final int JSON_array_en_main = 1;
 
-// line 481 "src/com/mernen/json/ext/Parser.rl"
+// line 482 "src/com/mernen/json/ext/Parser.rl"
 
 
 	ParserResult parseArray(byte[] data, int p, int pe) {
@@ -1416,13 +1423,13 @@ static final int JSON_array_en_main = 1;
 		RubyArray result = getRuntime().newArray();
 
 		
-// line 1392 "src/com/mernen/json/ext/Parser.java"
+// line 1393 "src/com/mernen/json/ext/Parser.java"
 	{
 	cs = JSON_array_start;
 	}
-// line 493 "src/com/mernen/json/ext/Parser.rl"
+// line 494 "src/com/mernen/json/ext/Parser.rl"
 		
-// line 1398 "src/com/mernen/json/ext/Parser.java"
+// line 1399 "src/com/mernen/json/ext/Parser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -1503,7 +1510,7 @@ case 1:
 			switch ( _JSON_array_actions[_acts++] )
 			{
 	case 0:
-// line 457 "src/com/mernen/json/ext/Parser.rl"
+// line 458 "src/com/mernen/json/ext/Parser.rl"
 	{
 			ParserResult res = parseValue(data, p, pe);
 			if (res == null) {
@@ -1516,10 +1523,10 @@ case 1:
 		}
 	break;
 	case 1:
-// line 468 "src/com/mernen/json/ext/Parser.rl"
+// line 469 "src/com/mernen/json/ext/Parser.rl"
 	{ { p += 1; _goto_targ = 5; if (true)  continue _goto;} }
 	break;
-// line 1495 "src/com/mernen/json/ext/Parser.java"
+// line 1496 "src/com/mernen/json/ext/Parser.java"
 			}
 		}
 	}
@@ -1538,7 +1545,7 @@ case 5:
 	}
 	break; }
 	}
-// line 494 "src/com/mernen/json/ext/Parser.rl"
+// line 495 "src/com/mernen/json/ext/Parser.rl"
 
 		if (cs >= JSON_array_first_final) {
 			return new ParserResult(result, p/*+1*/);
@@ -1550,7 +1557,7 @@ case 5:
 	}
 
 	
-// line 1526 "src/com/mernen/json/ext/Parser.java"
+// line 1527 "src/com/mernen/json/ext/Parser.java"
 private static byte[] init__JSON_actions_0()
 {
 	return new byte [] {
@@ -1650,7 +1657,7 @@ static final int JSON_error = 0;
 
 static final int JSON_en_main = 1;
 
-// line 525 "src/com/mernen/json/ext/Parser.rl"
+// line 526 "src/com/mernen/json/ext/Parser.rl"
 
 
 >>>>>>> Added support for floating-point numbers:src/com/mernen/json/ext/Parser.java
@@ -1665,15 +1672,15 @@ static final int JSON_en_main = 1;
 		byte[] data = source.bytes();
 
 		
-// line 1637 "src/com/mernen/json/ext/Parser.java"
+// line 1638 "src/com/mernen/json/ext/Parser.java"
 	{
 	cs = JSON_start;
 	}
-// line 535 "src/com/mernen/json/ext/Parser.rl"
+// line 536 "src/com/mernen/json/ext/Parser.rl"
 		p = 0;
 		pe = len;
 		
-// line 1645 "src/com/mernen/json/ext/Parser.java"
+// line 1646 "src/com/mernen/json/ext/Parser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -1754,7 +1761,7 @@ case 1:
 			switch ( _JSON_actions[_acts++] )
 			{
 	case 0:
-// line 510 "src/com/mernen/json/ext/Parser.rl"
+// line 511 "src/com/mernen/json/ext/Parser.rl"
 	{
 			this.currentNesting = 1;
 			ParserResult res = parseArray(data, p, pe);
@@ -1767,7 +1774,7 @@ case 1:
 			}
 		}
 	break;
-// line 1739 "src/com/mernen/json/ext/Parser.java"
+// line 1740 "src/com/mernen/json/ext/Parser.java"
 			}
 		}
 	}
@@ -1786,7 +1793,7 @@ case 5:
 	}
 	break; }
 	}
-// line 538 "src/com/mernen/json/ext/Parser.rl"
+// line 539 "src/com/mernen/json/ext/Parser.rl"
 
 		if (cs >= JSON_first_final && p == pe) {
 			return result;

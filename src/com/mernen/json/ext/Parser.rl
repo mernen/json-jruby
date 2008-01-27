@@ -1,6 +1,11 @@
 package com.mernen.json.ext;
 
+<<<<<<< HEAD:src/com/mernen/json/ext/Parser.rl
 import java.util.Arrays;
+=======
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+>>>>>>> Reimplemented stringUnescape to use Ruby strings and encode \u escapes as UTF-8:src/com/mernen/json/ext/Parser.rl
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -361,11 +366,9 @@ public class Parser extends RubyObject {
 	}
 
 	private RubyString stringUnescape(int start, int end) {
-		// using Java's StringBuffer as it's so much easier to deal with once
-		// unicode escapes come into play
+		Charset utf8 = null;
 		// FIXME: maybe preallocating some room would improve performance?
-		StringBuffer sb = new StringBuffer();
-		boolean hasUnicode = false;
+		RubyString result = getRuntime().newString();
 
 		for (int i = start; i < end; ) {
 			char c = source.charAt(i);
@@ -378,61 +381,64 @@ public class Parser extends RubyObject {
 				switch (c) {
 					case '"':
 					case '\\':
-						sb.append(c);
+						result.cat((byte)c);
 						i++;
 						break;
 					case 'b':
-						sb.append('\b');
+						result.cat((byte)'\b');
 						i++;
 						break;
 					case 'f':
-						sb.append('\f');
+						result.cat((byte)'\f');
 						i++;
 						break;
 					case 'n':
-						sb.append('\n');
+						result.cat((byte)'\n');
 						i++;
 						break;
 					case 'r':
-						sb.append('\r');
+						result.cat((byte)'\r');
 						i++;
 						break;
 					case 't':
-						sb.append('\t');
+						result.cat((byte)'\t');
 						i++;
 						break;
 					case 'u':
+						// XXX append the UTF-8 representation of characters for now;
+						//     once JRuby supports Ruby 1.9, this might change
 						i++;
 						if (i > end - 4) {
 							return null;
 						}
 						else {
 							int code = Integer.parseInt(source.subSequence(i, i + 4).toString(), 16);
-							sb.append((char)code);
+							if (code < 128) { // ASCII character
+								result.cat((byte)code);
+							}
+							else {
+								if (charset == null) { // lazy-load UTF-8 charset
+									charset = Charset.forName("UTF-8");
+								}
+    							byte[] repr = new String(new char[] {(char)code}).getBytes(utf8);
+    							result.cat(repr);
+							}
 							i += 4;
 						}
-						hasUnicode = true;
 						break;
 					default:
-						sb.append(c);
+						result.cat((byte)c);
 						i++;
 				}
 			}
 			else {
 				int j = i;
 				while (j < end && source.charAt(j) != '\\') j++;
-				sb.append(source.subSequence(i, j));
+				result.cat(source.unsafeBytes(), i, j - i);
 				i = j;
 			}
 		}
-		if (hasUnicode) {
-			// treat the original string as valid UTF-8, return UTF-8
-			return RubyString.newUnicodeString(getRuntime(), sb.toString());
-		}
-		else {
-			// ignore encoding
-			return getRuntime().newString(sb.toString());
-		}
+		return result;
 	}
 
 	%%{
