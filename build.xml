@@ -12,10 +12,9 @@
 	</path>
 
 	<target name="ragel">
-		<exec executable="ragel" dir="${basedir}/src/com/mernen/json/ext">
+		<exec executable="ragel" failonerror="true">
 			<arg value="-J" />
-			<arg value="Parser.rl" />
+			<arg value="${src.java}/com/mernen/json/ext/Parser.rl" />
 		</exec>
-		<javac srcdir="${src.java}" classpathref="build.classpath" />
 	</target>
 </project>
