@@ -367,8 +367,9 @@ public class Parser extends RubyObject {
 
 	private RubyString stringUnescape(int start, int end) {
 		Charset utf8 = null;
-		// FIXME: maybe preallocating some room would improve performance?
 		RubyString result = getRuntime().newString();
+		// XXX maybe other values would be better for preallocation?
+		result.modify(end - start);
 
 		for (int i = start; i < end; ) {
 			char c = source.charAt(i);
