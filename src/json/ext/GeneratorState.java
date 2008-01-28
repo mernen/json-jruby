@@ -34,12 +34,10 @@ public class GeneratorState extends RubyObject {
 	private RubyString spaceBefore;
 	private RubyString objectNl;
 	private RubyString arrayNl;
+
 	private boolean checkCircular;
 	private Set<Long> seen;
-	private RubyString memo;
-	private int depth;
 	private int maxNesting;
-	private boolean flag;
 	private boolean allowNaN;
 
 	static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
@@ -93,8 +91,6 @@ public class GeneratorState extends RubyObject {
 			configure(args[0]);
 		}
 		seen = new HashSet<Long>();
-		memo = null;
-		depth = 0;
 		return this;
 	}
 
@@ -270,30 +266,6 @@ public class GeneratorState extends RubyObject {
 		result.op_aset(getRuntime().newSymbol("allow_nan"), allow_nan_p());
 		result.op_aset(getRuntime().newSymbol("max_nesting"), max_nesting_get());
 		return result;
-	}
-
-	public RubyString getMemo() {
-		return memo;
-	}
-
-	public void setMemo(RubyString memo) {
-		this.memo = memo;
-	}
-
-	public int getDepth() {
-		return depth;
-	}
-
-	public void setDepth(int depth) {
-		this.depth = depth;
-	}
-
-	public boolean getStateFlag() {
-		return flag;
-	}
-
-	public void setStateFlag(boolean flag) {
-		this.flag = flag;
 	}
 
 	public int getMaxNesting() {

@@ -124,9 +124,6 @@ class GeneratorMethodsLoader {
 			final byte[] space = state.space_get().getBytes();
 			final RubyFixnum subDepth = runtime.newFixnum(depth + 1);
 
-			state.setMemo(result);
-			state.setDepth(depth + 1);
-			state.setStateFlag(false);
 			result.cat((byte)'{');
 			result.cat(objectNl);
 			self.visitAll(new RubyHash.Visitor() {
@@ -152,11 +149,8 @@ class GeneratorMethodsLoader {
 					result.cat(space);
 
 					RubyString valueJson = Utils.toJson(value, state, subDepth);
-					state.setStateFlag(true);
 					result.cat(valueJson.getByteList());
 					result.infectBy(valueJson);
-					state.setDepth(depth + 1);
-					state.setMemo(result);
 				}
 			});
 			if (objectNl.length != 0) {
