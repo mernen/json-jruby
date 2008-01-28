@@ -26,7 +26,6 @@ class GeneratorMethodsLoader {
 		E_NESTING_ERROR_CLASS = "NestingError",
 		E_GENERATOR_ERROR_CLASS = "GeneratorError";
 
-//	private Ruby runtime;
 	RubyModule parentModule;
 
 	private abstract static class OptionalArgsCallback implements Callback {
