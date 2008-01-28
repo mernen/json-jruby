@@ -426,6 +426,20 @@ class GeneratorMethodsLoader {
 		}
 	};
 
+	private static Callback stringExtendJsonCreate = new Callback() {
+		public Arity getArity() {
+			return Arity.ONE_ARGUMENT;
+		}
+
+		public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
+			Ruby runtime = vSelf.getRuntime();
+			RubyHash o = args[0].convertToHash();
+			IRubyObject ary = runtime.newString("raw");
+			assert ary instanceof RubyArray;
+			return o.op_aref(ary).callMethod(runtime.getCurrentContext(), "pack", runtime.newString("C*"));
+		}
+	};
+
 	private static class KeywordJsonConverter extends OptionalArgsCallback {
 		private String keyword;
 
@@ -462,6 +476,19 @@ class GeneratorMethodsLoader {
 		defineMethod("String", "to_json_raw", stringToJsonRaw);
 		defineMethod("String", "to_json_raw_object", stringToJsonRawObject);
 
+		RubyModule stringModule = parentModule.defineModuleUnder("String");
+		final RubyModule stringExtend = stringModule.defineModuleUnder("Extend");
+		stringModule.defineModuleFunction("included", new Callback() {
+			public Arity getArity() {
+				return Arity.ONE_ARGUMENT;
+			}
+
+			public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
+				return args[0].callMethod(vSelf.getRuntime().getCurrentContext(), "extend", stringExtend);
+			}
+		});
+		defineMethod(stringExtend, "json_create", stringExtendJsonCreate);
+
 		defineToJson("TrueClass", trueToJson);
 		defineToJson("FalseClass", falseToJson);
 		defineToJson("NilClass", nilToJson);
@@ -472,6 +499,10 @@ class GeneratorMethodsLoader {
 	}
 
 	private void defineMethod(String moduleName, String methodName, Callback method) {
-		parentModule.defineModuleUnder(moduleName).defineMethod(methodName, method);
+		defineMethod(parentModule.defineModuleUnder(moduleName), methodName, method);
+	}
+
+	private void defineMethod(RubyModule module, String methodName, Callback method) {
+		module.defineMethod(methodName, method);
 	}
 }
