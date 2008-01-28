@@ -5,6 +5,7 @@ import java.nio.charset.Charset;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyException;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
@@ -556,13 +557,14 @@ public class Parser extends RubyObject {
 	ParserResult parseObject(byte[] data, int p, int pe) {
 		int cs = EVIL;
 		IRubyObject lastName = null;
+		Ruby runtime = getRuntime();
 
 		if (maxNesting > 0 && currentNesting > maxNesting) {
-			throw new RaiseException(getRuntime(), nestingErrorClass,
+			throw new RaiseException(runtime, nestingErrorClass,
 				"nesting of " + currentNesting + " is too deep", false);
 		}
 
-		RubyHash result = RubyHash.newHash(getRuntime());
+		RubyHash result = RubyHash.newHash(runtime);
 
 		%% write init;
 		%% write exec;
@@ -570,11 +572,28 @@ public class Parser extends RubyObject {
 		if (cs >= JSON_object_first_final) {
 			ParserResult res = new ParserResult(result, p /*+1*/);
 			if (createId.isTrue()) {
-				IRubyObject klassName = result.op_aref(createId);
-				if (!klassName.isNil()) {
-					RubyModule klass = getRuntime().getClassFromPath(klassName.asJavaString());
-					if (klass.callMethod(getRuntime().getCurrentContext(), "json_creatable?").isTrue()) {
-						res.result = klass.callMethod(getRuntime().getCurrentContext(), "json_create", result);
+				IRubyObject vKlassName = result.op_aref(createId);
+				if (!vKlassName.isNil()) {
+					ThreadContext context = runtime.getCurrentContext();
+					String klassName = vKlassName.asJavaString();
+					RubyModule klass;
+					try {
+						klass = runtime.getClassFromPath(klassName);
+					}
+					catch (RaiseException e) {
+						if (runtime.getClass("NameError").isInstance(e.getException())) {
+							// invalid class path; we're supposed to return ArgumentError
+							throw runtime.newArgumentError("undefined class/module " + klassName);
+						}
+						else {
+							// some other exception; let it propagate
+							throw e;
+						}
+					}
+					if (klass.respondsTo("json_creatable?") &&
+					    klass.callMethod(context, "json_creatable?").isTrue()) {
+
+						res.result = klass.callMethod(context, "json_create", result);
 					}
 				}
 			}
