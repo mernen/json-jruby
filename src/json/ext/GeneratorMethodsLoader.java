@@ -18,8 +18,13 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
-import org.jruby.util.ByteList;
 
+/**
+ * A class that populates the <code>Json::Ext::Generator::GeneratorMethods</code>
+ * module.
+ * 
+ * @author mernen
+ */
 class GeneratorMethodsLoader {
 	private final static String
 		E_CIRCULAR_DATA_STRUCTURE_CLASS = "CircularDatastructure",
@@ -157,7 +162,6 @@ class GeneratorMethodsLoader {
 			if (objectNl.length != 0) {
 				result.cat(objectNl);
 				if (indent.length != 0) {
-					result.modify(result.getByteList().length() + indent.length * depth);
 					for (int i = 0; i < depth; i++) {
 						result.cat(indent);
 					}
@@ -205,32 +209,15 @@ class GeneratorMethodsLoader {
 			RubyString result = runtime.newString();
 			int depth = vDepth.isNil() ? 0 : RubyNumeric.fix2int(vDepth);
 
-			ByteList shift;
-	        ByteList indentUnit = state.indent_get().getByteList();
-
-	        if (indentUnit.length() == 0) {
-	        	shift = new ByteList(0);
-	        }
-	        else {
-				int n = depth + 1;
-		        // overflow check straight from RubyString#op_mul
-		        if (n > 0 && Integer.MAX_VALUE / n < indentUnit.length()) {
-		            throw runtime.newArgumentError("argument too big");
-		        }
-
-		        shift = new ByteList(indentUnit.length() * n);
-				for (int i = 0; i < n; i++) {
-					shift.append(indentUnit);
-				}
-	        }
+	        byte[] indentUnit = state.indent_get().getBytes();
+			byte[] shift = Utils.repeat(indentUnit, depth + 1);
 
 	        result.infectBy(self);
 
-			ByteList arrayNl = state.array_nl_get().getByteList();
-			ByteList delim = new ByteList(new byte[] {','});
-			if (arrayNl.length() != 0) {
-				delim.append(arrayNl);
-			}
+			byte[] arrayNl = state.array_nl_get().getBytes();
+			byte[] delim = new byte[1 + arrayNl.length];
+			delim[0] = ',';
+			System.arraycopy(arrayNl, 0, delim, 1, arrayNl.length);
 
 			checkMaxNesting(state, depth);
 			if (state.checkCircular()) {
@@ -257,9 +244,9 @@ class GeneratorMethodsLoader {
 					result.cat(elemJson.convertToString().getByteList());
 				}
 
-				if (arrayNl.length() != 0) {
+				if (arrayNl.length != 0) {
 					result.cat(arrayNl);
-					result.cat(shift.bytes(), 0, depth * indentUnit.length());
+					result.cat(shift, 0, depth * indentUnit.length);
 				}
 
 				result.cat((byte)']');
@@ -283,9 +270,9 @@ class GeneratorMethodsLoader {
 					result.cat(elemJson.convertToString().getByteList());
 				}
 
-				if (arrayNl.length() != 0) {
+				if (arrayNl.length != 0) {
 					result.cat(arrayNl);
-					result.cat(shift.bytes(), 0, depth * indentUnit.length());
+					result.cat(shift, 0, depth * indentUnit.length);
 				}
 
 				result.cat((byte)']');

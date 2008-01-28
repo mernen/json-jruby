@@ -19,6 +19,15 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
+/**
+ * The <code>JSON::Ext::Parser</code> class.
+ * 
+ * <p>This is the JSON parser implemented as a Java class. To use it as the
+ * standard parser, set
+ *   <pre>JSON.parser = JSON::Ext::Parser</pre>
+ * 
+ * @author mernen
+ */
 public class Parser extends RubyObject {
 	private static final long serialVersionUID = 2782556972195914229L;
 

@@ -9,6 +9,11 @@ import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
 
+/**
+ * Library of miscellaneous utility functions
+ * 
+ * @author mernen
+ */
 abstract class Utils {
 	/**
 	 * Convenience method for looking up items on a {@link RubyHash Hash}

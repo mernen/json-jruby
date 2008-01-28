@@ -18,6 +18,14 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+/**
+ * The <code>JSON::Ext::Generator::State</code> class.
+ * 
+ * <p>This class is used to create State instances, that are use to hold data
+ * while generating a JSON text from a a Ruby data structure.
+ * 
+ * @author mernen
+ */
 public class GeneratorState extends RubyObject {
 	private static final long serialVersionUID = -5070972964324653291L;
 
@@ -44,6 +52,18 @@ public class GeneratorState extends RubyObject {
 		super(runtime, metaClass);
 	}
 
+	/**
+	 * Creates a State object from <code>opts</code>, which ought to be
+	 * {@link RubyHash Hash} to create a new <code>State</code> instance
+	 * configured by <codes>opts</code>, something else to create an
+	 * unconfigured instance. If <code>opts</code> is a <code>State</code>
+	 * object, it is just returned.
+	 * @param clazzParam The receiver of the method call
+	 *                   ({@link RubyClass} <code>State</code>)
+	 * @param opts The object to use as a base for the new <code>State</code>
+	 * @param block The block passed to the method
+	 * @return
+	 */
 	@JRubyMethod(name = "from_state", required = 1, meta = true)
 	public static IRubyObject from_state(IRubyObject clazzParam, IRubyObject opts, Block block) {
 		RubyModule clazz = (RubyModule)clazzParam;
@@ -78,6 +98,10 @@ public class GeneratorState extends RubyObject {
 		return this;
 	}
 
+	/**
+	 * Ruby getter for the {@link #indent} attribute
+	 * @return The defined prefix indenting unit for each line
+	 */
 	@JRubyMethod(name = "indent")
 	public RubyString indent_get() {
 		return indent;
@@ -89,6 +113,10 @@ public class GeneratorState extends RubyObject {
 		return indent;
 	}
 
+	/**
+	 * Ruby getter for the {@link #space} attribute
+	 * @return The defined spacing after each {@link RubyHash Hash} semicolon
+	 */
 	@JRubyMethod(name = "space")
 	public RubyString space_get() {
 		return space;
@@ -100,6 +128,10 @@ public class GeneratorState extends RubyObject {
 		return space;
 	}
 
+	/**
+	 * Ruby getter for the {@link #space} attribute
+	 * @return The defined spacing before each {@link RubyHash Hash} semicolon
+	 */
 	@JRubyMethod(name = "space_before")
 	public RubyString space_before_get() {
 		return spaceBefore;
