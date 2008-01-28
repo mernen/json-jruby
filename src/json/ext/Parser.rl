@@ -195,7 +195,9 @@ public class Parser extends RubyObject {
 			}
 		}
 		action parse_number {
-			if (pe > fpc + 9 && source.subSequence(fpc, fpc + 9).toString().equals(JSON_MINUS_INFINITY)) {
+			if (pe > fpc + 9 &&
+			    source.subSequence(fpc, fpc + 9).toString().equals(JSON_MINUS_INFINITY)) {
+
 				if (allowNaN) {
 					result = MINUS_INFINITY;
 					fexec p + 10;
@@ -384,10 +386,12 @@ public class Parser extends RubyObject {
 	}
 
 	private RubyString stringUnescape(int start, int end) {
-		Charset utf8 = null;
 		RubyString result = getRuntime().newString();
 		// XXX maybe other values would be better for preallocation?
 		result.modify(end - start);
+
+		int surrogateStart = -1;
+		char surrogate = 0;
 
 		for (int i = start; i < end; ) {
 			char c = source.charAt(i);
@@ -397,6 +401,11 @@ public class Parser extends RubyObject {
 					return null;
 				}
 				c = source.charAt(i);
+				if (surrogateStart != -1 && c != 'u') {
+					throw Utils.newException(getRuntime(), "ParserError",
+						"partial character in source, but hit end near " +
+						source.subSequence(surrogateStart, end));
+				}
 				switch (c) {
 					case '"':
 					case '\\':
@@ -432,15 +441,25 @@ public class Parser extends RubyObject {
 						}
 						else {
 							int code = Integer.parseInt(source.subSequence(i, i + 4).toString(), 16);
-							if (code < 128) { // ASCII character
-								result.cat((byte)code);
+							if (surrogateStart != -1) {
+								if (Character.isLowSurrogate((char)code)) {
+									int fullCode = Character.toCodePoint(surrogate, (char)code);
+									result.cat(getUTF8Bytes(fullCode | 0L));
+									surrogateStart = -1;
+									surrogate = 0;
+								}
+								else {
+									throw Utils.newException(getRuntime(), "ParserError",
+										"partial character in source, but hit end near " +
+										source.subSequence(surrogateStart, end));
+								}
+							}
+							else if (Character.isHighSurrogate((char)code)) {
+								surrogateStart = i - 2;
+								surrogate = (char)code;
 							}
 							else {
-								if (utf8 == null) { // lazy-load UTF-8 charset
-									utf8 = Charset.forName("UTF-8");
-								}
-    							byte[] repr = new String(new char[] {(char)code}).getBytes(utf8);
-    							result.cat(repr);
+    							result.cat(getUTF8Bytes(code));
 							}
 							i += 4;
 						}
@@ -450,6 +469,11 @@ public class Parser extends RubyObject {
 						i++;
 				}
 			}
+			else if (surrogateStart != -1) {
+				throw Utils.newException(getRuntime(), "ParserError",
+					"partial character in source, but hit end near " +
+					source.subSequence(surrogateStart, end));
+			}
 			else {
 				int j = i;
 				while (j < end && source.charAt(j) != '\\') j++;
@@ -457,7 +481,31 @@ public class Parser extends RubyObject {
 				i = j;
 			}
 		}
+		if (surrogateStart != -1) {
+			throw Utils.newException(getRuntime(), "ParserError",
+				"partial character in source, but hit end near " +
+				source.subSequence(surrogateStart, end));
+		}
 		return result;
+	}
+
+	private static byte[] getUTF8Bytes(long code) {
+		if (code < 0x80) {
+			return new byte[] {(byte)code};
+		}
+		if (code < 0x800) {
+			return new byte[] {(byte)(0xc0 | code >>> 6),
+			                   (byte)(0x80 | code & 0x3f)};
+		}
+		if (code < 0x10000) {
+			return new byte[] {(byte)(0xe0 | code >>> 12),
+			                   (byte)(0x80 | code >>> 6 & 0x3f),
+			                   (byte)(0x80 | code & 0x3f)};
+		}
+		return new byte[] {(byte)(0xf0 | code >>> 18),
+		                   (byte)(0x80 | code >>> 12 & 0x3f),
+		                   (byte)(0x80 | code >>> 6 & 0x3f),
+		                   (byte)(0x80 | code & 0x3f)};
 	}
 
 	%%{
