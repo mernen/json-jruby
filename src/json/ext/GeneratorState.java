@@ -1,3 +1,9 @@
+/*
+ * This code is copyrighted work by Daniel Luz <@gmail.com: mernen>.
+ * 
+ * Distributed under the Ruby and GPLv2 licenses; see COPYING and GPL files
+ * for details.
+ */
 package json.ext;
 
 import java.util.HashSet;
@@ -29,15 +35,54 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class GeneratorState extends RubyObject {
 	private static final long serialVersionUID = -5070972964324653291L;
 
+	/**
+	 * The indenting unit string. Will be repeated several times for larger
+	 * indenting levels.
+	 */
 	private RubyString indent;
+	/**
+	 * The spacing to be added after a semicolon on a JSON object.
+	 * @see #spaceBefore
+	 */
 	private RubyString space;
+	/**
+	 * The spacing to be added before a semicolon on a JSON object.
+	 * @see #space
+	 */
 	private RubyString spaceBefore;
+	/**
+	 * Any suffix to be added after the comma for each element on a JSON object.
+	 * It is assumed to be a newline, if set.
+	 */
 	private RubyString objectNl;
+	/**
+	 * Any suffix to be added after the comma for each element on a JSON Array.
+	 * It is assumed to be a newline, if set.
+	 */
 	private RubyString arrayNl;
 
+	/**
+	 * Whether the generator should check for circular references.
+	 * Disabling them may improve performance, but the library user must then
+	 * ensure no circular references will happen.
+	 */
 	private boolean checkCircular;
+	/**
+	 * Internal set of objects that are currently on the stack of inspection.
+	 * Used to detect circular references.
+	 */
 	private Set<Long> seen;
+	/**
+	 * The maximum level of nesting of structures allowed.
+	 * <code>0</code> means disabled.
+	 */
 	private int maxNesting;
+	/**
+	 * Whether special float values (<code>NaN</code>, <code>Infinity</code>,
+	 * <code>-Infinity</code>) are accepted.
+	 * If set to <code>false</code>, an exception will be thrown upon
+	 * encountering one.
+	 */
 	private boolean allowNaN;
 
 	static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
@@ -63,15 +108,17 @@ public class GeneratorState extends RubyObject {
 	 * @return
 	 */
 	@JRubyMethod(name = "from_state", required = 1, meta = true)
-	public static IRubyObject from_state(IRubyObject clazzParam, IRubyObject opts, Block block) {
+	public static IRubyObject from_state(IRubyObject clazzParam, IRubyObject opts,
+			Block block) {
 		RubyModule clazz = (RubyModule)clazzParam;
 		if (clazz.isInstance(opts)) {
 			return (GeneratorState)opts;
 		}
-		if (clazz.getRuntime().getHash().isInstance(opts)) {
-			return (GeneratorState)clazz.callMethod(clazz.getRuntime().getCurrentContext(), "new", opts);
+		Ruby runtime = clazz.getRuntime();
+		if (runtime.getHash().isInstance(opts)) {
+			return clazz.callMethod(runtime.getCurrentContext(), "new", opts);
 		}
-		return (GeneratorState)clazz.callMethod(clazz.getRuntime().getCurrentContext(), "new");
+		return clazz.callMethod(runtime.getCurrentContext(), "new");
 	}
 
 	@JRubyMethod(name = "initialize", rest = true, visibility = Visibility.PRIVATE)
@@ -94,10 +141,6 @@ public class GeneratorState extends RubyObject {
 		return this;
 	}
 
-	/**
-	 * Ruby getter for the {@link #indent} attribute
-	 * @return The defined prefix indenting unit for each line
-	 */
 	@JRubyMethod(name = "indent")
 	public RubyString indent_get() {
 		return indent;
@@ -181,37 +224,76 @@ public class GeneratorState extends RubyObject {
 		return allowNaN;
 	}
 
+	/**
+	 * @see #allowNaN()
+	 */
 	@JRubyMethod(name = "allow_nan?")
 	public RubyBoolean allow_nan_p() {
 		return getRuntime().newBoolean(allowNaN);
 	}
 
+	/**
+	 * Convenience method for the "seen" methods.
+	 * @param object The object to process
+	 * @return The object's Ruby ID
+	 * @see #hasSeen(IRubyObject)
+	 * @see #remember(IRubyObject)
+	 * @see #forget(IRubyObject)
+	 */
 	private static long getId(IRubyObject object) {
 		return object.getRuntime().getObjectSpace().idOf(object);
 	}
 
+	/**
+	 * Checks whether an object is part of the current chain of recursive JSON
+	 * generation.
+	 * @param object The object to check
+	 * @return Whether the object is part of the current chain of recursive
+	 *         JSON generation or not
+	 */
 	public boolean hasSeen(IRubyObject object) {
 		return seen.contains(getId(object));
 	}
 
+	/**
+	 * @return {@link Ruby#getTrue() true} if the object is part of the current
+	 *         chain of recursive JSON generation, or {@link Ruby#getNil() nil}
+	 *         if not
+	 * @see #hasSeen(IRubyObject)
+	 */
 	@JRubyMethod(name = "seen?", required = 1)
 	public IRubyObject seen_p(IRubyObject object) {
 		return hasSeen(object) ? getRuntime().getTrue() : getRuntime().getNil();
 	}
 
+	/**
+	 * Adds an object to the stack.
+	 * @param object The object being inspected
+	 */
 	public void remember(IRubyObject object) {
 		seen.add(getId(object));
 	}
 
+	/**
+	 * @return {@link Ruby#getTrue() true}
+	 * @see #remember(IRubyObject)
+	 */
 	@JRubyMethod(name = "remember", required = 1)
 	public IRubyObject rb_remember(IRubyObject object) {
 		remember(object);
 		return getRuntime().getTrue();
 	}
 
+	public boolean forget(IRubyObject object) {
+		return seen.remove(getId(object));
+	}
+
+	/**
+	 * @see #forget(IRubyObject)
+	 */
 	@JRubyMethod(name = "forget", required = 1)
-	public IRubyObject forget(IRubyObject object) {
-		return seen.remove(getId(object)) ? getRuntime().getTrue() : getRuntime().getNil();
+	public IRubyObject rb_forget(IRubyObject object) {
+		return forget(object) ? getRuntime().getTrue() : getRuntime().getNil();
 	}
 
 	@JRubyMethod(name = "configure", required = 1)
@@ -274,5 +356,12 @@ public class GeneratorState extends RubyObject {
 
 	public boolean checkCircular() {
 		return checkCircular;
+	}
+
+	void checkMaxNesting(int depth) {
+		if (getMaxNesting() != 0 && depth > getMaxNesting()) {
+			throw Utils.newException(getRuntime(), Utils.M_NESTING_ERROR,
+				"nesting of " + depth + " is too deep");
+		}
 	}
 }

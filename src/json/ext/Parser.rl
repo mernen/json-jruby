@@ -1,3 +1,9 @@
+/*
+ * This code is copyrighted work by Daniel Luz <@gmail.com: mernen>.
+ * 
+ * Distributed under the Ruby and GPLv2 licenses; see COPYING and GPL files
+ * for details.
+ */
 package json.ext;
 
 import org.jruby.Ruby;
@@ -25,6 +31,7 @@ import org.jruby.util.ByteList;
  * <p>This is the JSON parser implemented as a Java class. To use it as the
  * standard parser, set
  *   <pre>JSON.parser = JSON::Ext::Parser</pre>
+ * This is performed for you when you <code>include "json/ext"</code>.
  * 
  * @author mernen
  */
@@ -34,19 +41,16 @@ public class Parser extends RubyObject {
 	private RubyString vSource;
 	private ByteList source;
 	private int len;
-	private IRubyObject createId;
+	private RubyString createId;
 	private int maxNesting;
 	private int currentNesting;
 	private boolean allowNaN;
 
-	private final RubyClass parserErrorClass;
-	private final RubyClass nestingErrorClass;
-	private final IRubyObject NAN;
-	private final IRubyObject INFINITY;
-	private final IRubyObject MINUS_INFINITY;
-
 	private static final int EVIL = 0x666;
 	private static final String JSON_MINUS_INFINITY = "-Infinity";
+	private static final String CONST_NAN = "NaN";
+	private static final String CONST_INFINITY = "Infinity";
+	private static final String CONST_MINUS_INFINITY = "MinusInfinity";
 
 	static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
 		public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
@@ -55,8 +59,8 @@ public class Parser extends RubyObject {
 	};
 
 	static class ParserResult {
-		IRubyObject result;
-		int p;
+		final IRubyObject result;
+		final int p;
 
 		ParserResult(IRubyObject result, int p) {
 			this.result = result;
@@ -66,15 +70,6 @@ public class Parser extends RubyObject {
 
 	public Parser(Ruby runtime, RubyClass metaClass) {
 		super(runtime, metaClass);
-
-		RubyModule jsonModule = runtime.getModule("JSON");
-
-		parserErrorClass = jsonModule.getClass("ParserError");
-		nestingErrorClass = jsonModule.getClass("NestingError");
-
-		NAN = jsonModule.getConstant("NaN");
-		INFINITY = jsonModule.getConstant("Infinity");
-		MINUS_INFINITY = jsonModule.getConstant("MinusInfinity");
 	}
 
 	%%{
@@ -122,8 +117,8 @@ public class Parser extends RubyObject {
 		int len = sourceBytes.length();
 
 		if (len < 2) {
-			throw new RaiseException(getRuntime(), parserErrorClass,
-				"A JSON text must at least contain two octets!", false);
+			throw Utils.newException(getRuntime(), Utils.M_PARSER_ERROR,
+				"A JSON text must at least contain two octets!");
 		}
 
 		ThreadContext context = getRuntime().getCurrentContext();
@@ -145,14 +140,17 @@ public class Parser extends RubyObject {
 			this.allowNaN = allowNaN != null && allowNaN.isTrue();
 
 			IRubyObject createAdditions = Utils.fastGetSymItem(opts, "create_additions");
-			this.createId = createAdditions == null || createAdditions.isTrue() ?
-				getRuntime().getModule("JSON").callMethod(context, "create_id") :
-				getRuntime().getNil();
+			if (createAdditions == null || createAdditions.isTrue()) {
+				this.createId = getCreateId();
+			}
+			else {
+				this.createId = null;
+			}
 		}
 		else {
 			this.maxNesting = 19;
 			this.allowNaN = false;
-			this.createId = getRuntime().getModule("JSON").callMethod(context, "create_id");
+			this.createId = getCreateId();
 		}
 
 		this.currentNesting = 0;
@@ -164,9 +162,20 @@ public class Parser extends RubyObject {
 		return this;
 	}
 
+	/**
+	 * Queries <code>JSON.create_id</code>, and returns null if it is set to
+	 * <code>nil</code> or <code>false</code>, and a String if not.
+	 */
+	private RubyString getCreateId() {
+		Ruby runtime = getRuntime();
+		IRubyObject v = runtime.getModule("JSON").
+			callMethod(runtime.getCurrentContext(), "create_id");
+		return v.isTrue() ? v.convertToString() : null;
+	}
+
 	private RaiseException unexpectedToken(int start, int end) {
-		return new RaiseException(getRuntime(), parserErrorClass,
-			"unexpected token at '" + source.subSequence(start, end) + "'", false);
+		return Utils.newException(getRuntime(), Utils.M_PARSER_ERROR,
+			"unexpected token at '" + source.subSequence(start, end) + "'");
 	}
 
 	%%{
@@ -186,7 +195,7 @@ public class Parser extends RubyObject {
 		}
 		action parse_nan {
 			if (allowNaN) {
-				result = NAN;
+				result = getConstant(CONST_NAN);
 			}
 			else {
 				throw unexpectedToken(p - 2, pe);
@@ -194,10 +203,10 @@ public class Parser extends RubyObject {
 		}
 		action parse_infinity {
 			if (allowNaN) {
-				result = INFINITY;
+				result = getConstant(CONST_INFINITY);
 			}
 			else {
-				throw unexpectedToken(p - 8, pe);
+				throw unexpectedToken(p - 7, pe);
 			}
 		}
 		action parse_number {
@@ -205,7 +214,7 @@ public class Parser extends RubyObject {
 			    source.subSequence(fpc, fpc + 9).toString().equals(JSON_MINUS_INFINITY)) {
 
 				if (allowNaN) {
-					result = MINUS_INFINITY;
+					result = getConstant(CONST_MINUS_INFINITY);
 					fexec p + 10;
 					fbreak;
 				}
@@ -408,7 +417,7 @@ public class Parser extends RubyObject {
 				}
 				c = source.charAt(i);
 				if (surrogateStart != -1 && c != 'u') {
-					throw Utils.newException(getRuntime(), "ParserError",
+					throw Utils.newException(getRuntime(), Utils.M_PARSER_ERROR,
 						"partial character in source, but hit end near " +
 						source.subSequence(surrogateStart, end));
 				}
@@ -446,7 +455,8 @@ public class Parser extends RubyObject {
 							return null;
 						}
 						else {
-							int code = Integer.parseInt(source.subSequence(i, i + 4).toString(), 16);
+							String digits = source.subSequence(i, i + 4).toString();
+							int code = Integer.parseInt(digits, 16);
 							if (surrogateStart != -1) {
 								if (Character.isLowSurrogate((char)code)) {
 									int fullCode = Character.toCodePoint(surrogate, (char)code);
@@ -455,7 +465,7 @@ public class Parser extends RubyObject {
 									surrogate = 0;
 								}
 								else {
-									throw Utils.newException(getRuntime(), "ParserError",
+									throw Utils.newException(getRuntime(), Utils.M_PARSER_ERROR,
 										"partial character in source, but hit end near " +
 										source.subSequence(surrogateStart, end));
 								}
@@ -476,7 +486,7 @@ public class Parser extends RubyObject {
 				}
 			}
 			else if (surrogateStart != -1) {
-				throw Utils.newException(getRuntime(), "ParserError",
+				throw Utils.newException(getRuntime(), Utils.M_PARSER_ERROR,
 					"partial character in source, but hit end near " +
 					source.subSequence(surrogateStart, end));
 			}
@@ -488,13 +498,18 @@ public class Parser extends RubyObject {
 			}
 		}
 		if (surrogateStart != -1) {
-			throw Utils.newException(getRuntime(), "ParserError",
+			throw Utils.newException(getRuntime(), Utils.M_PARSER_ERROR,
 				"partial character in source, but hit end near " +
 				source.subSequence(surrogateStart, end));
 		}
 		return result;
 	}
 
+	/**
+	 * Converts a code point into an UTF-8 representation.
+	 * @param code The character code point
+	 * @return An array containing the UTF-8 bytes for the given code point
+	 */
 	private static byte[] getUTF8Bytes(long code) {
 		if (code < 0x80) {
 			return new byte[] {(byte)code};
@@ -550,8 +565,8 @@ public class Parser extends RubyObject {
 		int cs = EVIL;
 
 		if (maxNesting > 0 && currentNesting > maxNesting) {
-			throw new RaiseException(getRuntime(), nestingErrorClass,
-				"nesting of " + currentNesting + " is too deep", false);
+			throw Utils.newException(getRuntime(), Utils.M_NESTING_ERROR,
+				"nesting of " + currentNesting + " is too deep");
 		}
 
 		RubyArray result = getRuntime().newArray();
@@ -563,8 +578,7 @@ public class Parser extends RubyObject {
 			return new ParserResult(result, p/*+1*/);
 		}
 		else {
-			throw new RaiseException(getRuntime(), parserErrorClass,
-				"unexpected token at '" + source.subSequence(p, pe) + "'", false);
+			throw unexpectedToken(p, pe);
 		}
 	}
 
@@ -614,8 +628,8 @@ public class Parser extends RubyObject {
 		Ruby runtime = getRuntime();
 
 		if (maxNesting > 0 && currentNesting > maxNesting) {
-			throw new RaiseException(runtime, nestingErrorClass,
-				"nesting of " + currentNesting + " is too deep", false);
+			throw Utils.newException(runtime, Utils.M_NESTING_ERROR,
+				"nesting of " + currentNesting + " is too deep");
 		}
 
 		RubyHash result = RubyHash.newHash(runtime);
@@ -624,11 +638,12 @@ public class Parser extends RubyObject {
 		%% write exec;
 
 		if (cs >= JSON_object_first_final) {
-			ParserResult res = new ParserResult(result, p /*+1*/);
-			if (createId.isTrue()) {
+			IRubyObject returnedResult = result;
+
+			// attempt to de-serialize object
+			if (createId != null) {
 				IRubyObject vKlassName = result.op_aref(createId);
 				if (!vKlassName.isNil()) {
-					ThreadContext context = runtime.getCurrentContext();
 					String klassName = vKlassName.asJavaString();
 					RubyModule klass;
 					try {
@@ -636,22 +651,24 @@ public class Parser extends RubyObject {
 					}
 					catch (RaiseException e) {
 						if (runtime.getClass("NameError").isInstance(e.getException())) {
-							// invalid class path; we're supposed to return ArgumentError
-							throw runtime.newArgumentError("undefined class/module " + klassName);
+							// invalid class path, but we're supposed to return ArgumentError
+							throw runtime.newArgumentError("undefined class/module " +
+							                               klassName);
 						}
 						else {
 							// some other exception; let it propagate
 							throw e;
 						}
 					}
+					ThreadContext context = runtime.getCurrentContext();
 					if (klass.respondsTo("json_creatable?") &&
 					    klass.callMethod(context, "json_creatable?").isTrue()) {
 
-						res.result = klass.callMethod(context, "json_create", result);
+						returnedResult = klass.callMethod(context, "json_create", result);
 					}
 				}
 			}
-			return res;
+			return new ParserResult(returnedResult, p /*+1*/);
 		}
 		else {
 			return null;
@@ -710,13 +727,16 @@ public class Parser extends RubyObject {
 			return result;
 		}
 		else {
-			throw new RaiseException(getRuntime(), parserErrorClass,
-				"unexpected token at '" + source.subSequence(p, pe) + "'", false);
+			throw unexpectedToken(p, pe);
 		}
 	}
 
 	@JRubyMethod(name = "source")
 	public IRubyObject source_get() {
 		return vSource.dup();
+	}
+
+	IRubyObject getConstant(String name) {
+		return getRuntime().getModule("JSON").getConstant(name);
 	}
 }

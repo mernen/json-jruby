@@ -1,9 +1,15 @@
+/*
+ * This code is copyrighted work by Daniel Luz <@gmail.com: mernen>.
+ * 
+ * Distributed under the Ruby and GPLv2 licenses; see COPYING and GPL files
+ * for details.
+ */
 package json.ext;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
-import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
@@ -15,6 +21,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author mernen
  */
 abstract class Utils {
+	static final String M_CIRCULAR_DATA_STRUCTURE = "JSON::CircularDatastructure";
+	static final String M_GENERATOR_ERROR = "JSON::GeneratorError";
+	static final String M_NESTING_ERROR = "JSON::NestingError";
+	static final String M_PARSER_ERROR = "JSON::ParserError";
+
 	/**
 	 * Convenience method for looking up items on a {@link RubyHash Hash}
 	 * with a {@link RubySymbol Symbol} key
@@ -43,7 +54,7 @@ abstract class Utils {
 	 * Looks up for an entry in a {@link RubyHash Hash} with a
 	 * {@link RubySymbol Symbol} key. If no entry is set for this key or if it
 	 * evaluates to <code>false</code>, returns null; attempts to coerce
-	 * the value to {@link RubyString String} otherwise
+	 * the value to {@link RubyString String} otherwise.
 	 * @param hash The Hash to look up
 	 * @param key The Symbol name to look up for
 	 * @return <code>null</code> if the key is not in the Hash or if
@@ -59,22 +70,45 @@ abstract class Utils {
 	}
 
 	/**
-	 * Safe {@link GeneratorState} type-checking
-	 * @param vState The value to be checked
-	 * @return The same parameter given, assured to be a GeneratorState
+	 * Safe {@link GeneratorState} type-checking.
+	 * Returns the given object if it is a
+	 * <code>JSON::Ext::Generator::State</code>, or throws an exception if not.
+	 * @param object The object to test
+	 * @return The given object if it is a <code>State</code>
+	 * @throws RaiseException <code>TypeError</code> if the object is not
+	 *                        of the expected type
 	 */
-	static GeneratorState asState(IRubyObject vState) {
-		if (vState instanceof GeneratorState) {
-			return (GeneratorState)vState;
+	static GeneratorState ensureState(IRubyObject object) {
+		if (object instanceof GeneratorState) {
+			return (GeneratorState)object;
 		}
-		RubyModule generatorState = vState.getRuntime().getClassFromPath("JSON::Ext::Generator::State");
-		assert generatorState.getJavaClass() == GeneratorState.class;
-		throw vState.getRuntime().newTypeError(vState, (RubyClass)generatorState);
+		Ruby runtime = object.getRuntime();
+		RubyClass generatorState =
+			(RubyClass)runtime.getClassFromPath("JSON::Ext::Generator::State");
+		assert generatorState.getAllocator() == GeneratorState.ALLOCATOR;
+		throw runtime.newTypeError(object, generatorState);
+	}
+
+	/**
+	 * Safe {@link RubyArray} type-checking.
+	 * Returns the given object if it is an <code>Array</code>,
+	 * or throws an exception if not.
+	 * @param object The object to test
+	 * @return The given object if it is an <code>Array</code>
+	 * @throws RaiseException <code>TypeError</code> if the object is not
+	 *                        of the expected type
+	 */
+	static RubyArray ensureArray(IRubyObject object) throws RaiseException {
+		if (object instanceof RubyArray) {
+			return (RubyArray)object;
+		}
+		Ruby runtime = object.getRuntime();
+		throw runtime.newTypeError(object, runtime.getArray());
 	}
 
 	static RaiseException newException(Ruby runtime, String className, String message) {
-		return new RaiseException(runtime, (RubyClass)runtime.getClassFromPath("JSON::" + className),
-		                          message, false);
+		RubyClass klazz = (RubyClass)runtime.getClassFromPath(className);
+		return new RaiseException(runtime, klazz, message, false);
 	}
 
 	/**

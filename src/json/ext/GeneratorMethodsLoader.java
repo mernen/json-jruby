@@ -1,3 +1,9 @@
+/*
+ * This code is copyrighted work by Daniel Luz <@gmail.com: mernen>.
+ * 
+ * Distributed under the Ruby and GPLv2 licenses; see COPYING and GPL files
+ * for details.
+ */
 package json.ext;
 
 import java.nio.ByteBuffer;
@@ -16,8 +22,10 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
+import org.jruby.util.ByteList;
 
 /**
  * A class that populates the <code>Json::Ext::Generator::GeneratorMethods</code>
@@ -26,24 +34,11 @@ import org.jruby.runtime.callback.Callback;
  * @author mernen
  */
 class GeneratorMethodsLoader {
-	private final static String
-		E_CIRCULAR_DATA_STRUCTURE_CLASS = "CircularDatastructure",
-		E_NESTING_ERROR_CLASS = "NestingError",
-		E_GENERATOR_ERROR_CLASS = "GeneratorError";
-
-	RubyModule parentModule;
+	private final RubyModule parentModule;
 
 	private abstract static class OptionalArgsCallback implements Callback {
 		public Arity getArity() {
 			return Arity.OPTIONAL;
-		}
-
-		protected void checkMaxNesting(GeneratorState state, int depth) {
-			int currentNesting = 1 + depth;
-			if (state.getMaxNesting() != 0 && currentNesting > state.getMaxNesting()) {
-				throw Utils.newException(state.getRuntime(), E_NESTING_ERROR_CLASS,
-					"nesting of " + currentNesting + " is too deep");
-			}
 		}
 	}
 
@@ -89,16 +84,16 @@ class GeneratorMethodsLoader {
 				return result;
 			}
 			else {
-				GeneratorState state = Utils.asState(vState);
+				GeneratorState state = Utils.ensureState(vState);
 				IRubyObject vDepth = args[1].isNil() ? runtime.newFixnum(0) : args[1];
 				RubyString result;
 
 				if (!args[1].isNil()) {
-					checkMaxNesting(state, RubyNumeric.fix2int(args[1]));
+					state.checkMaxNesting(RubyNumeric.fix2int(args[1]) + 1);
 				}
 				if (state.checkCircular()) {
 					if (state.hasSeen(self)) {
-						throw Utils.newException(runtime, E_CIRCULAR_DATA_STRUCTURE_CLASS,
+						throw Utils.newException(runtime, Utils.M_CIRCULAR_DATA_STRUCTURE,
 							"circular data structures not supported!");
 					}
 					state.remember(self);
@@ -169,7 +164,7 @@ class GeneratorMethodsLoader {
 
 	private static Callback arrayToJson = new OptionalArgsCallback() {
 		public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
-			RubyArray self = vSelf.convertToArray();
+			RubyArray self = Utils.ensureArray(vSelf);
 			Ruby runtime = self.getRuntime();
 			args = Arity.scanArgs(runtime, args, 0, 2);
 			IRubyObject state = args[0];
@@ -192,7 +187,7 @@ class GeneratorMethodsLoader {
 				result.cat((byte)']');
 			}
 			else {
-				result = transform(self, Utils.asState(state), depth);
+				result = transform(self, Utils.ensureState(state), depth);
 			}
 			result.infectBy(vSelf);
 			return result;
@@ -213,7 +208,7 @@ class GeneratorMethodsLoader {
 			delim[0] = ',';
 			System.arraycopy(arrayNl, 0, delim, 1, arrayNl.length);
 
-			checkMaxNesting(state, depth);
+			state.checkMaxNesting(depth + 1);
 			if (state.checkCircular()) {
 				state.remember(self);
 
@@ -223,7 +218,7 @@ class GeneratorMethodsLoader {
 				boolean firstItem = true;
 				for (IRubyObject element : self.toJavaArrayMaybeUnsafe()) {
 					if (state.hasSeen(element)) {
-						throw Utils.newException(runtime, E_CIRCULAR_DATA_STRUCTURE_CLASS,
+						throw Utils.newException(runtime, Utils.M_CIRCULAR_DATA_STRUCTURE,
 							"circular data structures not supported!");
 					}
 					result.infectBy(element);
@@ -287,13 +282,13 @@ class GeneratorMethodsLoader {
 			double value = RubyFloat.num2dbl(vSelf);
 
 			if (Double.isInfinite(value) || Double.isNaN(value)) {
-				GeneratorState state = args.length > 0 ? Utils.asState(args[0]) : null;
+				GeneratorState state = args.length > 0 ? Utils.ensureState(args[0]) : null;
 				if (state == null || state.allowNaN()) {
 					// XXX wouldn't it be better to hardcode a representation?
 					return vSelf.asString();
 				}
 				else {
-					throw Utils.newException(vSelf.getRuntime(), E_GENERATOR_ERROR_CLASS,
+					throw Utils.newException(vSelf.getRuntime(), Utils.M_GENERATOR_ERROR,
 					                         vSelf + " not allowed in JSON");
 				}
 			}
@@ -367,7 +362,8 @@ class GeneratorMethodsLoader {
 				}
 				return chars;
 				*/
-				throw Utils.newException(string.getRuntime(), "GeneratorError", "source sequence is illegal/malformed");
+				throw Utils.newException(string.getRuntime(), Utils.M_GENERATOR_ERROR,
+					"source sequence is illegal/malformed");
 			}
 		}
 
@@ -393,7 +389,8 @@ class GeneratorMethodsLoader {
 			Ruby runtime = self.getRuntime();
 			RubyHash result = RubyHash.newHash(runtime);
 
-			IRubyObject createId = runtime.getModule("JSON").callMethod(runtime.getCurrentContext(), "create_id");
+			IRubyObject createId =
+				runtime.getModule("JSON").callMethod(runtime.getCurrentContext(), "create_id");
 			result.op_aset(createId, vSelf.getMetaClass().to_s());
 
 			byte[] bytes = self.getBytes();
@@ -415,22 +412,41 @@ class GeneratorMethodsLoader {
 		public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
 			Ruby runtime = vSelf.getRuntime();
 			RubyHash o = args[0].convertToHash();
-			IRubyObject ary = runtime.newString("raw");
-			assert ary instanceof RubyArray;
-			return o.op_aref(ary).callMethod(runtime.getCurrentContext(), "pack", runtime.newString("C*"));
+			IRubyObject rawData = o.fastARef(runtime.newString("raw"));
+			if (rawData == null) {
+				throw runtime.newArgumentError("\"raw\" value not defined for encoded String");
+			}
+			RubyArray ary = Utils.ensureArray(rawData);
+			byte[] bytes = new byte[ary.getLength()];
+			for (int i = 0, t = ary.getLength(); i < t; i++) {
+				IRubyObject element = ary.eltInternal(i);
+				if (element instanceof RubyFixnum) {
+					bytes[i] = (byte)RubyNumeric.fix2long(element);
+				}
+				else {
+					throw runtime.newTypeError(element, runtime.getFixnum());
+				}
+			}
+			return runtime.newString(new ByteList(bytes, false));
 		}
 	};
 
+	/**
+	 * A general class for keyword values
+	 * (<code>true</code>, <code>false</code>, <code>null</code>).
+	 * Stores its keyword as a shared ByteList for performance.
+	 * @author mernen
+	 */
 	private static class KeywordJsonConverter extends OptionalArgsCallback {
-		private String keyword;
+		private final ByteList keyword;
 
 		private KeywordJsonConverter(String keyword) {
 			super();
-			this.keyword = keyword;
+			this.keyword = new ByteList(ByteList.plain(keyword), false);
 		}
 
 		public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
-			return self.getRuntime().newString(keyword);
+			return RubyString.newStringShared(self.getRuntime(), keyword);
 		}
 	}
 
@@ -442,7 +458,7 @@ class GeneratorMethodsLoader {
 		this.parentModule = module;
 	}
 
-	void apply() {
+	void load() {
 		defineToJson("Object", objectToJson);
 
 		defineToJson("Hash", hashToJson);
@@ -465,7 +481,8 @@ class GeneratorMethodsLoader {
 			}
 
 			public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
-				return args[0].callMethod(vSelf.getRuntime().getCurrentContext(), "extend", stringExtend);
+				ThreadContext context = vSelf.getRuntime().getCurrentContext();
+				return args[0].callMethod(context, "extend", stringExtend);
 			}
 		});
 		defineMethod(stringExtend, "json_create", stringExtendJsonCreate);
@@ -475,14 +492,31 @@ class GeneratorMethodsLoader {
 		defineToJson("NilClass", nilToJson);
 	}
 
+	/**
+	 * Convenience method for defining "to_json" on a module.
+	 * @param moduleName
+	 * @param method
+	 */
 	private void defineToJson(String moduleName, Callback method) {
 		defineMethod(moduleName, "to_json", method);
 	}
 
+	/**
+	 * Convenience method for defining arbitrary methods on a module (by name).
+	 * @param moduleName
+	 * @param methodName
+	 * @param method
+	 */
 	private void defineMethod(String moduleName, String methodName, Callback method) {
 		defineMethod(parentModule.defineModuleUnder(moduleName), methodName, method);
 	}
 
+	/**
+	 * Convenience methods for defining arbitrary methods on a module (by reference).
+	 * @param module
+	 * @param methodName
+	 * @param method
+	 */
 	private void defineMethod(RubyModule module, String methodName, Callback method) {
 		module.defineMethod(methodName, method);
 	}
