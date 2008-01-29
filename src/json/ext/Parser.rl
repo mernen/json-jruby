@@ -48,6 +48,7 @@ public class Parser extends RubyObject {
 
 	private static final int EVIL = 0x666;
 	private static final String JSON_MINUS_INFINITY = "-Infinity";
+	// constant names in the JSON module containing those values
 	private static final String CONST_NAN = "NaN";
 	private static final String CONST_INFINITY = "Infinity";
 	private static final String CONST_MINUS_INFINITY = "MinusInfinity";
@@ -58,8 +59,22 @@ public class Parser extends RubyObject {
 		}
 	};
 
+	/**
+	 * Multiple-value return for internal parser methods.
+	 * 
+	 * <p>All the <code>parse<var>Stuff</var></code> methods return instances of
+	 * <code>ParserResult</code> when successful, or <code>null</code> when
+	 * there's a problem with the input data.
+	 */
 	static class ParserResult {
+		/**
+		 * The result of the successful parsing. Should never be
+		 * <code>null</code>.
+		 */
 		final IRubyObject result;
+		/**
+		 * The point where the parser returned.
+		 */
 		final int p;
 
 		ParserResult(IRubyObject result, int p) {
