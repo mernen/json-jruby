@@ -59,32 +59,7 @@ class GeneratorMethodsLoader {
 			IRubyObject vState = args[0];
 
 			if (vState.isNil()) {
-				final RubyString result = runtime.newString();
-				result.cat((byte)'{');
-				self.visitAll(new RubyHash.Visitor() {
-					private boolean firstPair = true;
-					@Override
-					public void visit(IRubyObject key, IRubyObject value) {
-						// XXX key == Qundef???
-						if (firstPair) {
-							firstPair = false;
-						}
-						else {
-							result.cat((byte)',');
-						}
-
-						RubyString jsonKey = Utils.toJson(key.asString());
-						result.cat(((RubyString)jsonKey).getByteList());
-						result.infectBy(jsonKey);
-						result.cat((byte)':');
-
-						RubyString jsonValue = Utils.toJson(value);
-						result.cat(jsonValue.getByteList());
-						result.infectBy(jsonValue);
-					}
-				});
-				result.cat((byte)'}');
-				return result;
+				return simpleTransform(self);
 			}
 			else {
 				GeneratorState state = Utils.ensureState(vState);
@@ -109,6 +84,40 @@ class GeneratorMethodsLoader {
 
 				return result;
 			}
+		}
+
+		/**
+		 * Performs a simple Hash-to-JSON conversion, with no customization.
+		 * @param hash The Hash to process
+		 * @return The JSON representation of the Hash
+		 */
+		private RubyString simpleTransform(RubyHash hash) {
+			final RubyString result = hash.getRuntime().newString();
+			result.cat((byte)'{');
+			hash.visitAll(new RubyHash.Visitor() {
+				private boolean firstPair = true;
+				@Override
+				public void visit(IRubyObject key, IRubyObject value) {
+					// XXX key == Qundef???
+					if (firstPair) {
+						firstPair = false;
+					}
+					else {
+						result.cat((byte)',');
+					}
+
+					RubyString jsonKey = Utils.toJson(key.asString());
+					result.cat(((RubyString)jsonKey).getByteList());
+					result.infectBy(jsonKey);
+					result.cat((byte)':');
+
+					RubyString jsonValue = Utils.toJson(value);
+					result.cat(jsonValue.getByteList());
+					result.infectBy(jsonValue);
+				}
+			});
+			result.cat((byte)'}');
+			return result;
 		}
 
 		private RubyString transform(RubyHash self, final GeneratorState state, IRubyObject vDepth) {
