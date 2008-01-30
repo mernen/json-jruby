@@ -84,6 +84,8 @@ public class GeneratorState extends RubyObject {
 	 * encountering one.
 	 */
 	private boolean allowNaN;
+	// Porting note: due to the use of inner anonymous classes in the generator
+	// methods, the "memo", "depth" and "flag" fields are not needed
 
 	static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
 		public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
@@ -96,7 +98,9 @@ public class GeneratorState extends RubyObject {
 	}
 
 	/**
-	 * Creates a State object from <code>opts</code>, which ought to be
+	 * <code>State.from_state(opts)</code>
+	 * 
+	 * <p>Creates a State object from <code>opts</code>, which ought to be
 	 * {@link RubyHash Hash} to create a new <code>State</code> instance
 	 * configured by <codes>opts</code>, something else to create an
 	 * unconfigured instance. If <code>opts</code> is a <code>State</code>
@@ -105,22 +109,56 @@ public class GeneratorState extends RubyObject {
 	 *                   ({@link RubyClass} <code>State</code>)
 	 * @param opts The object to use as a base for the new <code>State</code>
 	 * @param block The block passed to the method
-	 * @return
+	 * @return A <code>GeneratorState</code> as determined above
 	 */
 	@JRubyMethod(name = "from_state", required = 1, meta = true)
 	public static IRubyObject from_state(IRubyObject clazzParam, IRubyObject opts,
 			Block block) {
+		// if the given parameter is a Generator::State, return itself
 		RubyModule clazz = (RubyModule)clazzParam;
 		if (clazz.isInstance(opts)) {
 			return (GeneratorState)opts;
 		}
+
 		Ruby runtime = clazz.getRuntime();
+		// if the given parameter is a Hash, pass it to the instantiator
 		if (runtime.getHash().isInstance(opts)) {
 			return clazz.callMethod(runtime.getCurrentContext(), "new", opts);
 		}
+
+		// ignore any other kinds of parameter
 		return clazz.callMethod(runtime.getCurrentContext(), "new");
 	}
 
+	/**
+	 * <code>State#initialize(opts = {})</code>
+	 * 
+     * Instantiates a new <code>State</code> object, configured by <code>opts</code>.
+     * 
+     * <code>opts</code> can have the following keys:
+     * 
+     * <dl>
+     * <dt><code>:indent</code>
+     * <dd>a {@link RubyString String} used to indent levels (default: <code>""</code>)
+     * <dt><code>:space</code>
+     * <dd>a String that is put after a <code>':'</code> or <code>','</code>
+     * delimiter (default: <code>""</code>)
+     * <dt><code>:space_before</code>
+     * <dd>a String that is put before a <code>":"</code> pair delimiter
+     * (default: <code>""</code>)
+     * <dt><code>:object_nl</code>
+     * <dd>a String that is put at the end of a JSON object (default: <code>""</code>) 
+     * <dt><code>:array_nl</code>
+     * <dd>a String that is put at the end of a JSON array (default: <code>""</code>)
+     * <dt><code>:check_circular</code>
+     * <dd><code>true</code> if checking for circular data structures should be
+     * done, <code>false</code> (the default) otherwise.
+     * <dt><code>:allow_nan</code>
+     * <dd><code>true</code> if <code>NaN</code>, <code>Infinity</code>, and
+     * <code>-Infinity</code> should be generated, otherwise an exception is
+     * thrown if these values are encountered.
+     * This options defaults to <code>false</code>.
+	 */
 	@JRubyMethod(name = "initialize", rest = true, visibility = Visibility.PRIVATE)
 	public IRubyObject initialize(IRubyObject[] args) {
 		Ruby runtime = getRuntime();
@@ -152,10 +190,6 @@ public class GeneratorState extends RubyObject {
 		return indent;
 	}
 
-	/**
-	 * Ruby getter for the {@link #space} attribute
-	 * @return The defined spacing after each {@link RubyHash Hash} semicolon
-	 */
 	@JRubyMethod(name = "space")
 	public RubyString space_get() {
 		return space;
@@ -167,10 +201,6 @@ public class GeneratorState extends RubyObject {
 		return space;
 	}
 
-	/**
-	 * Ruby getter for the {@link #space} attribute
-	 * @return The defined spacing before each {@link RubyHash Hash} semicolon
-	 */
 	@JRubyMethod(name = "space_before")
 	public RubyString space_before_get() {
 		return spaceBefore;
@@ -296,6 +326,14 @@ public class GeneratorState extends RubyObject {
 		return forget(object) ? getRuntime().getTrue() : getRuntime().getNil();
 	}
 
+	/**
+	 * <code>State#configure(opts)</code>
+	 * 
+	 * <p>Configures this State instance with the {@link RubyHash Hash}
+	 * <code>opts</code>, and returns itself.
+	 * @param vOpts The options hash
+	 * @return The receiver
+	 */
 	@JRubyMethod(name = "configure", required = 1)
 	public GeneratorState configure(IRubyObject vOpts) {
 		RubyHash opts;
@@ -335,29 +373,49 @@ public class GeneratorState extends RubyObject {
 		return this;
 	}
 
+	/**
+	 * <code>State#to_h()</code>
+	 * 
+	 * <p>Returns the configuration instance variables as a hash, that can be
+	 * passed to the configure method.
+	 * @return
+	 */
 	@JRubyMethod(name = "to_h")
 	public RubyHash to_h() {
-		RubyHash result = RubyHash.newHash(getRuntime());
+		Ruby runtime = getRuntime();
+		RubyHash result = RubyHash.newHash(runtime);
 
-		result.op_aset(getRuntime().newSymbol("indent"), indent_get());
-		result.op_aset(getRuntime().newSymbol("space"), space_get());
-		result.op_aset(getRuntime().newSymbol("space_before"), space_before_get());
-		result.op_aset(getRuntime().newSymbol("object_nl"), object_nl_get());
-		result.op_aset(getRuntime().newSymbol("array_nl"), array_nl_get());
-		result.op_aset(getRuntime().newSymbol("check_circular"), check_circular_p());
-		result.op_aset(getRuntime().newSymbol("allow_nan"), allow_nan_p());
-		result.op_aset(getRuntime().newSymbol("max_nesting"), max_nesting_get());
+		result.op_aset(runtime.newSymbol("indent"), indent_get());
+		result.op_aset(runtime.newSymbol("space"), space_get());
+		result.op_aset(runtime.newSymbol("space_before"), space_before_get());
+		result.op_aset(runtime.newSymbol("object_nl"), object_nl_get());
+		result.op_aset(runtime.newSymbol("array_nl"), array_nl_get());
+		result.op_aset(runtime.newSymbol("check_circular"), check_circular_p());
+		result.op_aset(runtime.newSymbol("allow_nan"), allow_nan_p());
+		result.op_aset(runtime.newSymbol("max_nesting"), max_nesting_get());
 		return result;
 	}
 
+	/**
+	 * Returns the maximum level of nesting configured for this state.
+	 * @return
+	 */
 	public int getMaxNesting() {
 		return maxNesting;
 	}
 
+	/**
+	 * Returns whether circular reference checking should be performed.
+	 * @return
+	 */
 	public boolean checkCircular() {
 		return checkCircular;
 	}
 
+	/**
+	 * Checks if the current depth is allowed as per this state's options.
+	 * @param depth The corrent depth
+	 */
 	void checkMaxNesting(int depth) {
 		if (getMaxNesting() != 0 && depth > getMaxNesting()) {
 			throw Utils.newException(getRuntime(), Utils.M_NESTING_ERROR,

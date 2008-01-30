@@ -115,6 +115,31 @@ public class Parser extends RubyObject {
 		begin_number        = digit | '-';
 	}%%
 
+	/**
+	 * <code>Parser.new(source, opts = {})</code>
+	 * 
+	 * <p>Creates a new <code>JSON::Ext::Parser</code> instance for the string
+	 * <code>source</code>.
+	 * It will be configured by the <code>opts</code> Hash.
+	 * <code>opts</code> can have the following keys:
+	 * 
+	 * <dl>
+	 * <dt><code>:max_nesting</code>
+	 * <dd>The maximum depth of nesting allowed in the parsed data
+	 * structures. Disable depth checking with <code>:max_nesting => false|nil|0</code>,
+	 * it defaults to 19.
+	 * 
+	 * <dt><code>:allow_nan</code>
+	 * <dd>If set to <code>true</code>, allow <code>NaN</code>,
+	 * <code>Infinity</code> and <code>-Infinity</code> in defiance of RFC 4627
+	 * to be parsed by the Parser. This option defaults to <code>false</code>.
+	 * 
+	 * <dt><code>:create_additions</code>
+	 * <dd>If set to <code>false</code>, the Parser doesn't create additions
+	 * even if a matchin class and <code>create_id</code> was found. This option
+	 * defaults to <code>true</code>.
+	 * </dl>
+	 */
 	@JRubyMethod(name = "new", required = 1, optional = 1, meta = true)
 	public static IRubyObject newInstance(IRubyObject clazz, IRubyObject[] args, Block block) {
 		Parser parser = (Parser)((RubyClass)clazz).allocate();
@@ -136,7 +161,6 @@ public class Parser extends RubyObject {
 				"A JSON text must at least contain two octets!");
 		}
 
-		ThreadContext context = getRuntime().getCurrentContext();
 		if (args.length > 1) {
 			RubyHash opts = args[1].convertToHash();
 
@@ -178,8 +202,8 @@ public class Parser extends RubyObject {
 	}
 
 	/**
-	 * Queries <code>JSON.create_id</code>, and returns null if it is set to
-	 * <code>nil</code> or <code>false</code>, and a String if not.
+	 * Queries <code>JSON.create_id</code>. Returns <code>null</code> if it is
+	 * set to <code>nil</code> or <code>false</code>, and a String if not.
 	 */
 	private RubyString getCreateId() {
 		Ruby runtime = getRuntime();
@@ -726,6 +750,12 @@ public class Parser extends RubyObject {
 		        ignore*;
 	}%%
 
+	/**
+	 * <code>Parser#parse()</code>
+	 * 
+	 * <p>Parses the current JSON text <code>source</code> and returns the
+	 * complete data structure as a result.
+	 */
 	@JRubyMethod(name = "parse")
 	public IRubyObject parse() {
 		int cs = EVIL;
@@ -746,12 +776,22 @@ public class Parser extends RubyObject {
 		}
 	}
 
+	/**
+	 * <code>Parser#source()</code>
+	 * 
+	 * <p>Returns a copy of the current <code>source</code> string, that was
+	 * used to construct this Parser.
+	 */
 	@JRubyMethod(name = "source")
 	public IRubyObject source_get() {
 		return vSource.dup();
 	}
 
-	IRubyObject getConstant(String name) {
+	/**
+	 * Retrieves a constant directly descended from the <code>JSON</code> module.
+	 * @param name The constant name
+	 */
+	private IRubyObject getConstant(String name) {
 		return getRuntime().getModule("JSON").getConstant(name);
 	}
 }

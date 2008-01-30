@@ -22,14 +22,14 @@ public class GeneratorService implements BasicLibraryService {
 	public boolean basicLoad(Ruby runtime) throws IOException {
 		runtime.getLoadService().require("json/common");
 
-		RubyModule jsonModule = runtime.defineModule("JSON");
-		RubyModule jsonExtModule = jsonModule.defineModuleUnder("Ext");
-		RubyModule generatorModule = jsonExtModule.defineModuleUnder("Generator");
+		RubyModule generator = runtime.defineModule("JSON").
+		                               defineModuleUnder("Ext").
+		                               defineModuleUnder("Generator");
 
-		RubyClass stateClass = generatorModule.defineClassUnder("State", runtime.getObject(), GeneratorState.ALLOCATOR);
+		RubyClass stateClass = generator.defineClassUnder("State", runtime.getObject(), GeneratorState.ALLOCATOR);
 		stateClass.defineAnnotatedMethods(GeneratorState.class);
 
-		RubyModule generatorMethods = generatorModule.defineModuleUnder("GeneratorMethods");
+		RubyModule generatorMethods = generator.defineModuleUnder("GeneratorMethods");
 		new GeneratorMethodsLoader(generatorMethods).load();
 
 		return true;

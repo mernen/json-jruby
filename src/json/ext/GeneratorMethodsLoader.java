@@ -42,12 +42,15 @@ class GeneratorMethodsLoader {
 		}
 	}
 
-	private static Callback objectToJson = new OptionalArgsCallback() {
-		public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-			return stringToJson.execute(recv.asString(), args, block);
-		}
-	};
-
+	/**
+	 * <code>{@link RubyHash Hash}#to_json(state = nil, depth = 0)</code>
+	 * 
+	 * <p>Returns a JSON string containing a JSON object, that is unparsed from
+	 * this Hash instance.
+	 * <p><code>state</code> is a {@link GeneratorState JSON::State} object,
+	 * that can also be used to configure the produced JSON string output further.
+	 * <p><code>depth</code> is used to find the nesting depth, to indent accordingly.
+	 */
 	private static Callback hashToJson = new OptionalArgsCallback() {
 		public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
 			RubyHash self = vSelf.convertToHash();
@@ -162,6 +165,15 @@ class GeneratorMethodsLoader {
 		}
 	};
 
+	/**
+	 * <code>{@link RubyArray Array}#to_json(state = nil, depth = 0)</code>
+	 * 
+	 * <p>Returns a JSON string containing a JSON array, that is unparsed from
+	 * this Array instance.
+	 * <p><code>state</code> is a {@link GeneratorState JSON::State} object,
+	 * that can also be used to configure the produced JSON string output further.
+	 * <p><code>depth</code> is used to find the nesting depth, to indent accordingly.
+	 */
 	private static Callback arrayToJson = new OptionalArgsCallback() {
 		public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
 			RubyArray self = Utils.ensureArray(vSelf);
@@ -271,12 +283,24 @@ class GeneratorMethodsLoader {
 		}
 	};
 
+	/**
+	 * <code>{@link RubyInteger Integer}#to_json(*)</code>
+	 * 
+	 * <p>Returns a JSON string representation for this Integer number.
+	 */
 	private static Callback integerToJson = new OptionalArgsCallback() {
 		public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
 			return recv.callMethod(recv.getRuntime().getCurrentContext(), "to_s");
 		}
 	};
 
+	/**
+	 * <code>{@link RubyFloat Float}#to_json(state = nil, *)</code>
+	 * 
+	 * <p>Returns a JSON string representation for this Float number.
+	 * <p><code>state</code> is a {@link GeneratorState JSON::State} object,
+	 * that can also be used to configure the produced JSON string output further.
+	 */
 	private static Callback floatToJson = new OptionalArgsCallback() {
 		public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
 			double value = RubyFloat.num2dbl(vSelf);
@@ -284,7 +308,6 @@ class GeneratorMethodsLoader {
 			if (Double.isInfinite(value) || Double.isNaN(value)) {
 				GeneratorState state = args.length > 0 ? Utils.ensureState(args[0]) : null;
 				if (state == null || state.allowNaN()) {
-					// XXX wouldn't it be better to hardcode a representation?
 					return vSelf.asString();
 				}
 				else {
@@ -298,12 +321,20 @@ class GeneratorMethodsLoader {
 		}
 	};
 
+	/**
+	 * <code>{@link RubyString String}#to_json(*)</code>
+	 * 
+	 * <p>Returns a JSON string representation for this String.
+	 * <p>The string must be encoded in UTF-8. All non-ASCII characters will be
+	 * escaped as <code>\\u????</code> escape sequences. Characters outside the
+	 * Basic Multilingual Plane range are encoded as a pair of surrogates.
+	 */
 	private static Callback stringToJson = new OptionalArgsCallback() {
 		public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
 			// using convertToString as a safety guard measure
 			char[] chars = decodeString(self.convertToString());
 			RubyString result = self.getRuntime().newString();
-			result.modify(chars.length);
+			result.modify(chars.length / 2);
 			result.cat((byte)'"');
 			for (char c : chars) {
 				if (c == '"') {
@@ -352,7 +383,7 @@ class GeneratorMethodsLoader {
 				System.arraycopy(buffer.array(), buffer.position(), result, 0, result.length);
 				return result;
 			} catch (CharacterCodingException e) {
-				// Florian's library strictly only interprets UTF-8
+				// XXX DISABLED: Florian's library strictly only interprets UTF-8
 				/*
 				// a very naïve decoder, which just maps bytes
 				// XXX is this *really* equivalent to the ISO-8859-1 decoder?
@@ -376,6 +407,12 @@ class GeneratorMethodsLoader {
 		}
 	};
 
+	/**
+	 * <code>{@link RubyString String}#to_json_raw(*)</code>
+	 * 
+	 * <p>This method creates a JSON text from the result of a call to
+	 * {@link stringToJsonRawObject to_json_raw_object} of this String.
+	 */
 	private static Callback stringToJsonRaw = new OptionalArgsCallback() {
 		public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
 			IRubyObject obj = stringToJsonRawObject.execute(vSelf, args, block);
@@ -383,6 +420,14 @@ class GeneratorMethodsLoader {
 		}
 	};
 
+	/**
+	 * <code>{@link RubyString String}#to_json_raw_object(*)</code>
+	 * 
+	 * <p>This method creates a raw object Hash, that can be nested into other
+	 * data structures and will be unparsed as a raw string. This method should
+	 * be used if you want to convert raw strings to JSON instead of UTF-8
+	 * strings, e.g. binary data.
+	 */
 	private static Callback stringToJsonRawObject = new OptionalArgsCallback() {
 		public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
 			RubyString self = vSelf.convertToString();
@@ -404,6 +449,12 @@ class GeneratorMethodsLoader {
 		}
 	};
 
+	/**
+	 * <code>{@link RubyString String}#json_create(o)</code>
+	 * 
+	 * <p>Raw Strings are JSON Objects (the raw bytes are stored in an array for
+	 * the key "raw"). The Ruby String can be created by this module method.
+	 */
 	private static Callback stringExtendJsonCreate = new Callback() {
 		public Arity getArity() {
 			return Arity.ONE_ARGUMENT;
@@ -432,12 +483,12 @@ class GeneratorMethodsLoader {
 	};
 
 	/**
-	 * A general class for keyword values
+	 * A general converter for keyword values
 	 * (<code>true</code>, <code>false</code>, <code>null</code>).
-	 * Stores its keyword as a shared ByteList for performance.
 	 * @author mernen
 	 */
 	private static class KeywordJsonConverter extends OptionalArgsCallback {
+		// Store keyword as a shared ByteList for performance.
 		private final ByteList keyword;
 
 		private KeywordJsonConverter(String keyword) {
@@ -450,14 +501,51 @@ class GeneratorMethodsLoader {
 		}
 	}
 
+	/**
+	 * <code>true.to_json(*)</code>
+	 * 
+	 * <p>Returns a JSON string for <code>true</code>: <code>"true"</code>.
+	 */
 	private static Callback trueToJson = new KeywordJsonConverter("true");
+	/**
+	 * <code>false.to_json(*)</code>
+	 * 
+	 * <p>Returns a JSON string for <code>false</code>: <code>"false"</code>.
+	 */
 	private static Callback falseToJson = new KeywordJsonConverter("false");
+	/**
+	 * <code>nil.to_json(*)</code>
+	 * 
+	 * <p>Returns a JSON string for <code>nil</code>: <code>"null"</code>.
+	 */
 	private static Callback nilToJson = new KeywordJsonConverter("null");
 
-	GeneratorMethodsLoader(RubyModule module) {
-		this.parentModule = module;
+	/**
+	 * <code>{@link RubyObject Object}#to_json(*)</code>
+	 * 
+	 * <p>Converts this object to a string (calling <code>#to_s</code>),
+	 * converts it to a JSON string, and returns the result.
+	 * This is a fallback, if no special method <code>#to_json</code> was
+	 * defined for some object.
+	 */
+	private static Callback objectToJson = new OptionalArgsCallback() {
+		public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
+			return stringToJson.execute(recv.asString(), args, block);
+		}
+	};
+
+	/**
+	 * Instantiates the RubyModule element.
+	 * @param generatorMethodsModule The module to populate
+	 * (normally <code>JSON::Generator::GeneratorMethods</code>)
+	 */
+	GeneratorMethodsLoader(RubyModule generatorMethodsModule) {
+		this.parentModule = generatorMethodsModule;
 	}
 
+	/**
+	 * Performs the generation of all submodules and methods.
+	 */
 	void load() {
 		defineToJson("Object", objectToJson);
 
