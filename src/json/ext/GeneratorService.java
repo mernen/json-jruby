@@ -1,5 +1,5 @@
 /*
- * This code is copyrighted work by Daniel Luz <@gmail.com: mernen>.
+ * This code is copyrighted work by Daniel Luz <mernen at gmail dot com>.
  * 
  * Distributed under the Ruby and GPLv2 licenses; see COPYING and GPL files
  * for details.
@@ -22,14 +22,14 @@ public class GeneratorService implements BasicLibraryService {
 	public boolean basicLoad(Ruby runtime) throws IOException {
 		runtime.getLoadService().require("json/common");
 
-		RubyModule generator = runtime.defineModule("JSON").
-		                               defineModuleUnder("Ext").
-		                               defineModuleUnder("Generator");
+		RubyModule jsonModule = runtime.defineModule("JSON");
+		RubyModule jsonExtModule = jsonModule.defineModuleUnder("Ext");
+		RubyModule generatorModule = jsonExtModule.defineModuleUnder("Generator");
 
-		RubyClass stateClass = generator.defineClassUnder("State", runtime.getObject(), GeneratorState.ALLOCATOR);
+		RubyClass stateClass = generatorModule.defineClassUnder("State", runtime.getObject(), GeneratorState.ALLOCATOR);
 		stateClass.defineAnnotatedMethods(GeneratorState.class);
 
-		RubyModule generatorMethods = generator.defineModuleUnder("GeneratorMethods");
+		RubyModule generatorMethods = generatorModule.defineModuleUnder("GeneratorMethods");
 		new GeneratorMethodsLoader(generatorMethods).load();
 
 		return true;

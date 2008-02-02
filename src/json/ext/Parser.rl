@@ -1,5 +1,5 @@
 /*
- * This code is copyrighted work by Daniel Luz <@gmail.com: mernen>.
+ * This code is copyrighted work by Daniel Luz <mernen at gmail dot com>.
  * 
  * Distributed under the Ruby and GPLv2 licenses; see COPYING and GPL files
  * for details.
@@ -36,8 +36,6 @@ import org.jruby.util.ByteList;
  * @author mernen
  */
 public class Parser extends RubyObject {
-	private static final long serialVersionUID = 2782556972195914229L;
-
 	private RubyString vSource;
 	private ByteList source;
 	private int len;

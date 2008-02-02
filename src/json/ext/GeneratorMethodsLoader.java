@@ -1,5 +1,5 @@
 /*
- * This code is copyrighted work by Daniel Luz <@gmail.com: mernen>.
+ * This code is copyrighted work by Daniel Luz <mernen at gmail dot com>.
  * 
  * Distributed under the Ruby and GPLv2 licenses; see COPYING and GPL files
  * for details.

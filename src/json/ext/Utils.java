@@ -1,5 +1,5 @@
 /*
- * This code is copyrighted work by Daniel Luz <@gmail.com: mernen>.
+ * This code is copyrighted work by Daniel Luz <mernen at gmail dot com>.
  * 
  * Distributed under the Ruby and GPLv2 licenses; see COPYING and GPL files
  * for details.
@@ -11,7 +11,6 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
-import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -21,10 +20,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author mernen
  */
 abstract class Utils {
-	static final String M_CIRCULAR_DATA_STRUCTURE = "JSON::CircularDatastructure";
-	static final String M_GENERATOR_ERROR = "JSON::GeneratorError";
-	static final String M_NESTING_ERROR = "JSON::NestingError";
-	static final String M_PARSER_ERROR = "JSON::ParserError";
+	public static final String M_CIRCULAR_DATA_STRUCTURE = "JSON::CircularDatastructure";
+	public static final String M_GENERATOR_ERROR = "JSON::GeneratorError";
+	public static final String M_NESTING_ERROR = "JSON::NestingError";
+	public static final String M_PARSER_ERROR = "JSON::ParserError";
 
 	/**
 	 * Convenience method for looking up items on a {@link RubyHash Hash}

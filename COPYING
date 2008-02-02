@@ -1,4 +1,5 @@
-JSON-JRuby is copyrighted free software by Daniel Luz <mernen at gmail dot com>.
+JSON-JRuby is copyrighted free software by Daniel Luz <mernen at gmail dot com>,
+and is a derivative work of Florian Frank's json library <flori at ping dot de>.
 You can redistribute it and/or modify it under either the terms of the GPL
 version 2 (see the file GPL), or the conditions below:
 
