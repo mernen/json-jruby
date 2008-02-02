@@ -1,4 +1,6 @@
 /build
+/lib/json/ext.jar
+*.gem
 .classpath
 .project
 .externalToolBuilders

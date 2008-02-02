@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="JSON-JRuby" default="default" basedir=".">
+<project name="JSON-JRuby" default="gem" basedir=".">
     <description>Builds, tests, and runs the project JSON-JRuby.</description>
     <import file="nbproject/build-impl.xml"/>
     
     <target name="ragel">
         <exec executable="ragel" failonerror="true">
-            <arg value="-J" />
+            <arg value="-J"/>
             <arg value="${basedir}/src/json/ext/Parser.rl"/>
         </exec>
     </target>
@@ -13,7 +13,18 @@
     <target name="-pre-compile" depends="ragel">
     </target>
     
-    <target name="-post-clean" depends="ragel">
-        <delete file="${dist.jar}"/>
+    <target name="clean-dist">
+        <delete>
+            <file file="${dist.jar}"/>
+            <fileset dir="." includes="*.gem"/>
+        </delete>
+    </target>
+    
+    <target name="-post-clean" depends="clean-dist,ragel"/>
+    
+    <target name="gem" depends="jar">
+        <exec executable="${jruby.dir}/bin/jruby">
+            <arg value="json-jruby.gemspec"/>
+        </exec>
     </target>
 </project>
