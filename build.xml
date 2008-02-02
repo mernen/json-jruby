@@ -1,38 +1,19 @@
-<?xml version="1.0"?>
-<project default="build" basedir="." name="JSON-JRuby">
-	<description>A port of Florian Frank's native json library for Ruby</description>
-
-	<path id="src.java">
-		<fileset dir="${basedir}/src" />
-	</path>
-
-	<property name="jruby.dir" value="${basedir}/../jruby/lib/jruby.jar" />
-	<property name="build.dir" value="${basedir}/bin" />
-	<property name="lib.dir" value="${basedir}/lib" />
-
-	<property name="src.java" value="src"/>
-	<path id="build.classpath">
-		<fileset dir="/home/daniel/Dev/jruby/lib" includes="jruby.jar" />
-	</path>
-
-	<target name="clean" description="Cleans build files">
-		<delete dir="${build.dir}" />
-		<delete file="${lib.dir}/json.jar" />
-	</target>
-
-	<target name="prepare">
-		<mkdir dir="${build.dir}" />
-		<mkdir dir="${lib.dir}" />
-	</target>
-
-	<target name="build" depends="prepare,ragel">
-		<javac classpath="${jruby.dir}" srcdir="${src.java}" destdir="${basedir}/bin" optimize="true" />
-	</target>
-
-	<target name="ragel">
-		<exec executable="ragel" failonerror="true">
-			<arg value="-J" />
-			<arg value="${src.java}/json/ext/Parser.rl" />
-		</exec>
-	</target>
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="JSON-JRuby" default="default" basedir=".">
+    <description>Builds, tests, and runs the project JSON-JRuby.</description>
+    <import file="nbproject/build-impl.xml"/>
+    
+    <target name="ragel">
+        <exec executable="ragel" failonerror="true">
+            <arg value="-J" />
+            <arg value="${basedir}/src/json/ext/Parser.rl"/>
+        </exec>
+    </target>
+    
+    <target name="-pre-compile" depends="ragel">
+    </target>
+    
+    <target name="-post-clean" depends="ragel">
+        <delete file="${dist.jar}"/>
+    </target>
 </project>
