@@ -335,7 +335,7 @@ public class GeneratorState extends RubyObject {
 	 * @return The receiver
 	 */
 	@JRubyMethod(name = "configure", required = 1)
-	public GeneratorState configure(IRubyObject vOpts) {
+	public IRubyObject configure(IRubyObject vOpts) {
 		RubyHash opts;
 		if (vOpts.respondsTo("to_hash")) {
 			opts = vOpts.convertToHash();
