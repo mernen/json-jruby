@@ -96,7 +96,7 @@ class GeneratorMethodsLoader {
          * @return The JSON representation of the Hash
          */
         private RubyString simpleTransform(RubyHash self) {
-            int preSize = 2 + Math.max(self.size() * 4, 0);
+            int preSize = 2 + Math.max(self.size() * 8, 0);
             final RubyString result = self.getRuntime().newString(new ByteList(preSize));
             result.cat((byte)'{');
             self.visitAll(new RubyHash.Visitor() {
@@ -208,7 +208,7 @@ class GeneratorMethodsLoader {
                     if (i > 0) {
                         result.cat((byte)',');
                     }
-                    IRubyObject elementStr = Utils.toJson(element);
+                    RubyString elementStr = Utils.toJson(element);
                     result.append(elementStr);
                 }
                 result.cat((byte)']');
@@ -244,7 +244,9 @@ class GeneratorMethodsLoader {
                 result.cat(arrayNl);
 
                 boolean firstItem = true;
-                for (IRubyObject element : self.toJavaArrayMaybeUnsafe()) {
+                //for (IRubyObject element : self.toJavaArrayMaybeUnsafe()) {
+                for (int i = 0, t = self.getLength(); i < t; i++) {
+                    IRubyObject element = self.entry(i);
                     if (state.hasSeen(element)) {
                         throw Utils.newException(runtime, Utils.M_CIRCULAR_DATA_STRUCTURE,
                             "circular data structures not supported!");
@@ -257,8 +259,8 @@ class GeneratorMethodsLoader {
                         result.cat(delim);
                     }
                     result.cat(shift);
-                    IRubyObject elemJson = Utils.toJson(element, state, RubyNumeric.int2fix(runtime, depth + 1));
-                    result.cat(elemJson.convertToString().getByteList());
+                    RubyString elemJson = Utils.toJson(element, state, RubyNumeric.int2fix(runtime, depth + 1));
+                    result.cat(elemJson.getByteList());
                 }
 
                 if (arrayNl.length != 0) {
@@ -274,7 +276,9 @@ class GeneratorMethodsLoader {
                 result.cat((byte)'[');
                 result.cat(arrayNl);
                 boolean firstItem = true;
-                for (IRubyObject element : self.toJavaArrayMaybeUnsafe()) {
+                //for (IRubyObject element : self.toJavaArrayMaybeUnsafe()) {
+                for (int i = 0, t = self.getLength(); i < t; i++) {
+                    IRubyObject element = self.entry(i);
                     result.infectBy(element);
                     if (firstItem) {
                         firstItem = false;
@@ -283,8 +287,8 @@ class GeneratorMethodsLoader {
                         result.cat(delim);
                     }
                     result.cat(shift);
-                    IRubyObject elemJson = Utils.toJson(element, state, RubyNumeric.int2fix(runtime, depth + 1));
-                    result.cat(elemJson.convertToString().getByteList());
+                    RubyString elemJson = Utils.toJson(element, state, RubyNumeric.int2fix(runtime, depth + 1));
+                    result.cat(elemJson.getByteList());
                 }
 
                 if (arrayNl.length != 0) {
