@@ -96,7 +96,7 @@ class GeneratorMethodsLoader {
          * @return The JSON representation of the Hash
          */
         private RubyString simpleTransform(RubyHash self) {
-            int preSize = 2 + Math.min(self.size() * 4, 0);
+            int preSize = 2 + Math.max(self.size() * 4, 0);
             final RubyString result = self.getRuntime().newString(new ByteList(preSize));
             result.cat((byte)'{');
             self.visitAll(new RubyHash.Visitor() {
@@ -127,7 +127,7 @@ class GeneratorMethodsLoader {
 
         private RubyString transform(RubyHash self, final GeneratorState state, int depth) {
             Ruby runtime = self.getRuntime();
-            int preSize = 2 + Math.min(self.size() * 8, 0);
+            int preSize = 2 + Math.max(self.size() * 8, 0);
             final RubyString result = self.getRuntime().newString(new ByteList(preSize));
 
             final byte[] objectNl = state.object_nl_get().getBytes();
@@ -198,7 +198,7 @@ class GeneratorMethodsLoader {
             RubyString result;
 
             if (state.isNil()) {
-                int preSize = 2 + Math.min(self.size() * 4, 0);
+                int preSize = 2 + Math.max(self.size() * 4, 0);
                 result = self.getRuntime().newString(new ByteList(preSize));
                 result.cat((byte)'[');
                 result.infectBy(vSelf);
@@ -223,7 +223,7 @@ class GeneratorMethodsLoader {
 
         private RubyString transform(RubyArray self, GeneratorState state, int depth) {
             final Ruby runtime = self.getRuntime();
-            final int preSize = 2 + Math.min(self.size() * 4, 0);
+            final int preSize = 2 + Math.max(self.size() * 4, 0);
             final RubyString result = self.getRuntime().newString(new ByteList(preSize));
 
             byte[] indentUnit = state.indent_get().getBytes();
