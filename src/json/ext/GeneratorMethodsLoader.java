@@ -63,11 +63,15 @@ class GeneratorMethodsLoader {
             }
             else {
                 GeneratorState state = Utils.ensureState(vState);
-                IRubyObject vDepth = args[1].isNil() ? runtime.newFixnum(0) : args[1];
+                int depth;
                 RubyString result;
 
-                if (!args[1].isNil()) {
-                    state.checkMaxNesting(RubyNumeric.fix2int(args[1]) + 1);
+                if (args[1].isNil()) {
+                    depth = 0;
+                }
+                else {
+                    depth = RubyNumeric.fix2int(args[1]);
+                    state.checkMaxNesting(depth + 1);
                 }
                 if (state.checkCircular()) {
                     if (state.hasSeen(self)) {
@@ -75,11 +79,11 @@ class GeneratorMethodsLoader {
                             "circular data structures not supported!");
                     }
                     state.remember(self);
-                    result = transform(self, state, vDepth);
+                    result = transform(self, state, depth);
                     state.forget(self);
                 }
                 else {
-                    result = transform(self, state, vDepth);
+                    result = transform(self, state, depth);
                 }
 
                 return result;
@@ -91,10 +95,11 @@ class GeneratorMethodsLoader {
          * @param hash The Hash to process
          * @return The JSON representation of the Hash
          */
-        private RubyString simpleTransform(RubyHash hash) {
-            final RubyString result = hash.getRuntime().newString();
+        private RubyString simpleTransform(RubyHash self) {
+            int preSize = 2 + Math.min(self.size() * 4, 0);
+            final RubyString result = self.getRuntime().newString(new ByteList(preSize));
             result.cat((byte)'{');
-            hash.visitAll(new RubyHash.Visitor() {
+            self.visitAll(new RubyHash.Visitor() {
                 private boolean firstPair = true;
                 @Override
                 public void visit(IRubyObject key, IRubyObject value) {
@@ -120,10 +125,10 @@ class GeneratorMethodsLoader {
             return result;
         }
 
-        private RubyString transform(RubyHash self, final GeneratorState state, IRubyObject vDepth) {
+        private RubyString transform(RubyHash self, final GeneratorState state, int depth) {
             Ruby runtime = self.getRuntime();
-            final int depth = RubyNumeric.fix2int(vDepth);
-            final RubyString result = runtime.newString();
+            int preSize = 2 + Math.min(self.size() * 8, 0);
+            final RubyString result = self.getRuntime().newString(new ByteList(preSize));
 
             final byte[] objectNl = state.object_nl_get().getBytes();
             final byte[] indent = Utils.repeat(state.indent_get().getBytes(), depth + 1);
@@ -189,11 +194,12 @@ class GeneratorMethodsLoader {
             Ruby runtime = self.getRuntime();
             args = Arity.scanArgs(runtime, args, 0, 2);
             IRubyObject state = args[0];
-            IRubyObject depth = args[1];
+            IRubyObject vDepth = args[1];
             RubyString result;
 
             if (state.isNil()) {
-                result = runtime.newString();
+                int preSize = 2 + Math.min(self.size() * 4, 0);
+                result = self.getRuntime().newString(new ByteList(preSize));
                 result.cat((byte)'[');
                 result.infectBy(vSelf);
                 for (int i = 0, t = self.getLength(); i < t; i++) {
@@ -208,16 +214,17 @@ class GeneratorMethodsLoader {
                 result.cat((byte)']');
             }
             else {
+                int depth = vDepth.isNil() ? 0 : RubyNumeric.fix2int(vDepth);
                 result = transform(self, Utils.ensureState(state), depth);
             }
             result.infectBy(vSelf);
             return result;
         }
 
-        private RubyString transform(RubyArray self, GeneratorState state, IRubyObject vDepth) {
-            Ruby runtime = self.getRuntime();
-            RubyString result = runtime.newString();
-            int depth = vDepth.isNil() ? 0 : RubyNumeric.fix2int(vDepth);
+        private RubyString transform(RubyArray self, GeneratorState state, int depth) {
+            final Ruby runtime = self.getRuntime();
+            final int preSize = 2 + Math.min(self.size() * 4, 0);
+            final RubyString result = self.getRuntime().newString(new ByteList(preSize));
 
             byte[] indentUnit = state.indent_get().getBytes();
             byte[] shift = Utils.repeat(indentUnit, depth + 1);
@@ -339,10 +346,12 @@ class GeneratorMethodsLoader {
      * Basic Multilingual Plane range are encoded as a pair of surrogates.
      */
     private static Callback stringToJson = new OptionalArgsCallback() {
-        public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
+        public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
             // using convertToString as a safety guard measure
-            char[] chars = decodeString(self.convertToString());
-            RubyString result = self.getRuntime().newString();
+            RubyString self = vSelf.convertToString();
+            char[] chars = decodeString(self);
+            int preSize = 2 + self.getByteList().length();
+            RubyString result = self.getRuntime().newString(new ByteList(preSize));
             result.modify(chars.length / 2);
             result.cat((byte)'"');
             for (char c : chars) {
@@ -382,12 +391,13 @@ class GeneratorMethodsLoader {
         }
 
         private char[] decodeString(RubyString string) {
-            byte[] bytes = string.getBytes();
+            ByteList byteList = string.getByteList();
             try { // attempt to interpret string as UTF-8
                 CharsetDecoder decoder = Charset.forName("UTF-8").newDecoder();
                 decoder.onMalformedInput(CodingErrorAction.REPORT);
                 decoder.onUnmappableCharacter(CodingErrorAction.REPORT);
-                CharBuffer buffer = decoder.decode(ByteBuffer.wrap(bytes));
+                ByteBuffer byteBuffer = ByteBuffer.wrap(byteList.unsafeBytes(), byteList.begin(), byteList.length());
+                CharBuffer buffer = decoder.decode(byteBuffer);
                 char[] result = new char[buffer.length()];
                 System.arraycopy(buffer.array(), buffer.position(), result, 0, result.length);
                 return result;

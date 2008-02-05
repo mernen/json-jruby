@@ -13,6 +13,7 @@ import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * Library of miscellaneous utility functions
@@ -38,6 +39,7 @@ final class Utils {
      *         {@link RubyHash#default_value_get(IRubyObject[]) default} if not found
      */
     static IRubyObject getSymItem(RubyHash hash, String key) {
+        System.err.println("!!");
         return hash.op_aref(hash.getRuntime().newSymbol(key));
     }
 

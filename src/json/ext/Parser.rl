@@ -438,9 +438,8 @@ public class Parser extends RubyObject {
     }
 
     private RubyString stringUnescape(int start, int end) {
-        RubyString result = getRuntime().newString();
-        // XXX maybe other values would be better for preallocation?
-        result.modify(end - start);
+        int preLen = end - start;
+        RubyString result = getRuntime().newString(new ByteList(preLen));
 
         int surrogateStart = -1;
         char surrogate = 0;
