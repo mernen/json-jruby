@@ -1,5 +1,5 @@
 /build
-/lib/json/ext.jar
+/lib/json/ext/*.jar
 /nbproject/private
 *.gem
 .classpath

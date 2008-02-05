@@ -6,7 +6,7 @@
     <target name="ragel" description="Generate parser with Ragel.">
         <exec executable="ragel" failonerror="true">
             <arg value="-J"/>
-            <arg value="${basedir}/src/json/ext/Parser.rl"/>
+            <arg value="${src.dir}/json/ext/Parser.rl"/>
         </exec>
     </target>
     
@@ -15,12 +15,33 @@
     
     <target name="clean-dist">
         <delete>
-            <file file="${dist.jar}"/>
+            <file file="${generator.jar}"/>
+            <file file="${parser.jar}"/>
             <fileset dir="." includes="*.gem"/>
         </delete>
     </target>
     
     <target name="-post-clean" depends="clean-dist,ragel"/>
+    
+    <target name="-do-jar-without-manifest">
+        <mkdir dir="${lib.dir}/json/ext"/>
+        <delete>
+            <file file="${generator.jar}"/>
+            <file file="${parser.jar}"/>
+        </delete>
+        <jar destfile="${generator.jar}">
+            <fileset dir="${build.classes.dir}">
+                <include name="json/ext/Generator*.class"/>
+                <include name="json/ext/Utils*.class"/>
+            </fileset>
+        </jar>
+        <jar destfile="${parser.jar}">
+            <fileset dir="${build.classes.dir}">
+                <include name="json/ext/Parser*.class"/>
+                <include name="json/ext/Utils*.class"/>
+            </fileset>
+        </jar>
+    </target>
     
     <target name="gem" depends="jar" description="Build a RubyGem.">
         <exec executable="${jruby.dir}/bin/jruby">
