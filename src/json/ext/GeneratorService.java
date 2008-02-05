@@ -19,19 +19,19 @@ import org.jruby.runtime.load.BasicLibraryService;
  * @author mernen
  */
 public class GeneratorService implements BasicLibraryService {
-	public boolean basicLoad(Ruby runtime) throws IOException {
-		runtime.getLoadService().require("json/common");
+    public boolean basicLoad(Ruby runtime) throws IOException {
+        runtime.getLoadService().require("json/common");
 
-		RubyModule jsonModule = runtime.defineModule("JSON");
-		RubyModule jsonExtModule = jsonModule.defineModuleUnder("Ext");
-		RubyModule generatorModule = jsonExtModule.defineModuleUnder("Generator");
+        RubyModule jsonModule = runtime.defineModule("JSON");
+        RubyModule jsonExtModule = jsonModule.defineModuleUnder("Ext");
+        RubyModule generatorModule = jsonExtModule.defineModuleUnder("Generator");
 
-		RubyClass stateClass = generatorModule.defineClassUnder("State", runtime.getObject(), GeneratorState.ALLOCATOR);
-		stateClass.defineAnnotatedMethods(GeneratorState.class);
+        RubyClass stateClass = generatorModule.defineClassUnder("State", runtime.getObject(), GeneratorState.ALLOCATOR);
+        stateClass.defineAnnotatedMethods(GeneratorState.class);
 
-		RubyModule generatorMethods = generatorModule.defineModuleUnder("GeneratorMethods");
-		new GeneratorMethodsLoader(generatorMethods).load();
+        RubyModule generatorMethods = generatorModule.defineModuleUnder("GeneratorMethods");
+        new GeneratorMethodsLoader(generatorMethods).load();
 
-		return true;
-	}
+        return true;
+    }
 }
