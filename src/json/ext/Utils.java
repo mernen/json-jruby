@@ -19,11 +19,15 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 
  * @author mernen
  */
-abstract class Utils {
-    public static final String M_CIRCULAR_DATA_STRUCTURE = "JSON::CircularDatastructure";
-    public static final String M_GENERATOR_ERROR = "JSON::GeneratorError";
-    public static final String M_NESTING_ERROR = "JSON::NestingError";
-    public static final String M_PARSER_ERROR = "JSON::ParserError";
+final class Utils {
+    public static final String M_CIRCULAR_DATA_STRUCTURE = "CircularDatastructure";
+    public static final String M_GENERATOR_ERROR = "GeneratorError";
+    public static final String M_NESTING_ERROR = "NestingError";
+    public static final String M_PARSER_ERROR = "ParserError";
+
+    private Utils() {
+	    throw new RuntimeException();
+	}
 
     /**
      * Convenience method for looking up items on a {@link RubyHash Hash}
@@ -106,7 +110,7 @@ abstract class Utils {
     }
 
     static RaiseException newException(Ruby runtime, String className, String message) {
-        RubyClass klazz = (RubyClass)runtime.getClassFromPath(className);
+        RubyClass klazz = runtime.getModule("JSON").getClass(className);
         return new RaiseException(runtime, klazz, message, false);
     }
 
