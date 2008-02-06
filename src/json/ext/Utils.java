@@ -39,7 +39,6 @@ final class Utils {
      *         {@link RubyHash#default_value_get(IRubyObject[]) default} if not found
      */
     static IRubyObject getSymItem(RubyHash hash, String key) {
-        System.err.println("!!");
         return hash.op_aref(hash.getRuntime().newSymbol(key));
     }
 
@@ -141,12 +140,29 @@ final class Utils {
      *         with the given array repeated <code>n</code> times
      */
     static byte[] repeat(byte[] a, int n) {
-        int len = a.length;
-        int resultLen = len * n;
+        return repeat(a, 0, a.length, n);
+    }
+
+    static byte[] repeat(ByteList a, int n) {
+        return repeat(a.unsafeBytes(), a.begin(), a.length(), n);
+    }
+
+    static byte[] repeat(byte[] a, int begin, int length, int n) {
+        int resultLen = length * n;
         byte[] result = new byte[resultLen];
-        for (int pos = 0; pos < resultLen; pos += len) {
-            System.arraycopy(a, 0, result, pos, len);
+        for (int pos = 0; pos < resultLen; pos += length) {
+            System.arraycopy(a, begin, result, pos, length);
         }
         return result;
+    }
+
+    private static final byte[] HEX =
+            new byte[] {'0', '1', '2', '3', '4', '5', '6', '7',
+                        '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+
+    static byte[] escapeUnicode(char c) {
+        return new byte[] {
+            '\\', 'u', HEX[(c >>> 12) & 0xf], HEX[(c >>> 8) & 0xf],
+                       HEX[(c >>>  4) & 0xf], HEX[c & 0xf]};
     }
 }

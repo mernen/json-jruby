@@ -128,12 +128,12 @@ class GeneratorMethodsLoader {
         private RubyString transform(RubyHash self, final GeneratorState state, int depth) {
             Ruby runtime = self.getRuntime();
             int preSize = 2 + Math.max(self.size() * 8, 0);
-            final RubyString result = self.getRuntime().newString(new ByteList(preSize));
+            final RubyString result = runtime.newString(new ByteList(preSize));
 
-            final byte[] objectNl = state.object_nl_get().getBytes();
-            final byte[] indent = Utils.repeat(state.indent_get().getBytes(), depth + 1);
-            final byte[] spaceBefore = state.space_before_get().getBytes();
-            final byte[] space = state.space_get().getBytes();
+            final ByteList objectNl = state.object_nl_get().getByteList();
+            final byte[] indent = Utils.repeat(state.indent_get().getByteList(), depth + 1);
+            final ByteList spaceBefore = state.space_before_get().getByteList();
+            final ByteList space = state.space_get().getByteList();
             final RubyFixnum subDepth = runtime.newFixnum(depth + 1);
 
             result.cat((byte)'{');
@@ -150,7 +150,7 @@ class GeneratorMethodsLoader {
                         result.cat((byte)',');
                         result.cat(objectNl);
                     }
-                    if (objectNl.length != 0) {
+                    if (objectNl.length() != 0) {
                         result.cat(indent);
                     }
                     RubyString keyJson = Utils.toJson(key.asString(), state, subDepth);
@@ -165,7 +165,7 @@ class GeneratorMethodsLoader {
                     result.infectBy(valueJson);
                 }
             });
-            if (objectNl.length != 0) {
+            if (objectNl.length() != 0) {
                 result.cat(objectNl);
                 if (indent.length != 0) {
                     for (int i = 0; i < depth; i++) {
@@ -199,11 +199,11 @@ class GeneratorMethodsLoader {
 
             if (state.isNil()) {
                 int preSize = 2 + Math.max(self.size() * 4, 0);
-                result = self.getRuntime().newString(new ByteList(preSize));
+                result = runtime.newString(new ByteList(preSize));
                 result.cat((byte)'[');
                 result.infectBy(vSelf);
                 for (int i = 0, t = self.getLength(); i < t; i++) {
-                    IRubyObject element = self.entry(i);
+                    IRubyObject element = self.eltInternal(i);
                     result.infectBy(element);
                     if (i > 0) {
                         result.cat((byte)',');
@@ -224,17 +224,17 @@ class GeneratorMethodsLoader {
         private RubyString transform(RubyArray self, GeneratorState state, int depth) {
             final Ruby runtime = self.getRuntime();
             final int preSize = 2 + Math.max(self.size() * 4, 0);
-            final RubyString result = self.getRuntime().newString(new ByteList(preSize));
+            final RubyString result = runtime.newString(new ByteList(preSize));
 
-            byte[] indentUnit = state.indent_get().getBytes();
+            ByteList indentUnit = state.indent_get().getByteList();
             byte[] shift = Utils.repeat(indentUnit, depth + 1);
 
             result.infectBy(self);
 
-            byte[] arrayNl = state.array_nl_get().getBytes();
-            byte[] delim = new byte[1 + arrayNl.length];
+            ByteList arrayNl = state.array_nl_get().getByteList();
+            byte[] delim = new byte[1 + arrayNl.length()];
             delim[0] = ',';
-            System.arraycopy(arrayNl, 0, delim, 1, arrayNl.length);
+            System.arraycopy(arrayNl.unsafeBytes(), arrayNl.begin(), delim, 1, arrayNl.length());
 
             state.checkMaxNesting(depth + 1);
             if (state.checkCircular()) {
@@ -244,9 +244,8 @@ class GeneratorMethodsLoader {
                 result.cat(arrayNl);
 
                 boolean firstItem = true;
-                //for (IRubyObject element : self.toJavaArrayMaybeUnsafe()) {
                 for (int i = 0, t = self.getLength(); i < t; i++) {
-                    IRubyObject element = self.entry(i);
+                    IRubyObject element = self.eltInternal(i);
                     if (state.hasSeen(element)) {
                         throw Utils.newException(runtime, Utils.M_CIRCULAR_DATA_STRUCTURE,
                             "circular data structures not supported!");
@@ -263,9 +262,9 @@ class GeneratorMethodsLoader {
                     result.cat(elemJson.getByteList());
                 }
 
-                if (arrayNl.length != 0) {
+                if (arrayNl.length() != 0) {
                     result.cat(arrayNl);
-                    result.cat(shift, 0, depth * indentUnit.length);
+                    result.cat(shift, 0, depth * indentUnit.length());
                 }
 
                 result.cat((byte)']');
@@ -276,9 +275,8 @@ class GeneratorMethodsLoader {
                 result.cat((byte)'[');
                 result.cat(arrayNl);
                 boolean firstItem = true;
-                //for (IRubyObject element : self.toJavaArrayMaybeUnsafe()) {
                 for (int i = 0, t = self.getLength(); i < t; i++) {
-                    IRubyObject element = self.entry(i);
+                    IRubyObject element = self.eltInternal(i);
                     result.infectBy(element);
                     if (firstItem) {
                         firstItem = false;
@@ -291,9 +289,9 @@ class GeneratorMethodsLoader {
                     result.cat(elemJson.getByteList());
                 }
 
-                if (arrayNl.length != 0) {
+                if (arrayNl.length() != 0) {
                     result.cat(arrayNl);
-                    result.cat(shift, 0, depth * indentUnit.length);
+                    result.cat(shift, 0, depth * indentUnit.length());
                 }
 
                 result.cat((byte)']');
@@ -356,39 +354,40 @@ class GeneratorMethodsLoader {
             char[] chars = decodeString(self);
             int preSize = 2 + self.getByteList().length();
             RubyString result = self.getRuntime().newString(new ByteList(preSize));
-            result.modify(chars.length / 2);
             result.cat((byte)'"');
+            final byte[] escapeSequence = new byte[] { '\\', 0 };
             for (char c : chars) {
-                if (c == '"') {
-                    result.cat(new byte[] {'\\', '"'});
+                switch (c) {
+                    case '"':
+                    case '/':
+                    case '\\':
+                        escapeSequence[1] = (byte)c;
+                        break;
+                    case '\n':
+                        escapeSequence[1] = 'n';
+                        break;
+                    case '\r':
+                        escapeSequence[1] = 'r';
+                        break;
+                    case '\t':
+                        escapeSequence[1] = 't';
+                        break;
+                    case '\f':
+                        escapeSequence[1] = 'f';
+                        break;
+                    case '\b':
+                        escapeSequence[1] = 'b';
+                        break;
+                    default:
+                        if (c >= 0x20 && c <= 0x7f) {
+                            result.cat((byte)c);
+                        }
+                        else {
+                            result.cat(Utils.escapeUnicode(c));
+                        }
+                        continue;
                 }
-                else if (c == '\\') {
-                    result.cat(new byte[] {'\\', '\\'});
-                }
-                else if (c == '/') {
-                    result.cat(new byte[] {'\\', '/'});
-                }
-                else if (c >= 0x20 && c <= 0x7f) {
-                    result.cat((byte)c);
-                }
-                else if (c == '\n') {
-                    result.cat(new byte[] {'\\', 'n'});
-                }
-                else if (c == '\r') {
-                    result.cat(new byte[] {'\\', 'r'});
-                }
-                else if (c == '\t') {
-                    result.cat(new byte[] {'\\', 't'});
-                }
-                else if (c == '\f') {
-                    result.cat(new byte[] {'\\', 'f'});
-                }
-                else if (c == '\b') {
-                    result.cat(new byte[] {'\\', 'b'});
-                }
-                else {
-                    result.cat(escapeUnicode(c));
-                }
+                result.cat(escapeSequence);
             }
             result.cat((byte)'"');
             return result;
@@ -419,14 +418,6 @@ class GeneratorMethodsLoader {
                 throw Utils.newException(string.getRuntime(), Utils.M_GENERATOR_ERROR,
                     "source sequence is illegal/malformed");
             }
-        }
-
-        private byte[] escapeUnicode(char c) {
-            final byte[] hex = new byte[] {'0', '1', '2', '3', '4', '5', '6', '7',
-                                           '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-            return new byte[] {
-                '\\', 'u', hex[(c >>> 12) & 0xf], hex[(c >>> 8) & 0xf],
-                           hex[(c >>>  4) & 0xf], hex[c & 0xf]};
         }
     };
 
@@ -461,10 +452,11 @@ class GeneratorMethodsLoader {
                 runtime.getModule("JSON").callMethod(runtime.getCurrentContext(), "create_id");
             result.op_aset(createId, vSelf.getMetaClass().to_s());
 
-            byte[] bytes = self.getBytes();
-            RubyArray array = runtime.newArray(bytes.length);
-            for (int i = 0; i < bytes.length; i++) {
-                array.store(i, runtime.newFixnum(bytes[i] & 0xff));
+            ByteList bl = self.getByteList();
+            byte[] uBytes = bl.unsafeBytes();
+            RubyArray array = runtime.newArray(bl.length());
+            for (int i = bl.begin(), t = bl.begin() + bl.length(); i < t; i++) {
+                array.store(i, runtime.newFixnum(uBytes[i] & 0xff));
             }
 
             result.op_aset(runtime.newString("raw"), array);
