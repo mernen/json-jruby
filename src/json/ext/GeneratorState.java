@@ -6,6 +6,7 @@
  */
 package json.ext;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -66,10 +67,11 @@ public class GeneratorState extends RubyObject {
      */
     private boolean checkCircular;
     /**
-     * Internal set of objects that are currently on the stack of inspection.
+     * Internal set of hashes of objects that are currently on the stack of
+     * inspection.
      * Used to detect circular references.
      */
-    private Set<Long> seen;
+    private final Set<Integer> seen = Collections.synchronizedSet(new HashSet<Integer>());
     /**
      * The maximum level of nesting of structures allowed.
      * <code>0</code> means disabled.
@@ -173,7 +175,6 @@ public class GeneratorState extends RubyObject {
         else {
             configure(args[0]);
         }
-        seen = new HashSet<Long>();
         return this;
     }
 
@@ -261,18 +262,6 @@ public class GeneratorState extends RubyObject {
     }
 
     /**
-     * Convenience method for the "seen" methods.
-     * @param object The object to process
-     * @return The object's Ruby ID
-     * @see #hasSeen(IRubyObject)
-     * @see #remember(IRubyObject)
-     * @see #forget(IRubyObject)
-     */
-    private static long getId(IRubyObject object) {
-        return object.getRuntime().getObjectSpace().idOf(object);
-    }
-
-    /**
      * Checks whether an object is part of the current chain of recursive JSON
      * generation.
      * @param object The object to check
@@ -280,7 +269,7 @@ public class GeneratorState extends RubyObject {
      *         JSON generation or not
      */
     public boolean hasSeen(IRubyObject object) {
-        return seen.contains(getId(object));
+        return seen.contains(System.identityHashCode(object));
     }
 
     /**
@@ -299,7 +288,7 @@ public class GeneratorState extends RubyObject {
      * @param object The object being inspected
      */
     public void remember(IRubyObject object) {
-        seen.add(getId(object));
+        seen.add(System.identityHashCode(object));
     }
 
     /**
@@ -313,7 +302,7 @@ public class GeneratorState extends RubyObject {
     }
 
     public boolean forget(IRubyObject object) {
-        return seen.remove(getId(object));
+        return seen.remove(System.identityHashCode(object));
     }
 
     /**
