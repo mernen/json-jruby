@@ -27,8 +27,8 @@ final class Utils {
     public static final String M_PARSER_ERROR = "ParserError";
 
     private Utils() {
-	    throw new RuntimeException();
-	}
+        throw new RuntimeException();
+    }
 
     /**
      * Convenience method for looking up items on a {@link RubyHash Hash}
