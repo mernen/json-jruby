@@ -9,9 +9,11 @@ package json.ext;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyException;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
@@ -111,8 +113,20 @@ final class Utils {
     }
 
     static RaiseException newException(Ruby runtime, String className, String message) {
+        return newException(runtime, className, runtime.newString(message));
+    }
+
+    static RaiseException newException(Ruby runtime, String className,
+                                       String messageBegin, ByteList messageEnd) {
+        RubyString msg = runtime.newString(messageBegin).cat(messageEnd);
+        return newException(runtime, className, msg);
+    }
+
+    static RaiseException newException(Ruby runtime, String className, RubyString message) {
         RubyClass klazz = runtime.getModule("JSON").getClass(className);
-        return new RaiseException(runtime, klazz, message, false);
+        RubyException excptn =
+            (RubyException)klazz.newInstance(new IRubyObject[] {message}, Block.NULL_BLOCK);
+        return new RaiseException(excptn);
     }
 
     /**
