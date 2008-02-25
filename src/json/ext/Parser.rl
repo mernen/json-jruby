@@ -64,7 +64,7 @@ public class Parser extends RubyObject {
      * <code>ParserResult</code> when successful, or <code>null</code> when
      * there's a problem with the input data.
      */
-    static class ParserResult {
+    static final class ParserResult {
         /**
          * The result of the successful parsing. Should never be
          * <code>null</code>.
@@ -353,14 +353,16 @@ public class Parser extends RubyObject {
         int memo = p;
         %% write exec;
 
-        if (cs >= JSON_integer_first_final) {
-            RubyString expr = getRuntime().newString((ByteList)source.subSequence(memo, p - 1));
-            RubyInteger number = RubyNumeric.str2inum(getRuntime(), expr, 10, true);
-            return new ParserResult(number, p + 1);
-        }
-        else {
+        if (cs < JSON_integer_first_final) {
             return null;
         }
+
+        ByteList num = (ByteList)source.subSequence(memo, p - 1);
+        // note: this is actually a shared string, but since it is temporary and
+        //       read-only, it doesn't really matter
+        RubyString expr = RubyString.newStringLight(getRuntime(), num);
+        RubyInteger number = RubyNumeric.str2inum(getRuntime(), expr, 10, true);
+        return new ParserResult(number, p + 1);
     }
 
     %%{
@@ -384,14 +386,16 @@ public class Parser extends RubyObject {
         int memo = p;
         %% write exec;
 
-        if (cs >= JSON_float_first_final) {
-            RubyString expr = getRuntime().newString((ByteList)source.subSequence(memo, p - 1));
-            RubyFloat number = RubyNumeric.str2fnum(getRuntime(), expr, true);
-            return new ParserResult(number, p + 1);
-        }
-        else {
+        if (cs < JSON_float_first_final) {
             return null;
         }
+
+        ByteList num = (ByteList)source.subSequence(memo, p - 1);
+        // note: this is actually a shared string, but since it is temporary and
+        //       read-only, it doesn't really matter
+        RubyString expr = RubyString.newStringLight(getRuntime(), num);
+        RubyFloat number = RubyNumeric.str2fnum(getRuntime(), expr, true);
+        return new ParserResult(number, p + 1);
     }
 
     %%{
@@ -641,7 +645,7 @@ public class Parser extends RubyObject {
                 fbreak;
             }
             else {
-                lastName = res.result;
+                lastName = (RubyString)res.result;
                 fexec res.p - 1 /*+1*/;
             }
         }
@@ -660,7 +664,7 @@ public class Parser extends RubyObject {
 
     ParserResult parseObject(byte[] data, int p, int pe) {
         int cs = EVIL;
-        IRubyObject lastName = null;
+        RubyString lastName = null;
         Ruby runtime = getRuntime();
 
         if (maxNesting > 0 && currentNesting > maxNesting) {
@@ -673,42 +677,41 @@ public class Parser extends RubyObject {
         %% write init;
         %% write exec;
 
-        if (cs >= JSON_object_first_final) {
-            IRubyObject returnedResult = result;
-
-            // attempt to de-serialize object
-            if (createId != null) {
-                IRubyObject vKlassName = result.op_aref(createId);
-                if (!vKlassName.isNil()) {
-                    String klassName = vKlassName.asJavaString();
-                    RubyModule klass;
-                    try {
-                        klass = runtime.getClassFromPath(klassName);
-                    }
-                    catch (RaiseException e) {
-                        if (runtime.getClass("NameError").isInstance(e.getException())) {
-                            // invalid class path, but we're supposed to return ArgumentError
-                            throw runtime.newArgumentError("undefined class/module " +
-                                                           klassName);
-                        }
-                        else {
-                            // some other exception; let it propagate
-                            throw e;
-                        }
-                    }
-                    ThreadContext context = runtime.getCurrentContext();
-                    if (klass.respondsTo("json_creatable?") &&
-                        klass.callMethod(context, "json_creatable?").isTrue()) {
-
-                        returnedResult = klass.callMethod(context, "json_create", result);
-                    }
-                }
-            }
-            return new ParserResult(returnedResult, p /*+1*/);
-        }
-        else {
+        if (cs < JSON_object_first_final) {
             return null;
         }
+
+        IRubyObject returnedResult = result;
+
+        // attempt to de-serialize object
+        if (createId != null) {
+            IRubyObject vKlassName = result.op_aref(createId);
+            if (!vKlassName.isNil()) {
+                String klassName = vKlassName.asJavaString();
+                RubyModule klass;
+                try {
+                    klass = runtime.getClassFromPath(klassName);
+                }
+                catch (RaiseException e) {
+                    if (runtime.getClass("NameError").isInstance(e.getException())) {
+                        // invalid class path, but we're supposed to throw ArgumentError
+                        throw runtime.newArgumentError(
+                            "undefined class/module " + klassName);
+                    }
+                    else {
+                        // some other exception; let it propagate
+                        throw e;
+                    }
+                }
+                ThreadContext context = runtime.getCurrentContext();
+                if (klass.respondsTo("json_creatable?") &&
+                    klass.callMethod(context, "json_creatable?").isTrue()) {
+
+                    returnedResult = klass.callMethod(context, "json_create", result);
+                }
+            }
+        }
+        return new ParserResult(returnedResult, p /*+1*/);
     }
 
     %%{
