@@ -41,7 +41,8 @@ final class Utils {
      *         {@link RubyHash#default_value_get(IRubyObject[]) default} if not found
      */
     static IRubyObject getSymItem(RubyHash hash, String key) {
-        return hash.op_aref(hash.getRuntime().newSymbol(key));
+        return hash.op_aref(hash.getRuntime().getCurrentContext(),
+                            hash.getRuntime().newSymbol(key));
     }
 
     /**
@@ -125,7 +126,9 @@ final class Utils {
     static RaiseException newException(Ruby runtime, String className, RubyString message) {
         RubyClass klazz = runtime.getModule("JSON").getClass(className);
         RubyException excptn =
-            (RubyException)klazz.newInstance(new IRubyObject[] {message}, Block.NULL_BLOCK);
+            (RubyException)klazz.newInstance(runtime.getCurrentContext(),
+                                             new IRubyObject[] {message},
+                                             Block.NULL_BLOCK);
         return new RaiseException(excptn);
     }
 

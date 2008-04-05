@@ -41,7 +41,6 @@ import org.jruby.util.ByteList;
  */
 public class Parser extends RubyObject {
     private RubyString vSource;
-    private int len;
     private RubyString createId;
     private int maxNesting;
     private boolean allowNaN;
@@ -164,9 +163,7 @@ public class Parser extends RubyObject {
             this.createId = getCreateId();
         }
 
-        this.len = len;
         this.vSource = source;
-
         return this;
     }
 
@@ -178,7 +175,7 @@ public class Parser extends RubyObject {
      */
     @JRubyMethod(name = "parse")
     public IRubyObject parse() {
-        return new ParserSession(this, vSource).parse();
+        return new ParserSession(this).parse();
     }
 
     /**
@@ -222,10 +219,10 @@ public class Parser extends RubyObject {
         // no idea about the origins of this value, ask Flori ;)
         private static final int EVIL = 0x666;
 
-        private ParserSession(Parser parser, RubyString source) {
+        private ParserSession(Parser parser) {
             this.parser = parser;
             runtime = parser.getRuntime();
-            byteList = source.getByteList();
+            byteList = parser.vSource.getByteList();
             data = byteList.unsafeBytes();
         }
 
@@ -737,7 +734,7 @@ public class Parser extends RubyObject {
 
             // attempt to de-serialize object
             if (parser.createId != null) {
-                IRubyObject vKlassName = result.op_aref(parser.createId);
+                IRubyObject vKlassName = result.op_aref(runtime.getCurrentContext(), parser.createId);
                 if (!vKlassName.isNil()) {
                     String klassName = vKlassName.asJavaString();
                     RubyModule klass;
