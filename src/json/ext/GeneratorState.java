@@ -67,11 +67,10 @@ public class GeneratorState extends RubyObject {
      */
     private boolean checkCircular;
     /**
-     * Internal set of hashes of objects that are currently on the stack of
-     * inspection.
+     * Internal set of objects that are currently on the stack of inspection.
      * Used to detect circular references.
      */
-    private final Set<Integer> seen = Collections.synchronizedSet(new HashSet<Integer>());
+    private final Set<Long> seen = new HashSet<Long>();
     /**
      * The maximum level of nesting of structures allowed.
      * <code>0</code> means disabled.
@@ -261,6 +260,18 @@ public class GeneratorState extends RubyObject {
         return getRuntime().newBoolean(allowNaN);
     }
 
+     /**
+     * Convenience method for the "seen" methods.
+     * @param object The object to process
+     * @return The object's Ruby ID
+     * @see #hasSeen(IRubyObject)
+     * @see #remember(IRubyObject)
+     * @see #forget(IRubyObject)
+     */
+    private static long getId(IRubyObject object) {
+        return object.getRuntime().getObjectSpace().idOf(object);
+    }
+
     /**
      * Checks whether an object is part of the current chain of recursive JSON
      * generation.
@@ -269,7 +280,7 @@ public class GeneratorState extends RubyObject {
      *         JSON generation or not
      */
     public boolean hasSeen(IRubyObject object) {
-        return seen.contains(System.identityHashCode(object));
+        return seen.contains(getId(object));
     }
 
     /**
@@ -288,7 +299,7 @@ public class GeneratorState extends RubyObject {
      * @param object The object being inspected
      */
     public void remember(IRubyObject object) {
-        seen.add(System.identityHashCode(object));
+        seen.add(getId(object));
     }
 
     /**
@@ -302,7 +313,7 @@ public class GeneratorState extends RubyObject {
     }
 
     public boolean forget(IRubyObject object) {
-        return seen.remove(System.identityHashCode(object));
+        return seen.remove(getId(object));
     }
 
     /**
