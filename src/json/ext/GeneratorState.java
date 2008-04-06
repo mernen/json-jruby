@@ -347,7 +347,7 @@ public class GeneratorState extends RubyObject {
         if (vObjectNl != null) objectNl = vObjectNl;
 
         IRubyObject vCheckCircular = Utils.fastGetSymItem(opts, "check_circular");
-        checkCircular = vCheckCircular == null ? true : vCheckCircular.isTrue();
+        checkCircular = vCheckCircular == null || vCheckCircular.isTrue();
 
         IRubyObject vMaxNesting = Utils.fastGetSymItem(opts, "max_nesting");
         if (vMaxNesting != null) {
