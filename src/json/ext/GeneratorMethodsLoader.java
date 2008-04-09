@@ -51,7 +51,7 @@ class GeneratorMethodsLoader {
      * that can also be used to configure the produced JSON string output further.
      * <p><code>depth</code> is used to find the nesting depth, to indent accordingly.
      */
-    private static Callback hashToJson = new OptionalArgsCallback() {
+    private static Callback HASH_TO_JSON = new OptionalArgsCallback() {
         public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
             RubyHash self = vSelf.convertToHash();
             Ruby runtime = self.getRuntime();
@@ -188,7 +188,7 @@ class GeneratorMethodsLoader {
      * that can also be used to configure the produced JSON string output further.
      * <p><code>depth</code> is used to find the nesting depth, to indent accordingly.
      */
-    private static Callback arrayToJson = new OptionalArgsCallback() {
+    private static Callback ARRAY_TO_JSON = new OptionalArgsCallback() {
         public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
             RubyArray self = Utils.ensureArray(vSelf);
             Ruby runtime = self.getRuntime();
@@ -306,7 +306,7 @@ class GeneratorMethodsLoader {
      * 
      * <p>Returns a JSON string representation for this Integer number.
      */
-    private static Callback integerToJson = new OptionalArgsCallback() {
+    private static Callback INTEGER_TO_JSON = new OptionalArgsCallback() {
         public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
             return recv.callMethod(recv.getRuntime().getCurrentContext(), "to_s");
         }
@@ -319,7 +319,7 @@ class GeneratorMethodsLoader {
      * <p><code>state</code> is a {@link GeneratorState JSON::State} object,
      * that can also be used to configure the produced JSON string output further.
      */
-    private static Callback floatToJson = new OptionalArgsCallback() {
+    private static Callback FLOAT_TO_JSON = new OptionalArgsCallback() {
         public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
             double value = RubyFloat.num2dbl(vSelf);
 
@@ -347,7 +347,7 @@ class GeneratorMethodsLoader {
      * escaped as <code>\\u????</code> escape sequences. Characters outside the
      * Basic Multilingual Plane range are encoded as a pair of surrogates.
      */
-    private static Callback stringToJson = new OptionalArgsCallback() {
+    private static Callback STRING_TO_JSON = new OptionalArgsCallback() {
         public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
             // using convertToString as a safety guard measure
             RubyString self = vSelf.convertToString();
@@ -425,12 +425,12 @@ class GeneratorMethodsLoader {
      * <code>{@link RubyString String}#to_json_raw(*)</code>
      * 
      * <p>This method creates a JSON text from the result of a call to
-     * {@link stringToJsonRawObject to_json_raw_object} of this String.
+     * {@link STRING_TO_JSON_RAW_OBJECT to_json_raw_object} of this String.
      */
-    private static Callback stringToJsonRaw = new OptionalArgsCallback() {
+    private static Callback STRING_TO_JSON_RAW = new OptionalArgsCallback() {
         public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
-            IRubyObject obj = stringToJsonRawObject.execute(vSelf, args, block);
-            return hashToJson.execute(obj, args, block);
+            IRubyObject obj = STRING_TO_JSON_RAW_OBJECT.execute(vSelf, args, block);
+            return HASH_TO_JSON.execute(obj, args, block);
         }
     };
 
@@ -442,7 +442,7 @@ class GeneratorMethodsLoader {
      * be used if you want to convert raw strings to JSON instead of UTF-8
      * strings, e.g. binary data.
      */
-    private static Callback stringToJsonRawObject = new OptionalArgsCallback() {
+    private static Callback STRING_TO_JSON_RAW_OBJECT = new OptionalArgsCallback() {
         public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
             RubyString self = vSelf.convertToString();
             Ruby runtime = self.getRuntime();
@@ -543,9 +543,9 @@ class GeneratorMethodsLoader {
      * This is a fallback, if no special method <code>#to_json</code> was
      * defined for some object.
      */
-    private static Callback objectToJson = new OptionalArgsCallback() {
+    private static Callback OBJECT_TO_JSON = new OptionalArgsCallback() {
         public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-            return stringToJson.execute(recv.asString(), args, block);
+            return STRING_TO_JSON.execute(recv.asString(), args, block);
         }
     };
 
@@ -562,19 +562,19 @@ class GeneratorMethodsLoader {
      * Performs the generation of all submodules and methods.
      */
     void load() {
-        defineToJson("Object", objectToJson);
+        defineToJson("Object", OBJECT_TO_JSON);
 
-        defineToJson("Hash", hashToJson);
+        defineToJson("Hash", HASH_TO_JSON);
 
-        defineToJson("Array", arrayToJson);
+        defineToJson("Array", ARRAY_TO_JSON);
 
-        defineToJson("Integer", integerToJson);
+        defineToJson("Integer", INTEGER_TO_JSON);
 
-        defineToJson("Float", floatToJson);
+        defineToJson("Float", FLOAT_TO_JSON);
 
-        defineToJson("String", stringToJson);
-        defineMethod("String", "to_json_raw", stringToJsonRaw);
-        defineMethod("String", "to_json_raw_object", stringToJsonRawObject);
+        defineToJson("String", STRING_TO_JSON);
+        defineMethod("String", "to_json_raw", STRING_TO_JSON_RAW);
+        defineMethod("String", "to_json_raw_object", STRING_TO_JSON_RAW_OBJECT);
 
         RubyModule stringModule = parentModule.defineModuleUnder("String");
         final RubyModule stringExtend = stringModule.defineModuleUnder("Extend");
