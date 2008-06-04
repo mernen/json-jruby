@@ -1,16 +1,18 @@
 JSON-JRuby
 ==========
 
-JSON-JRuby is a port of Florian Frank's native [`json` library](http://json.rubyforge.org/) to JRuby.
+JSON-JRuby is a port of Florian Frank's native
+[`json` library](http://json.rubyforge.org/) to JRuby.
 It aims to be a perfect drop-in replacement for `json_pure`.
 
 
 Development version
 ===================
 
-The latest version is available from the [Git](http://git.or.cz/) repository:
+The latest version is available from the
+[Git repository](http://github.com/mernen/json-jruby/tree):
 
-    git clone git://rubyforge.org/json-jruby.git
+    git clone git://github.com/mernen/json-jruby.git
 
 
 Compiling
