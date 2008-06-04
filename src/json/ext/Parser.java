@@ -307,7 +307,7 @@ private static byte[] init__JSON_value_index_offsets_0()
 private static final byte _JSON_value_index_offsets[] = init__JSON_value_index_offsets_0();
 
 
-private static byte[] init__JSON_value_trans_targs_wi_0()
+private static byte[] init__JSON_value_trans_targs_0()
 {
 	return new byte [] {
 	   21,   21,    2,    9,   21,   11,   15,   18,   21,   21,    0,    3,
@@ -318,10 +318,10 @@ private static byte[] init__JSON_value_trans_targs_wi_0()
 	};
 }
 
-private static final byte _JSON_value_trans_targs_wi[] = init__JSON_value_trans_targs_wi_0();
+private static final byte _JSON_value_trans_targs[] = init__JSON_value_trans_targs_0();
 
 
-private static byte[] init__JSON_value_trans_actions_wi_0()
+private static byte[] init__JSON_value_trans_actions_0()
 {
 	return new byte [] {
 	   13,   11,    0,    0,   15,    0,    0,    0,   17,   11,    0,    0,
@@ -332,7 +332,7 @@ private static byte[] init__JSON_value_trans_actions_wi_0()
 	};
 }
 
-private static final byte _JSON_value_trans_actions_wi[] = init__JSON_value_trans_actions_wi_0();
+private static final byte _JSON_value_trans_actions[] = init__JSON_value_trans_actions_0();
 
 
 private static byte[] init__JSON_value_from_state_actions_0()
@@ -450,10 +450,10 @@ case 1:
 	}
 	} while (false);
 
-	cs = _JSON_value_trans_targs_wi[_trans];
+	cs = _JSON_value_trans_targs[_trans];
 
-	if ( _JSON_value_trans_actions_wi[_trans] != 0 ) {
-		_acts = _JSON_value_trans_actions_wi[_trans];
+	if ( _JSON_value_trans_actions[_trans] != 0 ) {
+		_acts = _JSON_value_trans_actions[_trans];
 		_nacts = (int) _JSON_value_actions[_acts++];
 		while ( _nacts-- > 0 )
 	{
@@ -672,24 +672,24 @@ private static byte[] init__JSON_integer_indicies_0()
 private static final byte _JSON_integer_indicies[] = init__JSON_integer_indicies_0();
 
 
-private static byte[] init__JSON_integer_trans_targs_wi_0()
+private static byte[] init__JSON_integer_trans_targs_0()
 {
 	return new byte [] {
 	    2,    0,    3,    4,    5
 	};
 }
 
-private static final byte _JSON_integer_trans_targs_wi[] = init__JSON_integer_trans_targs_wi_0();
+private static final byte _JSON_integer_trans_targs[] = init__JSON_integer_trans_targs_0();
 
 
-private static byte[] init__JSON_integer_trans_actions_wi_0()
+private static byte[] init__JSON_integer_trans_actions_0()
 {
 	return new byte [] {
 	    0,    0,    0,    0,    1
 	};
 }
 
-private static final byte _JSON_integer_trans_actions_wi[] = init__JSON_integer_trans_actions_wi_0();
+private static final byte _JSON_integer_trans_actions[] = init__JSON_integer_trans_actions_0();
 
 
 static final int JSON_integer_start = 1;
@@ -783,10 +783,10 @@ case 1:
 	} while (false);
 
 	_trans = _JSON_integer_indicies[_trans];
-	cs = _JSON_integer_trans_targs_wi[_trans];
+	cs = _JSON_integer_trans_targs[_trans];
 
-	if ( _JSON_integer_trans_actions_wi[_trans] != 0 ) {
-		_acts = _JSON_integer_trans_actions_wi[_trans];
+	if ( _JSON_integer_trans_actions[_trans] != 0 ) {
+		_acts = _JSON_integer_trans_actions[_trans];
 		_nacts = (int) _JSON_integer_actions[_acts++];
 		while ( _nacts-- > 0 )
 	{
@@ -905,24 +905,24 @@ private static byte[] init__JSON_float_indicies_0()
 private static final byte _JSON_float_indicies[] = init__JSON_float_indicies_0();
 
 
-private static byte[] init__JSON_float_trans_targs_wi_0()
+private static byte[] init__JSON_float_trans_targs_0()
 {
 	return new byte [] {
 	    2,    0,    3,    9,    4,    6,    5,   10,    7,    8
 	};
 }
 
-private static final byte _JSON_float_trans_targs_wi[] = init__JSON_float_trans_targs_wi_0();
+private static final byte _JSON_float_trans_targs[] = init__JSON_float_trans_targs_0();
 
 
-private static byte[] init__JSON_float_trans_actions_wi_0()
+private static byte[] init__JSON_float_trans_actions_0()
 {
 	return new byte [] {
 	    0,    0,    0,    0,    0,    0,    0,    1,    0,    0
 	};
 }
 
-private static final byte _JSON_float_trans_actions_wi[] = init__JSON_float_trans_actions_wi_0();
+private static final byte _JSON_float_trans_actions[] = init__JSON_float_trans_actions_0();
 
 
 static final int JSON_float_start = 1;
@@ -1016,10 +1016,10 @@ case 1:
 	} while (false);
 
 	_trans = _JSON_float_indicies[_trans];
-	cs = _JSON_float_trans_targs_wi[_trans];
+	cs = _JSON_float_trans_targs[_trans];
 
-	if ( _JSON_float_trans_actions_wi[_trans] != 0 ) {
-		_acts = _JSON_float_trans_actions_wi[_trans];
+	if ( _JSON_float_trans_actions[_trans] != 0 ) {
+		_acts = _JSON_float_trans_actions[_trans];
 		_nacts = (int) _JSON_float_actions[_acts++];
 		while ( _nacts-- > 0 )
 	{
@@ -1138,24 +1138,24 @@ private static byte[] init__JSON_string_indicies_0()
 private static final byte _JSON_string_indicies[] = init__JSON_string_indicies_0();
 
 
-private static byte[] init__JSON_string_trans_targs_wi_0()
+private static byte[] init__JSON_string_trans_targs_0()
 {
 	return new byte [] {
 	    2,    0,    8,    3,    4,    5,    6,    7
 	};
 }
 
-private static final byte _JSON_string_trans_targs_wi[] = init__JSON_string_trans_targs_wi_0();
+private static final byte _JSON_string_trans_targs[] = init__JSON_string_trans_targs_0();
 
 
-private static byte[] init__JSON_string_trans_actions_wi_0()
+private static byte[] init__JSON_string_trans_actions_0()
 {
 	return new byte [] {
 	    0,    0,    1,    0,    0,    0,    0,    0
 	};
 }
 
-private static final byte _JSON_string_trans_actions_wi[] = init__JSON_string_trans_actions_wi_0();
+private static final byte _JSON_string_trans_actions[] = init__JSON_string_trans_actions_0();
 
 
 static final int JSON_string_start = 1;
@@ -1250,10 +1250,10 @@ case 1:
 	} while (false);
 
 	_trans = _JSON_string_indicies[_trans];
-	cs = _JSON_string_trans_targs_wi[_trans];
+	cs = _JSON_string_trans_targs[_trans];
 
-	if ( _JSON_string_trans_actions_wi[_trans] != 0 ) {
-		_acts = _JSON_string_trans_actions_wi[_trans];
+	if ( _JSON_string_trans_actions[_trans] != 0 ) {
+		_acts = _JSON_string_trans_actions[_trans];
 		_nacts = (int) _JSON_string_actions[_acts++];
 		while ( _nacts-- > 0 )
 	{
@@ -1520,7 +1520,7 @@ private static byte[] init__JSON_array_indicies_0()
 private static final byte _JSON_array_indicies[] = init__JSON_array_indicies_0();
 
 
-private static byte[] init__JSON_array_trans_targs_wi_0()
+private static byte[] init__JSON_array_trans_targs_0()
 {
 	return new byte [] {
 	    2,    0,    3,   13,   17,    3,    4,    9,    5,    6,    8,    7,
@@ -1528,10 +1528,10 @@ private static byte[] init__JSON_array_trans_targs_wi_0()
 	};
 }
 
-private static final byte _JSON_array_trans_targs_wi[] = init__JSON_array_trans_targs_wi_0();
+private static final byte _JSON_array_trans_targs[] = init__JSON_array_trans_targs_0();
 
 
-private static byte[] init__JSON_array_trans_actions_wi_0()
+private static byte[] init__JSON_array_trans_actions_0()
 {
 	return new byte [] {
 	    0,    0,    1,    0,    3,    0,    0,    0,    0,    0,    0,    0,
@@ -1539,7 +1539,7 @@ private static byte[] init__JSON_array_trans_actions_wi_0()
 	};
 }
 
-private static final byte _JSON_array_trans_actions_wi[] = init__JSON_array_trans_actions_wi_0();
+private static final byte _JSON_array_trans_actions[] = init__JSON_array_trans_actions_0();
 
 
 static final int JSON_array_start = 1;
@@ -1639,10 +1639,10 @@ case 1:
 	} while (false);
 
 	_trans = _JSON_array_indicies[_trans];
-	cs = _JSON_array_trans_targs_wi[_trans];
+	cs = _JSON_array_trans_targs[_trans];
 
-	if ( _JSON_array_trans_actions_wi[_trans] != 0 ) {
-		_acts = _JSON_array_trans_actions_wi[_trans];
+	if ( _JSON_array_trans_actions[_trans] != 0 ) {
+		_acts = _JSON_array_trans_actions[_trans];
 		_nacts = (int) _JSON_array_actions[_acts++];
 		while ( _nacts-- > 0 )
 	{
@@ -1787,7 +1787,7 @@ private static byte[] init__JSON_object_indicies_0()
 private static final byte _JSON_object_indicies[] = init__JSON_object_indicies_0();
 
 
-private static byte[] init__JSON_object_trans_targs_wi_0()
+private static byte[] init__JSON_object_trans_targs_0()
 {
 	return new byte [] {
 	    2,    0,    3,   23,   27,    3,    4,    8,    5,    7,    6,    9,
@@ -1796,10 +1796,10 @@ private static byte[] init__JSON_object_trans_targs_wi_0()
 	};
 }
 
-private static final byte _JSON_object_trans_targs_wi[] = init__JSON_object_trans_targs_wi_0();
+private static final byte _JSON_object_trans_targs[] = init__JSON_object_trans_targs_0();
 
 
-private static byte[] init__JSON_object_trans_actions_wi_0()
+private static byte[] init__JSON_object_trans_actions_0()
 {
 	return new byte [] {
 	    0,    0,    3,    0,    5,    0,    0,    0,    0,    0,    0,    1,
@@ -1808,7 +1808,7 @@ private static byte[] init__JSON_object_trans_actions_wi_0()
 	};
 }
 
-private static final byte _JSON_object_trans_actions_wi[] = init__JSON_object_trans_actions_wi_0();
+private static final byte _JSON_object_trans_actions[] = init__JSON_object_trans_actions_0();
 
 
 static final int JSON_object_start = 1;
@@ -1909,10 +1909,10 @@ case 1:
 	} while (false);
 
 	_trans = _JSON_object_indicies[_trans];
-	cs = _JSON_object_trans_targs_wi[_trans];
+	cs = _JSON_object_trans_targs[_trans];
 
-	if ( _JSON_object_trans_actions_wi[_trans] != 0 ) {
-		_acts = _JSON_object_trans_actions_wi[_trans];
+	if ( _JSON_object_trans_actions[_trans] != 0 ) {
+		_acts = _JSON_object_trans_actions[_trans];
 		_nacts = (int) _JSON_object_actions[_acts++];
 		while ( _nacts-- > 0 )
 	{
@@ -2081,7 +2081,7 @@ private static byte[] init__JSON_indicies_0()
 private static final byte _JSON_indicies[] = init__JSON_indicies_0();
 
 
-private static byte[] init__JSON_trans_targs_wi_0()
+private static byte[] init__JSON_trans_targs_0()
 {
 	return new byte [] {
 	    1,    0,    2,   10,   10,    3,    5,    4,    7,    9,    8,   10,
@@ -2089,10 +2089,10 @@ private static byte[] init__JSON_trans_targs_wi_0()
 	};
 }
 
-private static final byte _JSON_trans_targs_wi[] = init__JSON_trans_targs_wi_0();
+private static final byte _JSON_trans_targs[] = init__JSON_trans_targs_0();
 
 
-private static byte[] init__JSON_trans_actions_wi_0()
+private static byte[] init__JSON_trans_actions_0()
 {
 	return new byte [] {
 	    0,    0,    0,    3,    1,    0,    0,    0,    0,    0,    0,    0,
@@ -2100,7 +2100,7 @@ private static byte[] init__JSON_trans_actions_wi_0()
 	};
 }
 
-private static final byte _JSON_trans_actions_wi[] = init__JSON_trans_actions_wi_0();
+private static final byte _JSON_trans_actions[] = init__JSON_trans_actions_0();
 
 
 static final int JSON_start = 1;
@@ -2197,10 +2197,10 @@ case 1:
 	} while (false);
 
 	_trans = _JSON_indicies[_trans];
-	cs = _JSON_trans_targs_wi[_trans];
+	cs = _JSON_trans_targs[_trans];
 
-	if ( _JSON_trans_actions_wi[_trans] != 0 ) {
-		_acts = _JSON_trans_actions_wi[_trans];
+	if ( _JSON_trans_actions[_trans] != 0 ) {
+		_acts = _JSON_trans_actions[_trans];
 		_nacts = (int) _JSON_actions[_acts++];
 		while ( _nacts-- > 0 )
 	{
