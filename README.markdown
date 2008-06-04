@@ -19,4 +19,15 @@ Compiling
 =========
 
 You'll need JRuby version 1.1.1 or greater to build JSON-JRuby.
-Its path must be set on the `jruby.dir` property of `nbproject/project.properties` (defaults to `../jruby`).
+Its path must be set on the `jruby.dir` property of
+`nbproject/project.properties` (defaults to `../jruby`).
+
+Additionally, you'll need [Ant](http://ant.apache.org/), and
+[Ragel](http://www.cs.queensu.ca/~thurston/ragel/) 6.0 or greater.
+
+Then, from the folder where the sources are located, type:
+
+    ant clean jar
+
+to clean any leftovers from previous builds and generate the `.jar` files.
+To generate a RubyGem, specify the `gem` action rather than `jar`.
