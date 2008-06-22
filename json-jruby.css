@@ -1,0 +1,92 @@
+html {
+	background-color: #102044;
+	color: White;
+}
+body {
+	font-family: Helvetica, FreeSans, "Liberation Sans", Arial, sans-serif;
+	font-size: 90%;
+	line-height: 1.4;
+
+	margin: 0.3em auto;
+	padding: 1em 2em;
+	width: 90%;
+	max-width: 40em;
+	background-color: White;
+	color: #222222;
+}
+
+#contents a:link,
+#contents a:visited {
+	text-decoration: underline;
+}
+#contents a:link {
+	color: #112266;
+}
+#contents a:visited {
+	color: #666688;
+}
+#contents a:hover {
+	color: #113399;
+}
+
+.downgrade {
+	display: none;
+}
+
+#latest {
+	float: right;
+	margin: -1.44444em -2.55555em 0.5em 1em;
+	font-size: 90%;
+	text-align: center;
+	width: 9.5em;
+	background-color: White;
+	border-left: 0.33333em solid #102044;
+	border-bottom: 0.33333em solid #102044;
+	position: relative; /* IE6 magic */
+}
+#latest-link {
+	display: block;
+	padding: 0.5em;
+	text-decoration: none;
+	color: Black;
+}
+#latest-version {
+	display: block;
+	font-size: 220%;
+}
+.ln {
+	display: block;
+}
+
+h1 {
+	font-size: 1.8em;
+}
+h2 {
+	font-size: 1.3em;
+	margin: 2em 0 0.5em;
+}
+p {
+	margin: 0.5em 0;
+}
+
+pre, code, kbd, samp {
+	font-family: Consolas, Inconsolata, Monaco, "Lucida Console", monospace;
+	font-size: 1em;
+}
+pre {
+	background-color: #e4f4ff;
+	margin: 1em -2em;
+	padding: 0.5em 2em;
+}
+pre kbd { color: #112266; }
+.shebang {
+	color: #666688;
+}
+.outcome {
+	color: #003399;
+}
+
+
+#top {
+	margin-top: 0;
+}
