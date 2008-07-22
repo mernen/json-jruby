@@ -1,6 +1,6 @@
 // line 1 "src/json/ext/Parser.rl"
 /*
- * This code is copyrighted work by Daniel Luz <mernen at gmail dot com>.
+ * This code is copyrighted work by Daniel Luz <dev at mernen dot com>.
  * 
  * Distributed under the Ruby and GPLv2 licenses; see COPYING and GPL files
  * for details.
