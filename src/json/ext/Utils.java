@@ -86,9 +86,8 @@ final class Utils {
      *                        of the expected type
      */
     static GeneratorState ensureState(IRubyObject object) {
-        if (object instanceof GeneratorState) {
-            return (GeneratorState)object;
-        }
+        if (object instanceof GeneratorState) return (GeneratorState)object;
+
         Ruby runtime = object.getRuntime();
         RubyClass generatorState =
             (RubyClass)runtime.getClassFromPath("JSON::Ext::Generator::State");
@@ -123,7 +122,8 @@ final class Utils {
         return newException(runtime, className, msg);
     }
 
-    static RaiseException newException(Ruby runtime, String className, RubyString message) {
+    static RaiseException newException(Ruby runtime, String className,
+                                       RubyString message) {
         RubyClass klazz = runtime.getModule("JSON").getClass(className);
         RubyException excptn =
             (RubyException)klazz.newInstance(runtime.getCurrentContext(),
@@ -133,8 +133,8 @@ final class Utils {
     }
 
     /**
-     * Invokes <code>to_json</code> on the given object and ensures it
-     * returns a RubyString
+     * Invokes <code>to_json</code> on the given object and ensures
+     * it returns a RubyString
      * @param object The object to convert to JSON
      * @param args Parameters to pass to the method call
      * @return The {@link RubyString String} containing the
@@ -143,9 +143,7 @@ final class Utils {
     static RubyString toJson(IRubyObject object, IRubyObject... args) {
         Ruby runtime = object.getRuntime();
         IRubyObject result = object.callMethod(runtime.getCurrentContext(), "to_json", args);
-        if (result instanceof RubyString) {
-            return (RubyString)result;
-        }
+        if (result instanceof RubyString) return (RubyString)result;
         throw runtime.newTypeError("to_json must return a String");
     }
 

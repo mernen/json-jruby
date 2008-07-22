@@ -96,8 +96,9 @@ class GeneratorMethodsLoader {
          * @return The JSON representation of the Hash
          */
         private RubyString simpleTransform(RubyHash self) {
-            int preSize = 2 + Math.max(self.size() * 8, 0);
-            final RubyString result = self.getRuntime().newString(new ByteList(preSize));
+            final int preSize = 2 + Math.max(self.size() * 12, 0);
+            final RubyString result =
+                self.getRuntime().newString(new ByteList(preSize));
             result.cat((byte)'{');
             self.visitAll(new RubyHash.Visitor() {
                 private boolean firstPair = true;
@@ -112,7 +113,7 @@ class GeneratorMethodsLoader {
                     }
 
                     RubyString jsonKey = Utils.toJson(key.asString());
-                    result.cat(((RubyString)jsonKey).getByteList());
+                    result.cat(jsonKey.getByteList());
                     result.infectBy(jsonKey);
                     result.cat((byte)':');
 
@@ -126,9 +127,7 @@ class GeneratorMethodsLoader {
         }
 
         private RubyString transform(RubyHash self, final GeneratorState state, int depth) {
-            Ruby runtime = self.getRuntime();
-            int preSize = 2 + Math.max(self.size() * 8, 0);
-            final RubyString result = runtime.newString(new ByteList(preSize));
+            final Ruby runtime = self.getRuntime();
 
             final ByteList objectNl = state.object_nl_get().getByteList();
             final byte[] indent = Utils.repeat(state.indent_get().getByteList(), depth + 1);
@@ -136,10 +135,14 @@ class GeneratorMethodsLoader {
             final ByteList space = state.space_get().getByteList();
             final RubyFixnum subDepth = runtime.newFixnum(depth + 1);
 
+            final int preSize = 2 + self.size() * (12 + indent.length + spaceBefore.length() + space.length());
+            final RubyString result = runtime.newString(new ByteList(preSize));
+
             result.cat((byte)'{');
             result.cat(objectNl);
             self.visitAll(new RubyHash.Visitor() {
                 private boolean firstPair = true;
+
                 @Override
                 public void visit(IRubyObject key, IRubyObject value) {
                     // XXX key == Qundef???
@@ -150,9 +153,8 @@ class GeneratorMethodsLoader {
                         result.cat((byte)',');
                         result.cat(objectNl);
                     }
-                    if (objectNl.length() != 0) {
-                        result.cat(indent);
-                    }
+                    if (objectNl.length() != 0) result.cat(indent);
+
                     RubyString keyJson = Utils.toJson(key.asString(), state, subDepth);
                     result.cat(keyJson.getByteList());
                     result.infectBy(keyJson);
