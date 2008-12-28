@@ -141,4 +141,16 @@ EOT
     assert_equal /foo/, JSON(JSON(/foo/))
     assert_equal /foo/i, JSON(JSON(/foo/i))
   end
+
+  def test_utc_datetime
+    now = Time.now
+    d = DateTime.parse(now.to_s)                    # usual case
+    assert d, JSON.parse(d.to_json)
+    d = DateTime.parse(now.utc.to_s)                # of = 0
+    assert d, JSON.parse(d.to_json)
+    d = DateTime.civil(2008, 6, 17, 11, 48, 32, 1)  # of = 1 / 12 => 1/12
+    assert d, JSON.parse(d.to_json)
+    d = DateTime.civil(2008, 6, 17, 11, 48, 32, 12) # of = 12 / 12 => 12
+    assert d, JSON.parse(d.to_json)
+  end
 end
