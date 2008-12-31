@@ -50,6 +50,18 @@ class TC_JSONRails < Test::Unit::TestCase
     end
   end
 
+  class D
+    def initialize
+      @foo = 666
+    end
+
+    attr_reader :foo
+
+    def ==(other)
+      foo == other.foo
+    end
+  end
+
   def setup
     $KCODE = 'UTF8'
   end
@@ -57,10 +69,23 @@ class TC_JSONRails < Test::Unit::TestCase
   def test_extended_json
     a = A.new(666)
     assert A.json_creatable?
+    assert_equal 666, a.a
     json = generate(a)
     a_again = JSON.parse(json)
     assert_kind_of a.class, a_again
     assert_equal a, a_again
+    assert_equal 666, a_again.a
+  end
+
+  def test_extended_json_generic_object
+    d = D.new
+    assert D.json_creatable?
+    assert_equal 666, d.foo
+    json = generate(d)
+    d_again = JSON.parse(json)
+    assert_kind_of d.class, d_again
+    assert_equal d, d_again
+    assert_equal 666, d_again.foo
   end
 
   def test_extended_json_disabled
