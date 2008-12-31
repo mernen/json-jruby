@@ -300,6 +300,7 @@ public class Parser extends RubyObject {
                     if (parser.allowNaN) {
                         result = getConstant(CONST_MINUS_INFINITY);
                         fexec p + 10;
+                        fhold;
                         fbreak;
                     }
                     else {
@@ -309,23 +310,25 @@ public class Parser extends RubyObject {
                 ParserResult res = parseFloat(fpc, pe);
                 if (res != null) {
                     result = res.result;
-                    fexec res.p - 1 /*+1*/;
+                    fexec res.p;
                 }
                 res = parseInteger(fpc, pe);
                 if (res != null) {
                     result = res.result;
-                    fexec res.p - 1 /*+1*/;
+                    fexec res.p;
                 }
+                fhold;
                 fbreak;
             }
             action parse_string {
                 ParserResult res = parseString(fpc, pe);
                 if (res == null) {
+                    fhold;
                     fbreak;
                 }
                 else {
                     result = res.result;
-                    fexec res.p - 1 /*+1*/;
+                    fexec res.p;
                 }
             }
             action parse_array {
@@ -333,6 +336,7 @@ public class Parser extends RubyObject {
                 ParserResult res = parseArray(fpc, pe);
                 currentNesting--;
                 if (res == null) {
+                    fhold;
                     fbreak;
                 }
                 else {
@@ -345,6 +349,7 @@ public class Parser extends RubyObject {
                 ParserResult res = parseObject(fpc, pe);
                 currentNesting--;
                 if (res == null) {
+                    fhold;
                     fbreak;
                 }
                 else {
@@ -353,6 +358,7 @@ public class Parser extends RubyObject {
                 }
             }
             action exit {
+                fhold;
                 fbreak;
             }
 
@@ -388,7 +394,10 @@ public class Parser extends RubyObject {
 
             write data;
 
-            action exit { fbreak; }
+            action exit {
+                fhold;
+                fbreak;
+            }
 
             main := '-'? ( '0' | [1-9][0-9]* ) ( ^[0-9] @exit );
         }%%
@@ -404,7 +413,7 @@ public class Parser extends RubyObject {
                 return null;
             }
 
-            ByteList num = (ByteList)byteList.subSequence(memo, p - 1);
+            ByteList num = (ByteList)byteList.subSequence(memo, p);
             // note: this is actually a shared string, but since it is temporary and
             //       read-only, it doesn't really matter
             RubyString expr = RubyString.newStringLight(runtime, num);
@@ -418,7 +427,10 @@ public class Parser extends RubyObject {
 
             write data;
 
-            action exit { fbreak; }
+            action exit {
+                fhold;
+                fbreak;
+            }
 
             main := '-'?
                     ( ( ( '0' | [1-9][0-9]* ) '.' [0-9]+ ( [Ee] [+\-]?[0-9]+ )? )
@@ -437,7 +449,7 @@ public class Parser extends RubyObject {
                 return null;
             }
 
-            ByteList num = (ByteList)byteList.subSequence(memo, p - 1);
+            ByteList num = (ByteList)byteList.subSequence(memo, p);
             // note: this is actually a shared string, but since it is temporary and
             //       read-only, it doesn't really matter
             RubyString expr = RubyString.newStringLight(runtime, num);
@@ -454,14 +466,18 @@ public class Parser extends RubyObject {
             action parse_string {
                 result = stringUnescape(memo + 1, p);
                 if (result == null) {
+                    fhold;
                     fbreak;
                 }
                 else {
-                    fexec p +1;
+                    fexec p + 1;
                 }
             }
 
-            action exit { fbreak; }
+            action exit {
+                fhold;
+                fbreak;
+            }
 
             main := '"'
                     ( ( ^(["\\]|0..0x1f)
@@ -628,15 +644,19 @@ public class Parser extends RubyObject {
             action parse_value {
                 ParserResult res = parseValue(fpc, pe);
                 if (res == null) {
+                    fhold;
                     fbreak;
                 }
                 else {
                     result.append(res.result);
-                    fexec res.p - 1 /*+1*/;
+                    fexec res.p;
                 }
             }
 
-            action exit { fbreak; }
+            action exit {
+                fhold;
+                fbreak;
+            }
 
             next_element = value_separator ignore* begin_value >parse_value;
 
@@ -665,7 +685,7 @@ public class Parser extends RubyObject {
             %% write exec;
 
             if (cs >= JSON_array_first_final) {
-                return new ParserResult(result, p/*+1*/);
+                return new ParserResult(result, p + 1);
             }
             else {
                 throw unexpectedToken(p, pe);
@@ -681,26 +701,31 @@ public class Parser extends RubyObject {
             action parse_value {
                 ParserResult res = parseValue(fpc, pe);
                 if (res == null) {
+                    fhold;
                     fbreak;
                 }
                 else {
                     result.op_aset(lastName, res.result);
-                    fexec res.p - 1 /*+1*/;
+                    fexec res.p;
                 }
             }
 
             action parse_name {
                 ParserResult res = parseString(fpc, pe);
                 if (res == null) {
+                    fhold;
                     fbreak;
                 }
                 else {
                     lastName = (RubyString)res.result;
-                    fexec res.p - 1 /*+1*/;
+                    fexec res.p;
                 }
             }
 
-            action exit { fbreak; }
+            action exit {
+                fhold;
+                fbreak;
+            }
 
             a_pair = ignore*
                      begin_name >parse_name
@@ -759,7 +784,7 @@ public class Parser extends RubyObject {
                     }
                 }
             }
-            return new ParserResult(returnedResult, p /*+1*/);
+            return new ParserResult(returnedResult, p + 1);
         }
 
         %%{
@@ -772,11 +797,12 @@ public class Parser extends RubyObject {
                 currentNesting = 1;
                 ParserResult res = parseObject(fpc, pe);
                 if (res == null) {
+                    fhold;
                     fbreak;
                 }
                 else {
                     result = res.result;
-                    fexec res.p - 1 +1;
+                    fexec res.p;
                 }
             }
 
@@ -784,11 +810,12 @@ public class Parser extends RubyObject {
                 currentNesting = 1;
                 ParserResult res = parseArray(fpc, pe);
                 if (res == null) {
+                    fhold;
                     fbreak;
                 }
                 else {
                     result = res.result;
-                    fexec res.p - 1 +1;
+                    fexec res.p;
                 }
             }
 
