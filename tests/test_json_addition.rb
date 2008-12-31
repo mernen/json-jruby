@@ -116,6 +116,8 @@ EOT
     assert_equal raw, raw_again
   end
 
+  MyJsonStruct = Struct.new 'MyJsonStruct', :foo, :bar
+
   def test_core
     t = Time.now
     assert_equal t, JSON(JSON(t))
@@ -127,8 +129,7 @@ EOT
     assert_equal 1...10, JSON(JSON(1...10))
     assert_equal "a".."c", JSON(JSON("a".."c"))
     assert_equal "a"..."c", JSON(JSON("a"..."c"))
-    struct = Struct.new 'MyJsonStruct2', :foo, :bar
-    s = struct.new 4711, 'foot'
+    s = MyJsonStruct.new 4711, 'foot'
     assert_equal s, JSON(JSON(s))
     struct = Struct.new :foo, :bar
     s = struct.new 4711, 'foot'
