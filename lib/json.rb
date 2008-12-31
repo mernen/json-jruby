@@ -230,6 +230,4 @@ module JSON
       require 'json/pure'
     end
   end
-
-  JSON_LOADED = true
 end
