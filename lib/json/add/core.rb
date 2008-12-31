@@ -33,13 +33,15 @@ class Date
     civil(*object.values_at('y', 'm', 'd', 'sg'))
   end
 
+  alias start sg unless method_defined?(:start)
+
   def to_json(*args)
     {
       'json_class' => self.class.name,
       'y' => year,
       'm' => month,
       'd' => day,
-      'sg' => sg,
+      'sg' => start,
     }.to_json(*args)
   end
 end
@@ -57,6 +59,8 @@ class DateTime
     civil(*args)
   end
 
+  alias start sg unless method_defined?(:start)
+
   def to_json(*args)
     {
       'json_class' => self.class.name,
@@ -67,7 +71,7 @@ class DateTime
       'M' => min,
       'S' => sec,
       'of' => offset.to_s,
-      'sg' => sg,
+      'sg' => start,
     }.to_json(*args)
   end
 end
