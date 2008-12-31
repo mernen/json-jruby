@@ -291,4 +291,3 @@ EOT
     assert_equal too_deep, output.string
   end
 end
-  # vim: set et sw=2 ts=2:
