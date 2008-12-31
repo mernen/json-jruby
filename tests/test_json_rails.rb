@@ -31,6 +31,10 @@ class TC_JSONRails < Test::Unit::TestCase
   end
 
   class B
+    def self.json_creatable?
+      false
+    end
+
     def to_json(*args)
       {
         'json_class'  => self.class.name,
@@ -74,14 +78,14 @@ class TC_JSONRails < Test::Unit::TestCase
     )
   end
 
-  def test_extended_json_fail
+  def test_extended_json_fail1
     b = B.new
     assert !B.json_creatable?
     json = generate(b)
     assert_equal({ 'json_class' => B.name }, JSON.parse(json))
   end
 
-  def test_extended_json_fail
+  def test_extended_json_fail2
     c = C.new # with rails addition all objects are theoretically creatable
     assert C.json_creatable?
     json = generate(c)

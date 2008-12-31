@@ -31,6 +31,10 @@ class TC_JSONAddition < Test::Unit::TestCase
   end
 
   class B
+    def self.json_creatable?
+      false
+    end
+
     def to_json(*args)
       {
         'json_class'  => self.class.name,
@@ -78,14 +82,14 @@ class TC_JSONAddition < Test::Unit::TestCase
     )
   end
 
-  def test_extended_json_fail
+  def test_extended_json_fail1
     b = B.new
     assert !B.json_creatable?
     json = generate(b)
-    assert_equal({ 'json_class' => B.name }, JSON.parse(json))
+    assert_equal({ "json_class"=>"TC_JSONAddition::B" }, JSON.parse(json))
   end
 
-  def test_extended_json_fail
+  def test_extended_json_fail2
     c = C.new
     assert !C.json_creatable?
     json = generate(c)
@@ -123,7 +127,7 @@ EOT
     assert_equal 1...10, JSON(JSON(1...10))
     assert_equal "a".."c", JSON(JSON("a".."c"))
     assert_equal "a"..."c", JSON(JSON("a"..."c"))
-    struct = Struct.new 'MyJsonStruct', :foo, :bar
+    struct = Struct.new 'MyJsonStruct2', :foo, :bar
     s = struct.new 4711, 'foot'
     assert_equal s, JSON(JSON(s))
     struct = Struct.new :foo, :bar
@@ -138,8 +142,8 @@ EOT
       assert_equal e.message, e_again.message
       assert_equal e.backtrace, e_again.backtrace
     end
-    assert_equal /foo/, JSON(JSON(/foo/))
-    assert_equal /foo/i, JSON(JSON(/foo/i))
+    assert_equal(/foo/, JSON(JSON(/foo/)))
+    assert_equal(/foo/i, JSON(JSON(/foo/i)))
   end
 
   def test_utc_datetime
