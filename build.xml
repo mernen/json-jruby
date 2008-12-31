@@ -54,6 +54,7 @@
     <target name="ruby-tests" depends="jar"
             description="Perform the json ruby library tests.">
         <exec executable="${jruby.dir}/bin/jruby" failonerror="true">
+            <arg value="-v"/>
             <arg value="-I"/>
             <arg value="${lib.dir}"/>
             <arg value="tests/runner.rb"/>
