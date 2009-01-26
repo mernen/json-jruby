@@ -239,21 +239,28 @@ module JSON
 
           def json_transform(state, depth)
             delim = ','
-            delim << state.object_nl if state
-            result = '{'
-            result << state.object_nl if state
-            result << map { |key,value|
-              s = json_shift(state, depth + 1)
-              s << key.to_s.to_json(state, depth + 1)
-              s << state.space_before if state
-              s << ':'
-              s << state.space if state
-              s << value.to_json(state, depth + 1)
-            }.join(delim)
-            result << state.object_nl if state
-            result << json_shift(state, depth)
-            result << '}'
-            result
+            if state
+              delim << state.object_nl
+              result = '{'
+              result << state.object_nl
+              result << map { |key,value|
+                s = json_shift(state, depth + 1)
+                s << key.to_s.to_json(state, depth + 1)
+                s << state.space_before
+                s << ':'
+                s << state.space
+                s << value.to_json(state, depth + 1)
+              }.join(delim)
+              result << state.object_nl
+              result << json_shift(state, depth)
+              result << '}'
+            else
+              result = '{'
+              result << map { |key,value|
+                key.to_s.to_json << ':' << value.to_json
+              }.join(delim)
+              result << '}'
+            end
           end
         end
 
@@ -293,16 +300,19 @@ module JSON
 
           def json_transform(state, depth)
             delim = ','
-            delim << state.array_nl if state
-            result = '['
-            result << state.array_nl if state
-            result << map { |value|
-              json_shift(state, depth + 1) << value.to_json(state, depth + 1)
-            }.join(delim)
-            result << state.array_nl if state
-            result << json_shift(state, depth) 
-            result << ']'
-            result
+            if state
+              delim << state.array_nl
+              result = '['
+              result << state.array_nl
+              result << map { |value|
+                json_shift(state, depth + 1) << value.to_json(state, depth + 1)
+              }.join(delim)
+              result << state.array_nl
+              result << json_shift(state, depth) 
+              result << ']'
+            else
+              '[' << map { |value| value.to_json }.join(delim) << ']'
+            end
           end
         end
 
