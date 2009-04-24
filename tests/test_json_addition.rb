@@ -98,6 +98,7 @@ class TC_JSONAddition < Test::Unit::TestCase
 
   def test_raw_strings
     raw = ''
+    raw.respond_to?(:encode!) and raw.encode!(Encoding::ASCII_8BIT)
     raw_array = []
     for i in 0..255
       raw << i
@@ -120,7 +121,7 @@ EOT
 
   def test_core
     t = Time.now
-    assert_equal t, JSON(JSON(t))
+    assert_equal t.inspect, JSON(JSON(t)).inspect
     d = Date.today
     assert_equal d, JSON(JSON(d))
     d = DateTime.civil(2007, 6, 14, 14, 57, 10, Rational(1, 12), 2299161)

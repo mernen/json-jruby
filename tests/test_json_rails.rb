@@ -119,6 +119,7 @@ class TC_JSONRails < Test::Unit::TestCase
 
   def test_raw_strings
     raw = ''
+    raw.respond_to?(:encode!) and raw.encode!(Encoding::ASCII_8BIT)
     raw_array = []
     for i in 0..255
       raw << i
