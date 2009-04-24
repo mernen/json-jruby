@@ -1,14 +1,11 @@
 #!/usr/bin/env ruby
+# -*- encoding: utf-8 -*-
 
 require 'test/unit'
 require 'json'
 
 class TC_JSONUnicode < Test::Unit::TestCase
   include JSON
-
-  def setup
-    $KCODE = 'UTF8'
-  end
 
   def test_unicode
     assert_equal '""', ''.to_json

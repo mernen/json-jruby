@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# -*- encoding: utf-8 -*-
 
 require 'test/unit'
 require 'json/add/rails'
@@ -60,10 +61,6 @@ class TC_JSONRails < Test::Unit::TestCase
     def ==(other)
       foo == other.foo
     end
-  end
-
-  def setup
-    $KCODE = 'UTF8'
   end
 
   def test_extended_json

@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# -*- encoding: utf-8 -*-
 
 require 'test/unit'
 require 'json/add/core'
@@ -52,10 +53,6 @@ class TC_JSONAddition < Test::Unit::TestCase
         'json_class'  => 'TC_JSONAddition::Nix',
       }.to_json(*args)
     end
-  end
-
-  def setup
-    $KCODE = 'UTF8'
   end
 
   def test_extended_json

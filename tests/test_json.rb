@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# -*- encoding: utf-8 -*-
 
 require 'test/unit'
 require 'json'
@@ -8,7 +9,6 @@ class TC_JSON < Test::Unit::TestCase
   include JSON
 
   def setup
-    $KCODE = 'UTF8'
     @ary = [1, "foo", 3.14, 4711.0, 2.718, nil, [1,-2,3], false, true].map do
       |x| [x]
     end
@@ -29,7 +29,6 @@ class TC_JSON < Test::Unit::TestCase
     @json = '{"a":2,"b":3.141,"c":"c","d":[1,"b",3.14],"e":{"foo":"bar"},' +
       '"g":"\\"\\u0000\\u001f","h":1.0E3,"i":1.0E-3}'
   end
-    suite << TC_JSON.suite
 
   def test_construction
     parser = JSON::Parser.new('test')

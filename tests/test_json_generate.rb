@@ -1,3 +1,6 @@
+#!/usr/bin/env ruby
+# -*- encoding: utf-8 -*-
+
 require 'test/unit'
 require 'json'
 
@@ -5,7 +8,6 @@ class TC_JSONGenerate < Test::Unit::TestCase
   include JSON
 
   def setup
-    $KCODE = 'UTF8'
     @hash = {
       'a' => 2,
       'b' => 3.141,
