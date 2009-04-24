@@ -2,6 +2,11 @@
 # -*- coding: utf-8 -*-
 
 require 'test/unit'
+case ENV['JSON']
+when 'pure' then require 'json/pure'
+when 'ext'  then require 'json/ext'
+else             require 'json'
+end
 require 'json/add/rails'
 require 'date'
 

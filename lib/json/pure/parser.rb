@@ -122,7 +122,7 @@ module JSON
       def parse_string
         if scan(STRING)
           return '' if self[1].empty?
-          self[1].gsub(%r((?:\\[\\bfnrt"/]|(?:\\u(?:[A-Fa-f\d]{4}))+|\\[\x20-\xff]))n) do |c|
+          string = self[1].gsub(%r((?:\\[\\bfnrt"/]|(?:\\u(?:[A-Fa-f\d]{4}))+|\\[\x20-\xff]))n) do |c|
             if u = UNESCAPE_MAP[$&[1]]
               u
             else # \uXXXX
@@ -135,6 +135,8 @@ module JSON
               JSON::UTF16toUTF8.iconv(bytes)
             end
           end
+          string.respond_to?(:force_encoding) and string.force_encoding("UTF-8")
+          string
         else
           UNPARSED
         end
