@@ -41,7 +41,9 @@ module JSON
   # UTF16 big endian characters as \u????, and return it.
   if String.method_defined?(:force_encoding)
     def utf8_to_json(string) # :nodoc:
-      string = string.dup.force_encoding(Encoding::ASCII_8BIT)
+      string = string.dup
+      string << '' # XXX workaround: avoid buffer sharing
+      string.force_encoding(Encoding::ASCII_8BIT)
       string.gsub!(/["\\\/\x0-\x1f]/) { MAP[$&] }
       string.gsub!(/(
                       (?:
@@ -51,10 +53,11 @@ module JSON
                       )+ |
                       [\x80-\xc1\xf5-\xff]       # invalid
                     )/nx) { |c|
-        c.size == 1 and raise GeneratorError, "invalid utf8 byte: '#{c}'"
-        s = JSON::UTF8toUTF16.iconv(c).unpack('H*')[0]
-        s.gsub!(/.{4}/n, '\\\\u\&')
-      }
+                      c.size == 1 and raise GeneratorError, "invalid utf8 byte: '#{c}'"
+                      s = JSON::UTF8toUTF16.iconv(c).unpack('H*')[0]
+                      s.gsub!(/.{4}/n, '\\\\u\&')
+                    }
+      string.force_encoding(Encoding::UTF_8)
       string
     rescue Iconv::Failure => e
       raise GeneratorError, "Caught #{e.class}: #{e}"
@@ -283,6 +286,7 @@ module JSON
               }.join(delim)
               result << '}'
             end
+            result
           end
         end
 

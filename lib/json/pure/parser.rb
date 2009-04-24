@@ -128,14 +128,16 @@ module JSON
             else # \uXXXX
               bytes = ''
               i = 0
-              while c[6 * i] == ?\\ && c[6 * i + 1] == ?u 
+              while c[6 * i] == ?\\ && c[6 * i + 1] == ?u
                 bytes << c[6 * i + 2, 2].to_i(16) << c[6 * i + 4, 2].to_i(16)
                 i += 1
               end
               JSON::UTF16toUTF8.iconv(bytes)
             end
           end
-          string.respond_to?(:force_encoding) and string.force_encoding("UTF-8")
+          if string.respond_to?(:force_encoding)
+            string.force_encoding(Encoding::UTF_8)
+          end
           string
         else
           UNPARSED
