@@ -226,10 +226,10 @@ public class Parser extends RubyObject {
             data = byteList.unsafeBytes();
         }
 
-        private RaiseException unexpectedToken(int start, int end) {
+        private RaiseException unexpectedToken(int absStart, int absEnd) {
             RubyString msg =
                 runtime.newString("unexpected token at '")
-                       .cat(data, byteList.begin() + start, end - start)
+                       .cat(data, absStart, absEnd - absStart)
                        .cat((byte)'\'');
             return Utils.newException(runtime, Utils.M_PARSER_ERROR, msg);
         }
