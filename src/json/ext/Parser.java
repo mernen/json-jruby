@@ -508,7 +508,7 @@ case 1:
 // line 296 "src/json/ext/Parser.rl"
 	{
                 if (pe > p + 9 &&
-                    byteList.subSequence(p, p + 9).toString().equals(JSON_MINUS_INFINITY)) {
+                    absSubSequence(p, p + 9).toString().equals(JSON_MINUS_INFINITY)) {
 
                     if (parser.allowNaN) {
                         result = getConstant(CONST_MINUS_INFINITY);
@@ -838,7 +838,7 @@ case 5:
                 return null;
             }
 
-            ByteList num = (ByteList)byteList.subSequence(memo, p);
+            ByteList num = absSubSequence(memo, p);
             // note: this is actually a shared string, but since it is temporary and
             //       read-only, it doesn't really matter
             RubyString expr = RubyString.newStringLight(runtime, num);
@@ -1077,7 +1077,7 @@ case 5:
                 return null;
             }
 
-            ByteList num = (ByteList)byteList.subSequence(memo, p);
+            ByteList num = absSubSequence(memo, p);
             // note: this is actually a shared string, but since it is temporary and
             //       read-only, it doesn't really matter
             RubyString expr = RubyString.newStringLight(runtime, num);
@@ -2311,6 +2311,18 @@ case 5:
             else {
                 throw unexpectedToken(p, pe);
             }
+        }
+
+        /**
+         * Returns a subsequence of the source ByteList, based on source
+         * array byte offsets (i.e., the ByteList's own begin offset is not
+         * automatically added).
+         * @param start
+         * @param end
+         */
+        private ByteList absSubSequence(int absStart, int absEnd) {
+            int offset = byteList.begin();
+            return (ByteList)byteList.subSequence(absStart - offset, absEnd - offset);
         }
 
         /**

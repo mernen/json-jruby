@@ -1,2 +1,2 @@
 #! /bin/sh
-jruby -v -I lib tests/runner.rb
+exec jruby -v -I lib tests/runner.rb

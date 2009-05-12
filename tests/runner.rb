@@ -10,6 +10,7 @@ require 'test_json_unicode'
 require 'test_json_addition'
 require 'test_json_rails'
 require 'test_json_fixtures'
+require 'test_jjrb_offsets'
 
 class TS_AllTests
   def self.suite
@@ -20,6 +21,7 @@ class TS_AllTests
     suite << TC_JSONAddition.suite
     suite << TC_JSONRails.suite
     suite << TC_JSONFixtures.suite
+    suite << TestJjrbOffsets.suite
   end
 end
 Test::Unit::UI::Console::TestRunner.run(TS_AllTests)
