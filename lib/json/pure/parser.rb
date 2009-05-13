@@ -61,6 +61,8 @@ module JSON
       # * *create_additions*: If set to false, the Parser doesn't create
       #   additions even if a matchin class and create_id was found. This option
       #   defaults to true.
+      # * *object_class*: Defaults to Hash
+      # * *array_class*: Defaults to Array
       def initialize(source, opts = {})
         super
         if !opts.key?(:max_nesting) # defaults to 19
@@ -74,6 +76,8 @@ module JSON
         ca = true
         ca = opts[:create_additions] if opts.key?(:create_additions)
         @create_id = ca ? JSON.create_id : nil
+        @object_class = opts[:object_class] || Hash
+        @array_class = opts[:array_class] || Array
       end
 
       alias source string
@@ -184,7 +188,7 @@ module JSON
       def parse_array
         raise NestingError, "nesting of #@current_nesting is to deep" if
           @max_nesting.nonzero? && @current_nesting > @max_nesting
-        result = []
+        result = @array_class.new
         delim = false
         until eos?
           case
@@ -216,7 +220,7 @@ module JSON
       def parse_object
         raise NestingError, "nesting of #@current_nesting is to deep" if
           @max_nesting.nonzero? && @current_nesting > @max_nesting
-        result = {}
+        result = @object_class.new
         delim = false
         until eos?
           case

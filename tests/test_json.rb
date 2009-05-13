@@ -150,11 +150,27 @@ class TC_JSON < Test::Unit::TestCase
       , [2718.0E-3 ],\r[ null] , [[1, -2, 3 ]], [false ],[ true]\n ]  }))
   end
 
+  class SubArray < Array; end
+
+  def test_parse_array_custom_class
+    res = parse('[]', :array_class => SubArray)
+    assert_equal([], res)
+    assert_equal(SubArray, res.class)
+  end
+
   def test_parse_object
     assert_equal({}, parse('{}'))
     assert_equal({}, parse('  {  }  '))
     assert_equal({'foo'=>'bar'}, parse('{"foo":"bar"}'))
     assert_equal({'foo'=>'bar'}, parse('    { "foo"  :   "bar"   }   '))
+  end
+
+  class SubHash < Hash; end
+
+  def test_parse_object_custom_class
+    res = parse('{}', :object_class => SubHash)
+    assert_equal({}, res)
+    assert_equal(SubHash, res.class)
   end
 
   def test_parser_reset

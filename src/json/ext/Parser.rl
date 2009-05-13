@@ -44,6 +44,8 @@ public class Parser extends RubyObject {
     private RubyString createId;
     private int maxNesting;
     private boolean allowNaN;
+    private RubyClass objectClass;
+    private RubyClass arrayClass;
 
     private static final int DEFAULT_MAX_NESTING = 19;
 
@@ -110,6 +112,12 @@ public class Parser extends RubyObject {
      * <dd>If set to <code>false</code>, the Parser doesn't create additions
      * even if a matchin class and <code>create_id</code> was found. This option
      * defaults to <code>true</code>.
+     * 
+     * <dt><code>:object_class</code>
+     * <dd>Defaults to Hash.
+     * 
+     * <dt><code>:array_class</code>
+     * <dd>Defaults to Array.
      * </dl>
      */
     @JRubyMethod(name = "new", required = 1, optional = 1, meta = true)
@@ -156,11 +164,16 @@ public class Parser extends RubyObject {
             else {
                 this.createId = null;
             }
+
+            this.objectClass = readRubyClassParameter(opts, "object_class", getRuntime().getHash());
+            this.arrayClass = readRubyClassParameter(opts, "array_class", getRuntime().getArray());
         }
         else {
             this.maxNesting = DEFAULT_MAX_NESTING;
             this.allowNaN = false;
             this.createId = getCreateId();
+            this.objectClass = getRuntime().getHash();
+            this.arrayClass = getRuntime().getArray();
         }
 
         this.vSource = source;
@@ -197,6 +210,28 @@ public class Parser extends RubyObject {
         IRubyObject v = getRuntime().getModule("JSON").
             callMethod(getRuntime().getCurrentContext(), "create_id");
         return v.isTrue() ? v.convertToString() : null;
+    }
+
+    /**
+     * Reads the setting from the given options hash (using
+     * <code>key</code> as a Symbol key). If it is <code>nil</code> or
+     * undefined, returns the default value given.
+     * If not, ensures it is a RubyClass instance and shares the same
+     * allocator as the default value (i.e. for the basic types which have
+     * their specific allocators, this ensures the passed value is
+     * a subclass of them).
+     */
+    private RubyClass readRubyClassParameter(RubyHash opts, String key, RubyClass defaultClass) {
+        IRubyObject value = Utils.fastGetSymItem(opts, key);
+
+        if (value == null || value.isNil()) return defaultClass;
+
+        if (value instanceof RubyClass &&
+            ((RubyClass)value).getAllocator() == defaultClass.getAllocator()) {
+
+            return (RubyClass)value;
+        }
+        throw getRuntime().newTypeError(key + " option must be a subclass of " + defaultClass);
     }
 
     /**
@@ -679,7 +714,12 @@ public class Parser extends RubyObject {
                     "nesting of " + currentNesting + " is too deep");
             }
 
-            RubyArray result = runtime.newArray();
+            // this is guaranteed to be a RubyArray due to the earlier
+            // allocator test at readRubyClassParameter
+            RubyArray result =
+                (RubyArray)parser.arrayClass.newInstance(
+                    runtime.getCurrentContext(), new IRubyObject[0],
+                    Block.NULL_BLOCK);
 
             %% write init;
             %% write exec;
@@ -746,7 +786,12 @@ public class Parser extends RubyObject {
                     "nesting of " + currentNesting + " is too deep");
             }
 
-            RubyHash result = RubyHash.newHash(runtime);
+            // this is guaranteed to be a RubyHash due to the earlier
+            // allocator test at readRubyClassParameter
+            RubyHash result =
+                (RubyHash)parser.objectClass.newInstance(
+                    runtime.getCurrentContext(), new IRubyObject[0],
+                    Block.NULL_BLOCK);
 
             %% write init;
             %% write exec;
