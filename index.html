@@ -1,5 +1,5 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
-	"http://www.w3.org/TR/html4/strict.dtd">
+    "http://www.w3.org/TR/html4/strict.dtd">
 <html lang="en-us">
 <head>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
@@ -21,7 +21,8 @@ Latest version:
 
 <h1 id="top">JSON-JRuby</h1>
 
-<p><strong>JSON-JRuby</strong> is a Java port of Florian Frank's <a href="http://json.rubyforge.org/" title="JSON implementation for Ruby"><code>json</code> library</a>. It provides fast <a href="http://www.json.org/" title="JavaScript Object Notation">JSON</a> generation and parsing for <a href="http://jruby.codehaus.org/">JRuby</a>.</p>
+<p><strong>JSON-JRuby</strong> is a Java port of Florian Frank's <a href="http://json.rubyforge.org/" title="JSON implementation for Ruby"><code>json</code> library</a>.
+It provides fast <a href="http://www.json.org/" title="JavaScript Object Notation">JSON</a> generation and parsing for <a href="http://jruby.codehaus.org/">JRuby</a>.</p>
 
 <h2 id="installation">Installation</h2>
 
@@ -51,19 +52,23 @@ puts JSON(source_object)
 
 <h2>Building from source</h2>
 
-<p>Check the <a href="http://rubyforge.org/projects/json-jruby/" title="RubyForge: JSON-JRuby: Project Info">project page</a> for information regarding file downloads. To pull the <a href="http://github.com/mernen/json-jruby/tree" title="json-jruby on GitHub">Git repository</a>:</p>
+<p>Check the <a href="http://rubyforge.org/projects/json-jruby/" title="RubyForge: JSON-JRuby: Project Info">project page</a> for information regarding file downloads.
+To pull the <a href="http://github.com/mernen/json-jruby/tree" title="json-jruby on GitHub">Git repository</a>:</p>
 
 <pre><samp>$ </samp><kbd>git clone git://github.com/mernen/json-jruby.git</kbd></pre>
 
 <p>The <a href="http://java.sun.com/javase/downloads/index.jsp" title="Java SE Downloads">JDK</a> version 1.5 or 1.6, JRuby 1.1.3 and <a href="http://www.cs.queensu.ca/~thurston/ragel/" title="Ragel State Machine Compiler">Ragel</a> 6.4 are needed to build this package.</p>
 
-<p>After <a href="http://rubyforge.org/frs/?group_id=5401" title="RubyForge: JSON-JRuby: Project Filelist">downloading</a> a source package, you may need to configure the <code>jruby.dir</code> setting in <code>nbproject/project.properties</code> (defaults to <code>../jruby</code>). Ragel just needs to be in your path. Then, from the source's directory, you may run <kbd>ant</kbd> to build a gemfile.</p>
+<p>After <a href="http://rubyforge.org/frs/?group_id=5401" title="RubyForge: JSON-JRuby: Project Filelist">downloading</a> a source package, you may need to configure the <code>jruby.dir</code> setting in <code>nbproject/project.properties</code> (defaults to <code>../jruby</code>).
+Ragel just needs to be in your path.
+Then, from the source's directory, you may run <kbd>ant</kbd> to build a gemfile.</p>
 
 <h2>Differences from <code>json</code></h2>
 
 <ul>
-	<li>This gem does not include a graphical editor.</li>
-	<li>There are a few differences in corner cases, such as the strictness of certain parameters: <code>json</code> will only accept Hashes, whereas <code>json-jruby</code> would accept anything that responds to <code>to_hash</code>.</li>
+    <li>This gem does not include a graphical editor.</li>
+    <li>There are a few differences in corner cases, such as the strictness of certain parameters:
+        <code>json</code> will only accept Hashes, whereas <code>json-jruby</code> would accept anything that responds to <code>to_hash</code>.</li>
 </ul>
 
 <p>For regular use, though, there are no practical differences between the libraries.</p>
@@ -77,13 +82,13 @@ puts JSON(source_object)
 </div>
 
 <script type="text/javascript">
-	var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-	document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+    var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+    document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
 </script>
 <script type="text/javascript">
-	var pageTracker = _gat._getTracker("UA-4419614-1");
-	pageTracker._initData();
-	pageTracker._trackPageview();
+    var pageTracker = _gat._getTracker("UA-4419614-1");
+    pageTracker._initData();
+    pageTracker._trackPageview();
 </script>
 
 </body>
