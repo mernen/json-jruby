@@ -6,9 +6,11 @@ module JSON
     # into a Ruby data structure.
     class Parser < StringScanner
       STRING                = /" ((?:[^\x0-\x1f"\\] |
+                                   # escaped special characters:
                                   \\["\\\/bfnrt] |
                                   \\u[0-9a-fA-F]{4} |
-                                  \\[\x20-\xff])*)
+                                   # match all but escaped special characters:
+                                  \\[\x20-\x21\x23-\x2e\x30-\x5b\x5d-\x61\x63-\x65\x67-\x6d\x6f-\x71\x73\x75-\xff])*)
                               "/nx
       INTEGER               = /(-?0|-?[1-9]\d*)/
       FLOAT                 = /(-?
