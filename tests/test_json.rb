@@ -230,7 +230,7 @@ EOT
     assert_equal json, JSON.unparse(data)
     assert_equal data, JSON.parse(json)
     #
-    json = '["\/"]'
+    json = '["/"]'
     data = JSON.parse(json)
     assert_equal ['/'], data
     assert_equal json, JSON.unparse(data)

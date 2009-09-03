@@ -361,7 +361,6 @@ class GeneratorMethodsLoader {
             for (char c : chars) {
                 switch (c) {
                     case '"':
-                    case '/':
                     case '\\':
                         escapeSequence[1] = (byte)c;
                         break;
