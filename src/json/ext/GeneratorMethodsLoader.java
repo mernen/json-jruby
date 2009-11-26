@@ -327,7 +327,7 @@ class GeneratorMethodsLoader {
 
             if (Double.isInfinite(value) || Double.isNaN(value)) {
                 GeneratorState state = args.length > 0 ? Utils.ensureState(args[0]) : null;
-                if (state == null || state.allowNaN()) {
+                if (state != null && state.allowNaN()) {
                     return vSelf.asString();
                 }
                 else {
