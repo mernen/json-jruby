@@ -12,7 +12,6 @@ spec = Gem::Specification.new do |s|
   s.rubyforge_project = "json-jruby"
 
   s.files = Dir["{docs,lib,tests}/**/*"]
-  s.test_files << "tests/runner.rb"
 end
 
 if $0 == __FILE__
