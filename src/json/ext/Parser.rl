@@ -6,9 +6,14 @@
  */
 package json.ext;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.WeakHashMap;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
@@ -40,6 +45,7 @@ import org.jruby.util.ByteList;
  * @author mernen
  */
 public class Parser extends RubyObject {
+    private final RuntimeInfo info;
     private RubyString vSource;
     private RubyString createId;
     private int maxNesting;
@@ -85,8 +91,62 @@ public class Parser extends RubyObject {
         }
     }
 
+    private static class RuntimeInfo {
+        private static final Map<Ruby, RuntimeInfo> runtimes =
+                Collections.synchronizedMap(new WeakHashMap<Ruby, RuntimeInfo>(1));
+
+        public final RubyModule mJson;
+        public final RubyEncoding utf8;
+        public final RubyEncoding ascii8bit;
+        private final Map<String, RubyEncoding> encodings;
+
+        private RuntimeInfo(Ruby runtime) {
+            ThreadContext context = runtime.getCurrentContext();
+
+            mJson = runtime.getModule("JSON");
+
+            RubyClass encodingClass = runtime.getEncoding();
+            if (encodingClass == null) {
+                utf8 = ascii8bit = null;
+                encodings = null;
+            }
+            else {
+                utf8 = (RubyEncoding)RubyEncoding.find(context,
+                        encodingClass, runtime.newString("utf-8"));
+                ascii8bit = (RubyEncoding)RubyEncoding.find(context,
+                        encodingClass, runtime.newString("ascii-8bit"));
+                encodings = new HashMap<String, RubyEncoding>();
+            }
+        }
+
+        public static RuntimeInfo forRuntime(Ruby runtime) {
+            RuntimeInfo cache = runtimes.get(runtime);
+            if (cache == null) {
+                cache = new RuntimeInfo(runtime);
+                runtimes.put(runtime, cache);
+            }
+            return cache;
+        }
+
+        public boolean encodingsSupported() {
+            return utf8 != null;
+        }
+
+        public RubyEncoding getEncoding(ThreadContext context, String name) {
+            RubyEncoding encoding = encodings.get(name);
+            if (encoding == null) {
+                Ruby runtime = context.getRuntime();
+                encoding = (RubyEncoding)RubyEncoding.find(context,
+                        runtime.getEncoding(), runtime.newString(name));
+                encodings.put(name, encoding);
+            }
+            return encoding;
+        }
+    }
+
     public Parser(Ruby runtime, RubyClass metaClass) {
         super(runtime, metaClass);
+        info = RuntimeInfo.forRuntime(runtime);
     }
 
     /**
@@ -131,14 +191,8 @@ public class Parser extends RubyObject {
 
     @JRubyMethod(name = "initialize", required = 1, optional = 1,
                  visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(IRubyObject[] args) {
-        RubyString source = args[0].convertToString();
-        int len = source.getByteList().length();
-
-        if (len < 2) {
-            throw Utils.newException(getRuntime(), Utils.M_PARSER_ERROR,
-                "A JSON text must at least contain two octets!");
-        }
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        RubyString source = convertEncoding(context, args[0].convertToString());
 
         if (args.length > 1) {
             RubyHash opts = args[1].convertToHash();
@@ -159,7 +213,7 @@ public class Parser extends RubyObject {
 
             IRubyObject createAdditions = Utils.fastGetSymItem(opts, "create_additions");
             if (createAdditions == null || createAdditions.isTrue()) {
-                this.createId = getCreateId();
+                this.createId = getCreateId(context);
             }
             else {
                 this.createId = null;
@@ -171,13 +225,76 @@ public class Parser extends RubyObject {
         else {
             this.maxNesting = DEFAULT_MAX_NESTING;
             this.allowNaN = false;
-            this.createId = getCreateId();
+            this.createId = getCreateId(context);
             this.objectClass = getRuntime().getHash();
             this.arrayClass = getRuntime().getArray();
         }
 
         this.vSource = source;
         return this;
+    }
+
+    /**
+     * Checks the given string's encoding. If a non-UTF-8 encoding is detected,
+     * a converted copy is returned.
+     * Returns the source string if no conversion is needed.
+     */
+    private RubyString convertEncoding(ThreadContext context, RubyString source) {
+        ByteList bl = source.getByteList();
+        int len = bl.length();
+        if (len < 2) {
+            throw Utils.newException(getRuntime(), Utils.M_PARSER_ERROR,
+                "A JSON text must at least contain two octets!");
+        }
+
+        if (info.encodingsSupported()) {
+            RubyEncoding encoding = (RubyEncoding)source.encoding(context);
+            if (encoding != info.ascii8bit) {
+                return (RubyString)source.encode(context, info.utf8);
+            }
+
+            String sniffedEncoding = sniffByteList(bl);
+            if (sniffedEncoding == null) return source; // assume UTF-8
+            return reinterpretEncoding(context, source, sniffedEncoding, info);
+        }
+
+        String sniffedEncoding = sniffByteList(bl);
+        if (sniffedEncoding == null) return source; // assume UTF-8
+        Ruby runtime = context.getRuntime();
+        return (RubyString)info.mJson.
+            callMethod(context, "iconv",
+                new IRubyObject[] {
+                    runtime.newString("utf-8"),
+                    runtime.newString(sniffedEncoding),
+                    source});
+    }
+
+    /**
+     * Checks the first four bytes of the given ByteList to infer its encoding,
+     * using the principle demonstrated on section 3 of RFC 4627 (JSON).
+     */
+    private static String sniffByteList(ByteList bl) {
+        if (bl.length() < 4) return null;
+        if (bl.get(0) == 0 && bl.get(2) == 0) {
+            return bl.get(1) == 0 ? "utf-32be" : "utf-16be";
+        }
+        if (bl.get(1) == 0 && bl.get(3) == 0) {
+            return bl.get(2) == 0 ? "utf-32le" : "utf-16le";
+        }
+        return null;
+    }
+
+    /**
+     * Assumes the given (binary) RubyString to be in the given encoding, then
+     * converts it to UTF-8.
+     */
+    private static RubyString reinterpretEncoding(ThreadContext context,
+            RubyString str, String sniffedEncoding, RuntimeInfo info) {
+        RubyEncoding actualEncoding = info.getEncoding(context, sniffedEncoding);
+        RubyEncoding targetEncoding = info.utf8;
+        RubyString dup = (RubyString)str.dup();
+        dup.force_encoding(context, actualEncoding);
+        return (RubyString)dup.encode_bang(context, targetEncoding);
     }
 
     /**
@@ -206,9 +323,8 @@ public class Parser extends RubyObject {
      * Queries <code>JSON.create_id</code>. Returns <code>null</code> if it is
      * set to <code>nil</code> or <code>false</code>, and a String if not.
      */
-    private RubyString getCreateId() {
-        IRubyObject v = getRuntime().getModule("JSON").
-            callMethod(getRuntime().getCurrentContext(), "create_id");
+    private RubyString getCreateId(ThreadContext context) {
+        IRubyObject v = info.mJson.callMethod(context, "create_id");
         return v.isTrue() ? v.convertToString() : null;
     }
 
@@ -905,7 +1021,7 @@ public class Parser extends RubyObject {
          * @param name The constant name
          */
         private IRubyObject getConstant(String name) {
-            return runtime.getModule("JSON").getConstant(name);
+            return parser.info.mJson.getConstant(name);
         }
     }
 }
