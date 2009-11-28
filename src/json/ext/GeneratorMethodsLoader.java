@@ -395,6 +395,14 @@ class GeneratorMethodsLoader {
         }
 
         private char[] decodeString(RubyString string) {
+            Ruby runtime = string.getRuntime();
+            ThreadContext context = runtime.getCurrentContext();
+            RuntimeInfo info = RuntimeInfo.forRuntime(runtime);
+            if (info.encodingsSupported() &&
+                    string.encoding(context) != info.utf8) {
+                string = (RubyString)string.encode(context, info.utf8);
+            }
+
             ByteList byteList = string.getByteList();
             try { // attempt to interpret string as UTF-8
                 CharsetDecoder decoder = Charset.forName("UTF-8").newDecoder();
@@ -416,7 +424,7 @@ class GeneratorMethodsLoader {
                 }
                 return chars;
                 */
-                throw Utils.newException(string.getRuntime(), Utils.M_GENERATOR_ERROR,
+                throw Utils.newException(runtime, Utils.M_GENERATOR_ERROR,
                     "source sequence is illegal/malformed");
             }
         }
