@@ -425,7 +425,7 @@ class GeneratorMethodsLoader {
                 return chars;
                 */
                 throw Utils.newException(runtime, Utils.M_GENERATOR_ERROR,
-                    "source sequence is illegal/malformed");
+                    "source sequence is illegal/malformed utf-8");
             }
         }
     };
