@@ -6,3 +6,4 @@
 /.project
 /.settings
 /.externalToolBuilders
+/src/json/ext/Parser.java
