@@ -97,9 +97,9 @@ public class GeneratorState extends RubyObject {
      * @param block The block passed to the method
      * @return A <code>GeneratorState</code> as determined above
      */
-    @JRubyMethod(name = "from_state", required = 1, meta = true)
-    public static IRubyObject from_state(IRubyObject clazzParam, IRubyObject opts,
-            Block block) {
+    @JRubyMethod(required = 1, meta = true)
+    public static IRubyObject from_state(ThreadContext context,
+            IRubyObject clazzParam, IRubyObject opts, Block block) {
         // if the given parameter is a Generator::State, return itself
         RubyModule clazz = (RubyModule)clazzParam;
         if (clazz.isInstance(opts)) {
@@ -109,11 +109,11 @@ public class GeneratorState extends RubyObject {
         Ruby runtime = clazz.getRuntime();
         // if the given parameter is a Hash, pass it to the instantiator
         if (runtime.getHash().isInstance(opts)) {
-            return clazz.callMethod(runtime.getCurrentContext(), "new", opts);
+            return clazz.callMethod(context, "new", opts);
         }
 
         // ignore any other kinds of parameter
-        return clazz.callMethod(runtime.getCurrentContext(), "new");
+        return clazz.callMethod(context, "new");
     }
 
     /**
@@ -143,7 +143,7 @@ public class GeneratorState extends RubyObject {
      * This options defaults to <code>false</code>.
      */
     @JRubyMethod(name = "initialize", rest = true, visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(IRubyObject[] args) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = getRuntime();
         indent = runtime.newString();
         space = runtime.newString();
@@ -155,7 +155,7 @@ public class GeneratorState extends RubyObject {
             maxNesting = 19;
         }
         else {
-            configure(args[0]);
+            configure(context, args[0]);
         }
         return this;
     }
@@ -300,14 +300,14 @@ public class GeneratorState extends RubyObject {
      * @param vOpts The options hash
      * @return The receiver
      */
-    @JRubyMethod(name = "configure", required = 1)
-    public IRubyObject configure(IRubyObject vOpts) {
+    @JRubyMethod(required = 1)
+    public IRubyObject configure(ThreadContext context, IRubyObject vOpts) {
         RubyHash opts;
         if (vOpts.respondsTo("to_hash")) {
             opts = vOpts.convertToHash();
         }
         else {
-            opts = vOpts.callMethod(getRuntime().getCurrentContext(), "to_h").convertToHash();
+            opts = vOpts.callMethod(context, "to_h").convertToHash();
         }
 
         RubyString vIndent = Utils.getSymString(opts, "indent");
@@ -346,18 +346,18 @@ public class GeneratorState extends RubyObject {
      * passed to the configure method.
      * @return
      */
-    @JRubyMethod(name = "to_h")
-    public RubyHash to_h() {
+    @JRubyMethod
+    public RubyHash to_h(ThreadContext context) {
         Ruby runtime = getRuntime();
         RubyHash result = RubyHash.newHash(runtime);
 
-        result.op_aset(runtime.newSymbol("indent"), indent_get());
-        result.op_aset(runtime.newSymbol("space"), space_get());
-        result.op_aset(runtime.newSymbol("space_before"), space_before_get());
-        result.op_aset(runtime.newSymbol("object_nl"), object_nl_get());
-        result.op_aset(runtime.newSymbol("array_nl"), array_nl_get());
-        result.op_aset(runtime.newSymbol("allow_nan"), allow_nan_p());
-        result.op_aset(runtime.newSymbol("max_nesting"), max_nesting_get());
+        result.op_aset(context, runtime.newSymbol("indent"), indent_get());
+        result.op_aset(context, runtime.newSymbol("space"), space_get());
+        result.op_aset(context, runtime.newSymbol("space_before"), space_before_get());
+        result.op_aset(context, runtime.newSymbol("object_nl"), object_nl_get());
+        result.op_aset(context, runtime.newSymbol("array_nl"), array_nl_get());
+        result.op_aset(context, runtime.newSymbol("allow_nan"), allow_nan_p());
+        result.op_aset(context, runtime.newSymbol("max_nesting"), max_nesting_get());
         return result;
     }
 
