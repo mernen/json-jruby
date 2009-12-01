@@ -74,10 +74,6 @@ class GeneratorMethodsLoader {
                     state.checkMaxNesting(depth + 1);
                 }
                 if (state.checkCircular()) {
-                    if (state.hasSeen(self)) {
-                        throw Utils.newException(runtime, Utils.M_CIRCULAR_DATA_STRUCTURE,
-                            "circular data structures not supported!");
-                    }
                     state.remember(self);
                     result = transform(self, state, depth);
                     state.forget(self);
@@ -248,10 +244,6 @@ class GeneratorMethodsLoader {
                 boolean firstItem = true;
                 for (int i = 0, t = self.getLength(); i < t; i++) {
                     IRubyObject element = self.eltInternal(i);
-                    if (state.hasSeen(element)) {
-                        throw Utils.newException(runtime, Utils.M_CIRCULAR_DATA_STRUCTURE,
-                            "circular data structures not supported!");
-                    }
                     result.infectBy(element);
                     if (firstItem) {
                         firstItem = false;

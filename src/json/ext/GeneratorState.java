@@ -21,8 +21,10 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * The <code>JSON::Ext::Generator::State</code> class.
@@ -176,6 +178,60 @@ public class GeneratorState extends RubyObject {
         return this;
     }
 
+    /**
+     * XXX
+     */
+    @JRubyMethod(required = 1)
+    public IRubyObject generate(ThreadContext context, IRubyObject obj) {
+        Ruby runtime = getRuntime();
+        IRubyObject result = obj.callMethod(context, "to_json", this);
+        if (!objectOrArrayLiteral(result)) {
+            throw Utils.newException(runtime, Utils.M_GENERATOR_ERROR,
+                    "only generation of JSON objects or arrays allowed");
+        }
+        return result;
+    }
+
+    /**
+     * Ensures the given string is in the form "[...]" or "{...}", being
+     * possibly surrounded by white space.
+     * The string's encoding must be ASCII-compatible.
+     * @param value
+     * @return
+     */
+    private static boolean objectOrArrayLiteral(IRubyObject value) {
+        if (!(value instanceof RubyString)) return false;
+        ByteList bl = ((RubyString)value).getByteList();
+        int len = bl.length();
+
+        for (int pos = 0; pos < len - 1; pos++) {
+            int b = bl.get(pos);
+            if (Character.isWhitespace(b)) continue;
+
+            // match the opening brace
+            switch (b) {
+            case '[':
+                return matchClosingBrace(bl, pos, len, ']');
+            case '{':
+                return matchClosingBrace(bl, pos, len, '}');
+            default:
+                return false;
+            }
+        }
+        return false;
+    }
+
+    private static boolean matchClosingBrace(ByteList bl, int pos, int len,
+                                             int brace) {
+        for (int endPos = len - 1; endPos > pos; endPos--) {
+            int b = bl.get(endPos);
+            if (Character.isWhitespace(b)) continue;
+            if (b == brace) return true;
+            return false;
+        }
+        return false;
+    }
+
     @JRubyMethod(name = "indent")
     public RubyString indent_get() {
         return indent;
@@ -283,17 +339,6 @@ public class GeneratorState extends RubyObject {
     }
 
     /**
-     * @return {@link Ruby#getTrue() true} if the object is part of the current
-     *         chain of recursive JSON generation, or {@link Ruby#getNil() nil}
-     *         if not
-     * @see #hasSeen(IRubyObject)
-     */
-    @JRubyMethod(name = "seen?", required = 1)
-    public IRubyObject seen_p(IRubyObject object) {
-        return hasSeen(object) ? getRuntime().getTrue() : getRuntime().getNil();
-    }
-
-    /**
      * Adds an object to the stack.
      * @param object The object being inspected
      */
@@ -301,26 +346,8 @@ public class GeneratorState extends RubyObject {
         seen.add(getId(object));
     }
 
-    /**
-     * @return {@link Ruby#getTrue() true}
-     * @see #remember(IRubyObject)
-     */
-    @JRubyMethod(name = "remember", required = 1)
-    public IRubyObject rb_remember(IRubyObject object) {
-        remember(object);
-        return getRuntime().getTrue();
-    }
-
     public boolean forget(IRubyObject object) {
         return seen.remove(getId(object));
-    }
-
-    /**
-     * @see #forget(IRubyObject)
-     */
-    @JRubyMethod(name = "forget", required = 1)
-    public IRubyObject rb_forget(IRubyObject object) {
-        return forget(object) ? getRuntime().getTrue() : getRuntime().getNil();
     }
 
     /**
