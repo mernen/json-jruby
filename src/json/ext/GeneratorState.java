@@ -329,6 +329,9 @@ public class GeneratorState extends RubyObject {
         if (vMaxNesting != null) {
             maxNesting = vMaxNesting.isTrue() ? RubyNumeric.fix2int(vMaxNesting) : 0;
         }
+        else {
+            maxNesting = 19;
+        }
 
         IRubyObject vAllowNaN = Utils.fastGetSymItem(opts, "allow_nan");
         allowNaN = vAllowNaN != null && vAllowNaN.isTrue();
