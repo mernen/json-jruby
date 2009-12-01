@@ -6,9 +6,6 @@
  */
 package json.ext;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -21,8 +18,10 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * The <code>JSON::Ext::Generator::State</code> class.
@@ -59,17 +58,6 @@ public class GeneratorState extends RubyObject {
      */
     private RubyString arrayNl;
 
-    /**
-     * Whether the generator should check for circular references.
-     * Disabling them may improve performance, but the library user must then
-     * ensure no circular references will happen.
-     */
-    private boolean checkCircular;
-    /**
-     * Internal set of objects that are currently on the stack of inspection.
-     * Used to detect circular references.
-     */
-    private final Set<Long> seen = new HashSet<Long>();
     /**
      * The maximum level of nesting of structures allowed.
      * <code>0</code> means disabled.
@@ -148,9 +136,6 @@ public class GeneratorState extends RubyObject {
      * <dd>a String that is put at the end of a JSON object (default: <code>""</code>) 
      * <dt><code>:array_nl</code>
      * <dd>a String that is put at the end of a JSON array (default: <code>""</code>)
-     * <dt><code>:check_circular</code>
-     * <dd><code>true</code> if checking for circular data structures should be
-     * done, <code>false</code> (the default) otherwise.
      * <dt><code>:allow_nan</code>
      * <dd><code>true</code> if <code>NaN</code>, <code>Infinity</code>, and
      * <code>-Infinity</code> should be generated, otherwise an exception is
@@ -166,7 +151,6 @@ public class GeneratorState extends RubyObject {
         arrayNl = runtime.newString();
         objectNl = runtime.newString();
         if (args.length == 0 || args[0].isNil()) {
-            checkCircular = true;
             allowNaN = false;
             maxNesting = 19;
         }
@@ -174,6 +158,60 @@ public class GeneratorState extends RubyObject {
             configure(args[0]);
         }
         return this;
+    }
+
+    /**
+     * XXX
+     */
+    @JRubyMethod(required = 1)
+    public IRubyObject generate(ThreadContext context, IRubyObject obj) {
+        Ruby runtime = getRuntime();
+        IRubyObject result = obj.callMethod(context, "to_json", this);
+        if (!objectOrArrayLiteral(result)) {
+            throw Utils.newException(runtime, Utils.M_GENERATOR_ERROR,
+                    "only generation of JSON objects or arrays allowed");
+        }
+        return result;
+    }
+
+    /**
+     * Ensures the given string is in the form "[...]" or "{...}", being
+     * possibly surrounded by white space.
+     * The string's encoding must be ASCII-compatible.
+     * @param value
+     * @return
+     */
+    private static boolean objectOrArrayLiteral(IRubyObject value) {
+        if (!(value instanceof RubyString)) return false;
+        ByteList bl = ((RubyString)value).getByteList();
+        int len = bl.length();
+
+        for (int pos = 0; pos < len - 1; pos++) {
+            int b = bl.get(pos);
+            if (Character.isWhitespace(b)) continue;
+
+            // match the opening brace
+            switch (b) {
+            case '[':
+                return matchClosingBrace(bl, pos, len, ']');
+            case '{':
+                return matchClosingBrace(bl, pos, len, '}');
+            default:
+                return false;
+            }
+        }
+        return false;
+    }
+
+    private static boolean matchClosingBrace(ByteList bl, int pos, int len,
+                                             int brace) {
+        for (int endPos = len - 1; endPos > pos; endPos--) {
+            int b = bl.get(endPos);
+            if (Character.isWhitespace(b)) continue;
+            if (b == brace) return true;
+            return false;
+        }
+        return false;
     }
 
     @JRubyMethod(name = "indent")
@@ -231,11 +269,6 @@ public class GeneratorState extends RubyObject {
         return arrayNl;
     }
 
-    @JRubyMethod(name = "check_circular?")
-    public RubyBoolean check_circular_p() {
-        return getRuntime().newBoolean(checkCircular);
-    }
-
     @JRubyMethod(name = "max_nesting")
     public RubyInteger max_nesting_get() {
         return getRuntime().newFixnum(maxNesting);
@@ -257,70 +290,6 @@ public class GeneratorState extends RubyObject {
     @JRubyMethod(name = "allow_nan?")
     public RubyBoolean allow_nan_p() {
         return getRuntime().newBoolean(allowNaN);
-    }
-
-     /**
-     * Convenience method for the "seen" methods.
-     * @param object The object to process
-     * @return The object's Ruby ID
-     * @see #hasSeen(IRubyObject)
-     * @see #remember(IRubyObject)
-     * @see #forget(IRubyObject)
-     */
-    private static long getId(IRubyObject object) {
-        return object.getRuntime().getObjectSpace().idOf(object);
-    }
-
-    /**
-     * Checks whether an object is part of the current chain of recursive JSON
-     * generation.
-     * @param object The object to check
-     * @return Whether the object is part of the current chain of recursive
-     *         JSON generation or not
-     */
-    public boolean hasSeen(IRubyObject object) {
-        return seen.contains(getId(object));
-    }
-
-    /**
-     * @return {@link Ruby#getTrue() true} if the object is part of the current
-     *         chain of recursive JSON generation, or {@link Ruby#getNil() nil}
-     *         if not
-     * @see #hasSeen(IRubyObject)
-     */
-    @JRubyMethod(name = "seen?", required = 1)
-    public IRubyObject seen_p(IRubyObject object) {
-        return hasSeen(object) ? getRuntime().getTrue() : getRuntime().getNil();
-    }
-
-    /**
-     * Adds an object to the stack.
-     * @param object The object being inspected
-     */
-    public void remember(IRubyObject object) {
-        seen.add(getId(object));
-    }
-
-    /**
-     * @return {@link Ruby#getTrue() true}
-     * @see #remember(IRubyObject)
-     */
-    @JRubyMethod(name = "remember", required = 1)
-    public IRubyObject rb_remember(IRubyObject object) {
-        remember(object);
-        return getRuntime().getTrue();
-    }
-
-    public boolean forget(IRubyObject object) {
-        return seen.remove(getId(object));
-    }
-
-    /**
-     * @see #forget(IRubyObject)
-     */
-    @JRubyMethod(name = "forget", required = 1)
-    public IRubyObject rb_forget(IRubyObject object) {
-        return forget(object) ? getRuntime().getTrue() : getRuntime().getNil();
     }
 
     /**
@@ -356,12 +325,12 @@ public class GeneratorState extends RubyObject {
         RubyString vObjectNl = Utils.getSymString(opts, "object_nl");
         if (vObjectNl != null) objectNl = vObjectNl;
 
-        IRubyObject vCheckCircular = Utils.fastGetSymItem(opts, "check_circular");
-        checkCircular = vCheckCircular == null || vCheckCircular.isTrue();
-
         IRubyObject vMaxNesting = Utils.fastGetSymItem(opts, "max_nesting");
         if (vMaxNesting != null) {
             maxNesting = vMaxNesting.isTrue() ? RubyNumeric.fix2int(vMaxNesting) : 0;
+        }
+        else {
+            maxNesting = 19;
         }
 
         IRubyObject vAllowNaN = Utils.fastGetSymItem(opts, "allow_nan");
@@ -387,7 +356,6 @@ public class GeneratorState extends RubyObject {
         result.op_aset(runtime.newSymbol("space_before"), space_before_get());
         result.op_aset(runtime.newSymbol("object_nl"), object_nl_get());
         result.op_aset(runtime.newSymbol("array_nl"), array_nl_get());
-        result.op_aset(runtime.newSymbol("check_circular"), check_circular_p());
         result.op_aset(runtime.newSymbol("allow_nan"), allow_nan_p());
         result.op_aset(runtime.newSymbol("max_nesting"), max_nesting_get());
         return result;
@@ -399,14 +367,6 @@ public class GeneratorState extends RubyObject {
      */
     public int getMaxNesting() {
         return maxNesting;
-    }
-
-    /**
-     * Returns whether circular reference checking should be performed.
-     * @return
-     */
-    public boolean checkCircular() {
-        return checkCircular;
     }
 
     /**

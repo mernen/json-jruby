@@ -73,18 +73,7 @@ class GeneratorMethodsLoader {
                     depth = RubyNumeric.fix2int(args[1]);
                     state.checkMaxNesting(depth + 1);
                 }
-                if (state.checkCircular()) {
-                    if (state.hasSeen(self)) {
-                        throw Utils.newException(runtime, Utils.M_CIRCULAR_DATA_STRUCTURE,
-                            "circular data structures not supported!");
-                    }
-                    state.remember(self);
-                    result = transform(self, state, depth);
-                    state.forget(self);
-                }
-                else {
-                    result = transform(self, state, depth);
-                }
+                result = transform(self, state, depth);
 
                 return result;
             }
@@ -239,65 +228,29 @@ class GeneratorMethodsLoader {
             System.arraycopy(arrayNl.unsafeBytes(), arrayNl.begin(), delim, 1, arrayNl.length());
 
             state.checkMaxNesting(depth + 1);
-            if (state.checkCircular()) {
-                state.remember(self);
-
-                result.cat((byte)'[');
-                result.cat(arrayNl);
-
-                boolean firstItem = true;
-                for (int i = 0, t = self.getLength(); i < t; i++) {
-                    IRubyObject element = self.eltInternal(i);
-                    if (state.hasSeen(element)) {
-                        throw Utils.newException(runtime, Utils.M_CIRCULAR_DATA_STRUCTURE,
-                            "circular data structures not supported!");
-                    }
-                    result.infectBy(element);
-                    if (firstItem) {
-                        firstItem = false;
-                    }
-                    else {
-                        result.cat(delim);
-                    }
-                    result.cat(shift);
-                    RubyString elemJson = Utils.toJson(element, state, RubyNumeric.int2fix(runtime, depth + 1));
-                    result.cat(elemJson.getByteList());
+            result.cat((byte)'[');
+            result.cat(arrayNl);
+            boolean firstItem = true;
+            for (int i = 0, t = self.getLength(); i < t; i++) {
+                IRubyObject element = self.eltInternal(i);
+                result.infectBy(element);
+                if (firstItem) {
+                    firstItem = false;
                 }
-
-                if (arrayNl.length() != 0) {
-                    result.cat(arrayNl);
-                    result.cat(shift, 0, depth * indentUnit.length());
+                else {
+                    result.cat(delim);
                 }
-
-                result.cat((byte)']');
-
-                state.forget(self);
+                result.cat(shift);
+                RubyString elemJson = Utils.toJson(element, state, RubyNumeric.int2fix(runtime, depth + 1));
+                result.cat(elemJson.getByteList());
             }
-            else {
-                result.cat((byte)'[');
+
+            if (arrayNl.length() != 0) {
                 result.cat(arrayNl);
-                boolean firstItem = true;
-                for (int i = 0, t = self.getLength(); i < t; i++) {
-                    IRubyObject element = self.eltInternal(i);
-                    result.infectBy(element);
-                    if (firstItem) {
-                        firstItem = false;
-                    }
-                    else {
-                        result.cat(delim);
-                    }
-                    result.cat(shift);
-                    RubyString elemJson = Utils.toJson(element, state, RubyNumeric.int2fix(runtime, depth + 1));
-                    result.cat(elemJson.getByteList());
-                }
-
-                if (arrayNl.length() != 0) {
-                    result.cat(arrayNl);
-                    result.cat(shift, 0, depth * indentUnit.length());
-                }
-
-                result.cat((byte)']');
+                result.cat(shift, 0, depth * indentUnit.length());
             }
+
+            result.cat((byte)']');
 
             return result;
         }
