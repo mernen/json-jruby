@@ -304,11 +304,15 @@ class GeneratorMethodsLoader {
      */
     private static Callback STRING_TO_JSON = new OptionalArgsCallback() {
         public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
+            Ruby runtime = vSelf.getRuntime();
             // using convertToString as a safety guard measure
-            RubyString self = vSelf.convertToString();
-            char[] chars = decodeString(self);
-            int preSize = 2 + self.getByteList().length();
-            RubyString result = self.getRuntime().newString(new ByteList(preSize));
+            char[] chars = decodeString(runtime, vSelf.convertToString());
+            // For most apps, the vast majority of strings will be plain simple
+            // ASCII strings with no characters that need escaping. So, we'll
+            // preallocate just enough space for the entire string plus opening
+            // and closing quotes
+            int preSize = 2 + chars.length;
+            RubyString result = runtime.newString(new ByteList(preSize));
             result.cat((byte)'"');
             final byte[] escapeSequence = new byte[] { '\\', 0 };
             for (char c : chars) {
@@ -347,8 +351,7 @@ class GeneratorMethodsLoader {
             return result;
         }
 
-        private char[] decodeString(RubyString string) {
-            Ruby runtime = string.getRuntime();
+        private char[] decodeString(Ruby runtime, RubyString string) {
             ThreadContext context = runtime.getCurrentContext();
             RuntimeInfo info = RuntimeInfo.forRuntime(runtime);
             if (info.encodingsSupported() &&
