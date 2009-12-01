@@ -14,6 +14,7 @@ import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
@@ -29,19 +30,6 @@ final class Utils {
 
     private Utils() {
         throw new RuntimeException();
-    }
-
-    /**
-     * Convenience method for looking up items on a {@link RubyHash Hash}
-     * with a {@link RubySymbol Symbol} key
-     * @param hash The Hash to look up at
-     * @param key The Symbol name to look up for
-     * @return The item in the {@link RubyHash Hash}, or the Hash's
-     *         {@link RubyHash#default_value_get(IRubyObject[]) default} if not found
-     */
-    static IRubyObject getSymItem(RubyHash hash, String key) {
-        return hash.op_aref(hash.getRuntime().getCurrentContext(),
-                            hash.getRuntime().newSymbol(key));
     }
 
     /**
@@ -69,7 +57,7 @@ final class Utils {
      *                        evaluate to <code>false</code> and can't be
      *                        converted to string
      */
-    static RubyString getSymString(RubyHash hash, String key)
+    static RubyString fastGetSymString(RubyHash hash, String key)
             throws RaiseException {
         IRubyObject value = fastGetSymItem(hash, key);
         return value != null && value.isTrue() ? value.convertToString() : null;
@@ -104,30 +92,29 @@ final class Utils {
      *                        of the expected type
      */
     static RubyArray ensureArray(IRubyObject object) throws RaiseException {
-        if (object instanceof RubyArray) {
-            return (RubyArray)object;
-        }
+        if (object instanceof RubyArray) return (RubyArray)object;
         Ruby runtime = object.getRuntime();
         throw runtime.newTypeError(object, runtime.getArray());
     }
 
-    static RaiseException newException(Ruby runtime, String className, String message) {
-        return newException(runtime, className, runtime.newString(message));
+    static RaiseException newException(ThreadContext context, String className,
+                                       String message) {
+        return newException(context, className,
+                            context.getRuntime().newString(message));
     }
 
-    static RaiseException newException(Ruby runtime, String className,
-                                       String messageBegin, ByteList messageEnd) {
-        RubyString msg = runtime.newString(messageBegin).cat(messageEnd);
-        return newException(runtime, className, msg);
+    static RaiseException newException(ThreadContext context, String className,
+            String messageBegin, ByteList messageEnd) {
+        RubyString msg = context.getRuntime().newString(messageBegin).cat(messageEnd);
+        return newException(context, className, msg);
     }
 
-    static RaiseException newException(Ruby runtime, String className,
+    static RaiseException newException(ThreadContext context, String className,
                                        RubyString message) {
-        RubyClass klazz = runtime.getModule("JSON").getClass(className);
+        RubyClass klazz = context.getRuntime().getModule("JSON").getClass(className);
         RubyException excptn =
-            (RubyException)klazz.newInstance(runtime.getCurrentContext(),
-                                             new IRubyObject[] {message},
-                                             Block.NULL_BLOCK);
+            (RubyException)klazz.newInstance(context,
+                new IRubyObject[] {message}, Block.NULL_BLOCK);
         return new RaiseException(excptn);
     }
 
@@ -139,9 +126,10 @@ final class Utils {
      * @return The {@link RubyString String} containing the
      *         JSON representation of the object
      */
-    static RubyString toJson(IRubyObject object, IRubyObject... args) {
+    static RubyString toJson(ThreadContext context, IRubyObject object,
+                             IRubyObject... args) {
         Ruby runtime = object.getRuntime();
-        IRubyObject result = object.callMethod(runtime.getCurrentContext(), "to_json", args);
+        IRubyObject result = object.callMethod(context, "to_json", args);
         if (result instanceof RubyString) return (RubyString)result;
         throw runtime.newTypeError("to_json must return a String");
     }

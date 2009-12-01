@@ -142,7 +142,7 @@ public class GeneratorState extends RubyObject {
      * thrown if these values are encountered.
      * This options defaults to <code>false</code>.
      */
-    @JRubyMethod(name = "initialize", rest = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = getRuntime();
         indent = runtime.newString();
@@ -165,10 +165,9 @@ public class GeneratorState extends RubyObject {
      */
     @JRubyMethod(required = 1)
     public IRubyObject generate(ThreadContext context, IRubyObject obj) {
-        Ruby runtime = getRuntime();
-        IRubyObject result = obj.callMethod(context, "to_json", this);
+        RubyString result = Utils.toJson(context, obj, this);
         if (!objectOrArrayLiteral(result)) {
-            throw Utils.newException(runtime, Utils.M_GENERATOR_ERROR,
+            throw Utils.newException(context, Utils.M_GENERATOR_ERROR,
                     "only generation of JSON objects or arrays allowed");
         }
         return result;
@@ -181,9 +180,8 @@ public class GeneratorState extends RubyObject {
      * @param value
      * @return
      */
-    private static boolean objectOrArrayLiteral(IRubyObject value) {
-        if (!(value instanceof RubyString)) return false;
-        ByteList bl = ((RubyString)value).getByteList();
+    private static boolean objectOrArrayLiteral(RubyString value) {
+        ByteList bl = value.getByteList();
         int len = bl.length();
 
         for (int pos = 0; pos < len - 1; pos++) {
@@ -310,19 +308,19 @@ public class GeneratorState extends RubyObject {
             opts = vOpts.callMethod(context, "to_h").convertToHash();
         }
 
-        RubyString vIndent = Utils.getSymString(opts, "indent");
+        RubyString vIndent = Utils.fastGetSymString(opts, "indent");
         if (vIndent != null) indent = vIndent;
 
-        RubyString vSpace = Utils.getSymString(opts, "space");
+        RubyString vSpace = Utils.fastGetSymString(opts, "space");
         if (vSpace != null) space = vSpace;
 
-        RubyString vSpaceBefore = Utils.getSymString(opts, "space_before");
+        RubyString vSpaceBefore = Utils.fastGetSymString(opts, "space_before");
         if (vSpaceBefore != null) spaceBefore = vSpaceBefore;
 
-        RubyString vArrayNl = Utils.getSymString(opts, "array_nl");
+        RubyString vArrayNl = Utils.fastGetSymString(opts, "array_nl");
         if (vArrayNl != null) arrayNl = vArrayNl;
 
-        RubyString vObjectNl = Utils.getSymString(opts, "object_nl");
+        RubyString vObjectNl = Utils.fastGetSymString(opts, "object_nl");
         if (vObjectNl != null) objectNl = vObjectNl;
 
         IRubyObject vMaxNesting = Utils.fastGetSymItem(opts, "max_nesting");
@@ -375,8 +373,8 @@ public class GeneratorState extends RubyObject {
      */
     void checkMaxNesting(int depth) {
         if (getMaxNesting() != 0 && depth > getMaxNesting()) {
-            throw Utils.newException(getRuntime(), Utils.M_NESTING_ERROR,
-                "nesting of " + depth + " is too deep");
+            throw Utils.newException(getRuntime().getCurrentContext(),
+                    Utils.M_NESTING_ERROR, "nesting of " + depth + " is too deep");
         }
     }
 }

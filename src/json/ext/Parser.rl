@@ -132,8 +132,7 @@ public class Parser extends RubyObject {
         return parser;
     }
 
-    @JRubyMethod(name = "initialize", required = 1, optional = 1,
-                 visibility = Visibility.PRIVATE)
+    @JRubyMethod(required = 1, optional = 1, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         RubyString source = convertEncoding(context, args[0].convertToString());
 
@@ -186,7 +185,7 @@ public class Parser extends RubyObject {
         ByteList bl = source.getByteList();
         int len = bl.length();
         if (len < 2) {
-            throw Utils.newException(getRuntime(), Utils.M_PARSER_ERROR,
+            throw Utils.newException(context, Utils.M_PARSER_ERROR,
                 "A JSON text must at least contain two octets!");
         }
 
@@ -246,9 +245,9 @@ public class Parser extends RubyObject {
      * <p>Parses the current JSON text <code>source</code> and returns the
      * complete data structure as a result.
      */
-    @JRubyMethod(name = "parse")
-    public IRubyObject parse() {
-        return new ParserSession(this).parse();
+    @JRubyMethod
+    public IRubyObject parse(ThreadContext context) {
+        return new ParserSession(this, context).parse();
     }
 
     /**
@@ -305,6 +304,7 @@ public class Parser extends RubyObject {
     private static class ParserSession {
         private final Parser parser;
         private final Ruby runtime;
+        private final ThreadContext context;
         private final ByteList byteList;
         private final byte[] data;
         private int currentNesting = 0;
@@ -313,9 +313,10 @@ public class Parser extends RubyObject {
         // no idea about the origins of this value, ask Flori ;)
         private static final int EVIL = 0x666;
 
-        private ParserSession(Parser parser) {
+        private ParserSession(Parser parser, ThreadContext context) {
             this.parser = parser;
             runtime = parser.getRuntime();
+            this.context = context;
             byteList = parser.vSource.getByteList();
             data = byteList.unsafeBytes();
         }
@@ -325,7 +326,7 @@ public class Parser extends RubyObject {
                 runtime.newString("unexpected token at '")
                        .cat(data, absStart, absEnd - absStart)
                        .cat((byte)'\'');
-            return Utils.newException(runtime, Utils.M_PARSER_ERROR, msg);
+            return Utils.newException(context, Utils.M_PARSER_ERROR, msg);
         }
 
         %%{
@@ -617,7 +618,7 @@ public class Parser extends RubyObject {
                     }
                     c = byteList.charAt(i);
                     if (surrogateStart != -1 && c != 'u') {
-                        throw Utils.newException(runtime, Utils.M_PARSER_ERROR,
+                        throw Utils.newException(context, Utils.M_PARSER_ERROR,
                             "partial character in source, but hit end near ",
                             (ByteList)byteList.subSequence(surrogateStart, relEnd));
                     }
@@ -648,8 +649,6 @@ public class Parser extends RubyObject {
                             i++;
                             break;
                         case 'u':
-                            // XXX append the UTF-8 representation of characters for now;
-                            //     once JRuby supports Ruby 1.9, this might change
                             i++;
                             if (i > relEnd - 4) {
                                 return null;
@@ -665,7 +664,7 @@ public class Parser extends RubyObject {
                                         surrogate = 0;
                                     }
                                     else {
-                                        throw Utils.newException(runtime, Utils.M_PARSER_ERROR,
+                                        throw Utils.newException(context, Utils.M_PARSER_ERROR,
                                             "partial character in source, but hit end near ",
                                             (ByteList)byteList.subSequence(surrogateStart, relEnd));
                                     }
@@ -686,7 +685,7 @@ public class Parser extends RubyObject {
                     }
                 }
                 else if (surrogateStart != -1) {
-                    throw Utils.newException(runtime, Utils.M_PARSER_ERROR,
+                    throw Utils.newException(context, Utils.M_PARSER_ERROR,
                         "partial character in source, but hit end near ",
                         (ByteList)byteList.subSequence(surrogateStart, relEnd));
                 }
@@ -698,7 +697,7 @@ public class Parser extends RubyObject {
                 }
             }
             if (surrogateStart != -1) {
-                throw Utils.newException(runtime, Utils.M_PARSER_ERROR,
+                throw Utils.newException(context, Utils.M_PARSER_ERROR,
                     "partial character in source, but hit end near ",
                     (ByteList)byteList.subSequence(surrogateStart, relEnd));
             }
@@ -769,16 +768,15 @@ public class Parser extends RubyObject {
             int cs = EVIL;
 
             if (parser.maxNesting > 0 && currentNesting > parser.maxNesting) {
-                throw Utils.newException(runtime, Utils.M_NESTING_ERROR,
+                throw Utils.newException(context, Utils.M_NESTING_ERROR,
                     "nesting of " + currentNesting + " is too deep");
             }
 
             // this is guaranteed to be a RubyArray due to the earlier
             // allocator test at readRubyClassParameter
             RubyArray result =
-                (RubyArray)parser.arrayClass.newInstance(
-                    runtime.getCurrentContext(), new IRubyObject[0],
-                    Block.NULL_BLOCK);
+                (RubyArray)parser.arrayClass.newInstance(context,
+                    new IRubyObject[0], Block.NULL_BLOCK);
 
             %% write init;
             %% write exec;
@@ -841,16 +839,15 @@ public class Parser extends RubyObject {
             RubyString lastName = null;
 
             if (parser.maxNesting > 0 && currentNesting > parser.maxNesting) {
-                throw Utils.newException(runtime, Utils.M_NESTING_ERROR,
+                throw Utils.newException(context, Utils.M_NESTING_ERROR,
                     "nesting of " + currentNesting + " is too deep");
             }
 
             // this is guaranteed to be a RubyHash due to the earlier
             // allocator test at readRubyClassParameter
             RubyHash result =
-                (RubyHash)parser.objectClass.newInstance(
-                    runtime.getCurrentContext(), new IRubyObject[0],
-                    Block.NULL_BLOCK);
+                (RubyHash)parser.objectClass.newInstance(context,
+                    new IRubyObject[0], Block.NULL_BLOCK);
 
             %% write init;
             %% write exec;
@@ -863,7 +860,7 @@ public class Parser extends RubyObject {
 
             // attempt to de-serialize object
             if (parser.createId != null) {
-                IRubyObject vKlassName = result.op_aref(runtime.getCurrentContext(), parser.createId);
+                IRubyObject vKlassName = result.op_aref(context, parser.createId);
                 if (!vKlassName.isNil()) {
                     String klassName = vKlassName.asJavaString();
                     RubyModule klass;
@@ -880,7 +877,6 @@ public class Parser extends RubyObject {
                             throw e;
                         }
                     }
-                    ThreadContext context = runtime.getCurrentContext();
                     if (klass.respondsTo("json_creatable?") &&
                         klass.callMethod(context, "json_creatable?").isTrue()) {
 

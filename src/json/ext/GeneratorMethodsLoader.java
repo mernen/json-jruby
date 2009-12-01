@@ -85,6 +85,7 @@ class GeneratorMethodsLoader {
          * @return The JSON representation of the Hash
          */
         private RubyString simpleTransform(RubyHash self) {
+            final ThreadContext context = self.getRuntime().getCurrentContext();
             final int preSize = 2 + Math.max(self.size() * 12, 0);
             final RubyString result =
                 self.getRuntime().newString(new ByteList(preSize));
@@ -101,12 +102,12 @@ class GeneratorMethodsLoader {
                         result.cat((byte)',');
                     }
 
-                    RubyString jsonKey = Utils.toJson(key.asString());
+                    RubyString jsonKey = Utils.toJson(context, key.asString());
                     result.cat(jsonKey.getByteList());
                     result.infectBy(jsonKey);
                     result.cat((byte)':');
 
-                    RubyString jsonValue = Utils.toJson(value);
+                    RubyString jsonValue = Utils.toJson(context, value);
                     result.cat(jsonValue.getByteList());
                     result.infectBy(jsonValue);
                 }
@@ -117,6 +118,7 @@ class GeneratorMethodsLoader {
 
         private RubyString transform(RubyHash self, final GeneratorState state, int depth) {
             final Ruby runtime = self.getRuntime();
+            final ThreadContext context = runtime.getCurrentContext();
 
             final ByteList objectNl = state.object_nl_get().getByteList();
             final byte[] indent = Utils.repeat(state.indent_get().getByteList(), depth + 1);
@@ -144,14 +146,16 @@ class GeneratorMethodsLoader {
                     }
                     if (objectNl.length() != 0) result.cat(indent);
 
-                    RubyString keyJson = Utils.toJson(key.asString(), state, subDepth);
+                    RubyString keyJson = Utils.toJson(context, key.asString(),
+                            state, subDepth);
                     result.cat(keyJson.getByteList());
                     result.infectBy(keyJson);
                     result.cat(spaceBefore);
                     result.cat((byte)':');
                     result.cat(space);
 
-                    RubyString valueJson = Utils.toJson(value, state, subDepth);
+                    RubyString valueJson = Utils.toJson(context, value, state,
+                            subDepth);
                     result.cat(valueJson.getByteList());
                     result.infectBy(valueJson);
                 }
@@ -189,6 +193,7 @@ class GeneratorMethodsLoader {
             RubyString result;
 
             if (state.isNil()) {
+                ThreadContext context = runtime.getCurrentContext();
                 int preSize = 2 + Math.max(self.size() * 4, 0);
                 result = runtime.newString(new ByteList(preSize));
                 result.cat((byte)'[');
@@ -199,7 +204,7 @@ class GeneratorMethodsLoader {
                     if (i > 0) {
                         result.cat((byte)',');
                     }
-                    RubyString elementStr = Utils.toJson(element);
+                    RubyString elementStr = Utils.toJson(context, element);
                     result.append(elementStr);
                 }
                 result.cat((byte)']');
@@ -214,6 +219,7 @@ class GeneratorMethodsLoader {
 
         private RubyString transform(RubyArray self, GeneratorState state, int depth) {
             final Ruby runtime = self.getRuntime();
+            ThreadContext context = runtime.getCurrentContext();
             final int preSize = 2 + Math.max(self.size() * 4, 0);
             final RubyString result = runtime.newString(new ByteList(preSize));
 
@@ -225,7 +231,8 @@ class GeneratorMethodsLoader {
             ByteList arrayNl = state.array_nl_get().getByteList();
             byte[] delim = new byte[1 + arrayNl.length()];
             delim[0] = ',';
-            System.arraycopy(arrayNl.unsafeBytes(), arrayNl.begin(), delim, 1, arrayNl.length());
+            System.arraycopy(arrayNl.unsafeBytes(), arrayNl.begin(), delim, 1,
+                    arrayNl.length());
 
             state.checkMaxNesting(depth + 1);
             result.cat((byte)'[');
@@ -241,7 +248,8 @@ class GeneratorMethodsLoader {
                     result.cat(delim);
                 }
                 result.cat(shift);
-                RubyString elemJson = Utils.toJson(element, state, RubyNumeric.int2fix(runtime, depth + 1));
+                RubyString elemJson = Utils.toJson(context, element, state,
+                        RubyNumeric.int2fix(runtime, depth + 1));
                 result.cat(elemJson.getByteList());
             }
 
@@ -284,8 +292,8 @@ class GeneratorMethodsLoader {
                     return vSelf.asString();
                 }
                 else {
-                    throw Utils.newException(vSelf.getRuntime(), Utils.M_GENERATOR_ERROR,
-                                             vSelf + " not allowed in JSON");
+                    throw Utils.newException(vSelf.getRuntime().getCurrentContext(),
+                            Utils.M_GENERATOR_ERROR, vSelf + " not allowed in JSON");
                 }
             }
             else {
@@ -380,7 +388,7 @@ class GeneratorMethodsLoader {
                 }
                 return chars;
                 */
-                throw Utils.newException(runtime, Utils.M_GENERATOR_ERROR,
+                throw Utils.newException(context, Utils.M_GENERATOR_ERROR,
                     "source sequence is illegal/malformed utf-8");
             }
         }
