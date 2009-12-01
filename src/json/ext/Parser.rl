@@ -776,7 +776,7 @@ public class Parser extends RubyObject {
             // allocator test at readRubyClassParameter
             RubyArray result =
                 (RubyArray)parser.arrayClass.newInstance(context,
-                    new IRubyObject[0], Block.NULL_BLOCK);
+                    IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
 
             %% write init;
             %% write exec;
@@ -847,7 +847,7 @@ public class Parser extends RubyObject {
             // allocator test at readRubyClassParameter
             RubyHash result =
                 (RubyHash)parser.objectClass.newInstance(context,
-                    new IRubyObject[0], Block.NULL_BLOCK);
+                    IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
 
             %% write init;
             %% write exec;

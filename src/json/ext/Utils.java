@@ -150,6 +150,7 @@ final class Utils {
     }
 
     static byte[] repeat(byte[] a, int begin, int length, int n) {
+        if (length == 0) return ByteList.NULL_ARRAY;
         int resultLen = length * n;
         byte[] result = new byte[resultLen];
         for (int pos = 0; pos < resultLen; pos += length) {

@@ -99,21 +99,27 @@ public class GeneratorState extends RubyObject {
      */
     @JRubyMethod(required = 1, meta = true)
     public static IRubyObject from_state(ThreadContext context,
-            IRubyObject clazzParam, IRubyObject opts, Block block) {
-        // if the given parameter is a Generator::State, return itself
-        RubyModule clazz = (RubyModule)clazzParam;
-        if (clazz.isInstance(opts)) {
-            return (GeneratorState)opts;
-        }
+            IRubyObject clazz, IRubyObject opts, Block block) {
+        return fromState(context, clazz.getRuntime(), (RubyClass)clazz, opts);
+    }
 
-        Ruby runtime = clazz.getRuntime();
+    static GeneratorState fromState(Ruby runtime, IRubyObject opts) {
+        return fromState(runtime.getCurrentContext(), runtime,
+                RuntimeInfo.forRuntime(runtime).generatorStateClass, opts);
+    }
+
+    private static GeneratorState fromState(ThreadContext context,
+            Ruby runtime, RubyClass clazz, IRubyObject opts) {
+        // if the given parameter is a Generator::State, return itself
+        if (clazz.isInstance(opts)) return (GeneratorState)opts;
+
         // if the given parameter is a Hash, pass it to the instantiator
         if (runtime.getHash().isInstance(opts)) {
-            return clazz.callMethod(context, "new", opts);
+            return (GeneratorState)clazz.callMethod(context, "new", opts);
         }
 
         // ignore any other kinds of parameter
-        return clazz.callMethod(context, "new");
+        return (GeneratorState)clazz.callMethod(context, "new");
     }
 
     /**

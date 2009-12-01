@@ -17,14 +17,18 @@ class RuntimeInfo {
             Collections.synchronizedMap(new WeakHashMap<Ruby, RuntimeInfo>(1));
 
     public final RubyModule mJson;
+    public final RubyClass generatorStateClass;
+
     public final RubyEncoding utf8;
     public final RubyEncoding ascii8bit;
+    // other encodings
     private final Map<String, RubyEncoding> encodings;
 
     private RuntimeInfo(Ruby runtime) {
         ThreadContext context = runtime.getCurrentContext();
 
         mJson = runtime.getModule("JSON");
+        generatorStateClass = (RubyClass)runtime.getClassFromPath("JSON::Ext::Generator::State");
 
         RubyClass encodingClass = runtime.getEncoding();
         if (encodingClass == null) {

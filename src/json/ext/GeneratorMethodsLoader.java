@@ -56,68 +56,15 @@ class GeneratorMethodsLoader {
             RubyHash self = vSelf.convertToHash();
             Ruby runtime = self.getRuntime();
             args = Arity.scanArgs(runtime, args, 0, 2);
-            IRubyObject vState = args[0];
 
-            if (vState.isNil()) {
-                return simpleTransform(self);
-            }
-            else {
-                GeneratorState state = Utils.ensureState(vState);
-                int depth;
-                RubyString result;
+            GeneratorState state = GeneratorState.fromState(runtime, args[0]);
+            int depth = args[1].isNil() ? 0 : RubyNumeric.fix2int(args[1]);
 
-                if (args[1].isNil()) {
-                    depth = 0;
-                }
-                else {
-                    depth = RubyNumeric.fix2int(args[1]);
-                    state.checkMaxNesting(depth + 1);
-                }
-                result = transform(self, state, depth);
-
-                return result;
-            }
+            state.checkMaxNesting(depth + 1);
+            return transform(runtime, self, state, depth);
         }
 
-        /**
-         * Performs a simple Hash-to-JSON conversion, with no customization.
-         * @param hash The Hash to process
-         * @return The JSON representation of the Hash
-         */
-        private RubyString simpleTransform(RubyHash self) {
-            final ThreadContext context = self.getRuntime().getCurrentContext();
-            final int preSize = 2 + Math.max(self.size() * 12, 0);
-            final RubyString result =
-                self.getRuntime().newString(new ByteList(preSize));
-            result.cat((byte)'{');
-            self.visitAll(new RubyHash.Visitor() {
-                private boolean firstPair = true;
-                @Override
-                public void visit(IRubyObject key, IRubyObject value) {
-                    // XXX key == Qundef???
-                    if (firstPair) {
-                        firstPair = false;
-                    }
-                    else {
-                        result.cat((byte)',');
-                    }
-
-                    RubyString jsonKey = Utils.toJson(context, key.asString());
-                    result.cat(jsonKey.getByteList());
-                    result.infectBy(jsonKey);
-                    result.cat((byte)':');
-
-                    RubyString jsonValue = Utils.toJson(context, value);
-                    result.cat(jsonValue.getByteList());
-                    result.infectBy(jsonValue);
-                }
-            });
-            result.cat((byte)'}');
-            return result;
-        }
-
-        private RubyString transform(RubyHash self, final GeneratorState state, int depth) {
-            final Ruby runtime = self.getRuntime();
+        private RubyString transform(Ruby runtime, RubyHash self, final GeneratorState state, int depth) {
             final ThreadContext context = runtime.getCurrentContext();
 
             final ByteList objectNl = state.object_nl_get().getByteList();
@@ -126,8 +73,13 @@ class GeneratorMethodsLoader {
             final ByteList space = state.space_get().getByteList();
             final RubyFixnum subDepth = runtime.newFixnum(depth + 1);
 
-            final int preSize = 2 + self.size() * (12 + indent.length + spaceBefore.length() + space.length());
+            // Basic estimative, just to get things started
+            // Math.max() is just being careful with overflowing
+            final int preSize = Math.max(0,
+                    2 + self.size() * (12 + indent.length +
+                                       spaceBefore.length() + space.length()));
             final RubyString result = runtime.newString(new ByteList(preSize));
+            result.infectBy(self);
 
             result.cat((byte)'{');
             result.cat(objectNl);
@@ -136,7 +88,6 @@ class GeneratorMethodsLoader {
 
                 @Override
                 public void visit(IRubyObject key, IRubyObject value) {
-                    // XXX key == Qundef???
                     if (firstPair) {
                         firstPair = false;
                     }
@@ -188,45 +139,18 @@ class GeneratorMethodsLoader {
             RubyArray self = Utils.ensureArray(vSelf);
             Ruby runtime = self.getRuntime();
             args = Arity.scanArgs(runtime, args, 0, 2);
-            IRubyObject state = args[0];
-            IRubyObject vDepth = args[1];
-            RubyString result;
+            GeneratorState state = GeneratorState.fromState(runtime, args[0]);
+            int depth = args[1].isNil() ? 0 : RubyNumeric.fix2int(args[1]);
 
-            if (state.isNil()) {
-                ThreadContext context = runtime.getCurrentContext();
-                int preSize = 2 + Math.max(self.size() * 4, 0);
-                result = runtime.newString(new ByteList(preSize));
-                result.cat((byte)'[');
-                result.infectBy(vSelf);
-                for (int i = 0, t = self.getLength(); i < t; i++) {
-                    IRubyObject element = self.eltInternal(i);
-                    result.infectBy(element);
-                    if (i > 0) {
-                        result.cat((byte)',');
-                    }
-                    RubyString elementStr = Utils.toJson(context, element);
-                    result.append(elementStr);
-                }
-                result.cat((byte)']');
-            }
-            else {
-                int depth = vDepth.isNil() ? 0 : RubyNumeric.fix2int(vDepth);
-                result = transform(self, Utils.ensureState(state), depth);
-            }
-            result.infectBy(vSelf);
-            return result;
+            state.checkMaxNesting(depth + 1);
+            return transform(runtime, self, state, depth);
         }
 
-        private RubyString transform(RubyArray self, GeneratorState state, int depth) {
-            final Ruby runtime = self.getRuntime();
+        private RubyString transform(Ruby runtime, RubyArray self, GeneratorState state, int depth) {
             ThreadContext context = runtime.getCurrentContext();
-            final int preSize = 2 + Math.max(self.size() * 4, 0);
-            final RubyString result = runtime.newString(new ByteList(preSize));
 
             ByteList indentUnit = state.indent_get().getByteList();
             byte[] shift = Utils.repeat(indentUnit, depth + 1);
-
-            result.infectBy(self);
 
             ByteList arrayNl = state.array_nl_get().getByteList();
             byte[] delim = new byte[1 + arrayNl.length()];
@@ -234,7 +158,13 @@ class GeneratorMethodsLoader {
             System.arraycopy(arrayNl.unsafeBytes(), arrayNl.begin(), delim, 1,
                     arrayNl.length());
 
-            state.checkMaxNesting(depth + 1);
+            // Basic estimative, doesn't take much into account
+            // Math.max() is just being careful with overflowing
+            int preSize = Math.max(0,
+                    2 + self.size() * (4 + shift.length + delim.length));
+            final RubyString result = runtime.newString(new ByteList(preSize));
+            result.infectBy(self);
+
             result.cat((byte)'[');
             result.cat(arrayNl);
             boolean firstItem = true;
@@ -251,6 +181,7 @@ class GeneratorMethodsLoader {
                 RubyString elemJson = Utils.toJson(context, element, state,
                         RubyNumeric.int2fix(runtime, depth + 1));
                 result.cat(elemJson.getByteList());
+                result.infectBy(elemJson);
             }
 
             if (arrayNl.length() != 0) {
