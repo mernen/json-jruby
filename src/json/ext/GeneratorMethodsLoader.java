@@ -218,13 +218,17 @@ class GeneratorMethodsLoader {
             double value = RubyFloat.num2dbl(vSelf);
 
             if (Double.isInfinite(value) || Double.isNaN(value)) {
-                GeneratorState state = args.length > 0 ? Utils.ensureState(args[0]) : null;
+                Ruby runtime = vSelf.getRuntime();
+                GeneratorState state = args.length > 0
+                        ? GeneratorState.fromState(runtime, args[0])
+                        : null;
                 if (state != null && state.allowNaN()) {
                     return vSelf.asString();
                 }
                 else {
-                    throw Utils.newException(vSelf.getRuntime().getCurrentContext(),
-                            Utils.M_GENERATOR_ERROR, vSelf + " not allowed in JSON");
+                    throw Utils.newException(runtime.getCurrentContext(),
+                            Utils.M_GENERATOR_ERROR,
+                            vSelf + " not allowed in JSON");
                 }
             }
             else {
@@ -242,10 +246,13 @@ class GeneratorMethodsLoader {
      * Basic Multilingual Plane range are encoded as a pair of surrogates.
      */
     private static Callback STRING_TO_JSON = new OptionalArgsCallback() {
-        public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
+        public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args,
+                                   Block block) {
             Ruby runtime = vSelf.getRuntime();
+            ThreadContext context = runtime.getCurrentContext();
+            RuntimeInfo info = RuntimeInfo.forRuntime(runtime);
             // using convertToString as a safety guard measure
-            char[] chars = decodeString(runtime, vSelf.convertToString());
+            char[] chars = decodeString(info, context, vSelf.convertToString());
             // For most apps, the vast majority of strings will be plain simple
             // ASCII strings with no characters that need escaping. So, we'll
             // preallocate just enough space for the entire string plus opening
@@ -290,9 +297,8 @@ class GeneratorMethodsLoader {
             return result;
         }
 
-        private char[] decodeString(Ruby runtime, RubyString string) {
-            ThreadContext context = runtime.getCurrentContext();
-            RuntimeInfo info = RuntimeInfo.forRuntime(runtime);
+        private char[] decodeString(RuntimeInfo info, ThreadContext context,
+                                    RubyString string) {
             if (info.encodingsSupported() &&
                     string.encoding(context) != info.utf8) {
                 string = (RubyString)string.encode(context, info.utf8);
@@ -319,7 +325,7 @@ class GeneratorMethodsLoader {
                 }
                 return chars;
                 */
-                throw Utils.newException(context, Utils.M_GENERATOR_ERROR,
+                throw Utils.newException(info, context, Utils.M_GENERATOR_ERROR,
                     "source sequence is illegal/malformed utf-8");
             }
         }

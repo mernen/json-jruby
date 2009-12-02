@@ -185,7 +185,7 @@ public class Parser extends RubyObject {
         ByteList bl = source.getByteList();
         int len = bl.length();
         if (len < 2) {
-            throw Utils.newException(context, Utils.M_PARSER_ERROR,
+            throw Utils.newException(info, context, Utils.M_PARSER_ERROR,
                 "A JSON text must at least contain two octets!");
         }
 
@@ -197,13 +197,13 @@ public class Parser extends RubyObject {
 
             String sniffedEncoding = sniffByteList(bl);
             if (sniffedEncoding == null) return source; // assume UTF-8
-            return reinterpretEncoding(context, source, sniffedEncoding, info);
+            return reinterpretEncoding(context, source, sniffedEncoding);
         }
 
         String sniffedEncoding = sniffByteList(bl);
         if (sniffedEncoding == null) return source; // assume UTF-8
         Ruby runtime = context.getRuntime();
-        return (RubyString)info.mJson.
+        return (RubyString)info.jsonModule.
             callMethod(context, "iconv",
                 new IRubyObject[] {
                     runtime.newString("utf-8"),
@@ -230,8 +230,8 @@ public class Parser extends RubyObject {
      * Assumes the given (binary) RubyString to be in the given encoding, then
      * converts it to UTF-8.
      */
-    private static RubyString reinterpretEncoding(ThreadContext context,
-            RubyString str, String sniffedEncoding, RuntimeInfo info) {
+    private RubyString reinterpretEncoding(ThreadContext context,
+            RubyString str, String sniffedEncoding) {
         RubyEncoding actualEncoding = info.getEncoding(context, sniffedEncoding);
         RubyEncoding targetEncoding = info.utf8;
         RubyString dup = (RubyString)str.dup();
@@ -266,7 +266,7 @@ public class Parser extends RubyObject {
      * set to <code>nil</code> or <code>false</code>, and a String if not.
      */
     private RubyString getCreateId(ThreadContext context) {
-        IRubyObject v = info.mJson.callMethod(context, "create_id");
+        IRubyObject v = info.jsonModule.callMethod(context, "create_id");
         return v.isTrue() ? v.convertToString() : null;
     }
 
@@ -326,7 +326,7 @@ public class Parser extends RubyObject {
                 runtime.newString("unexpected token at '")
                        .cat(data, absStart, absEnd - absStart)
                        .cat((byte)'\'');
-            return Utils.newException(context, Utils.M_PARSER_ERROR, msg);
+            return newException(Utils.M_PARSER_ERROR, msg);
         }
 
         %%{
@@ -618,7 +618,7 @@ public class Parser extends RubyObject {
                     }
                     c = byteList.charAt(i);
                     if (surrogateStart != -1 && c != 'u') {
-                        throw Utils.newException(context, Utils.M_PARSER_ERROR,
+                        throw newException(Utils.M_PARSER_ERROR,
                             "partial character in source, but hit end near ",
                             (ByteList)byteList.subSequence(surrogateStart, relEnd));
                     }
@@ -664,7 +664,7 @@ public class Parser extends RubyObject {
                                         surrogate = 0;
                                     }
                                     else {
-                                        throw Utils.newException(context, Utils.M_PARSER_ERROR,
+                                        throw newException(Utils.M_PARSER_ERROR,
                                             "partial character in source, but hit end near ",
                                             (ByteList)byteList.subSequence(surrogateStart, relEnd));
                                     }
@@ -685,7 +685,7 @@ public class Parser extends RubyObject {
                     }
                 }
                 else if (surrogateStart != -1) {
-                    throw Utils.newException(context, Utils.M_PARSER_ERROR,
+                    throw newException(Utils.M_PARSER_ERROR,
                         "partial character in source, but hit end near ",
                         (ByteList)byteList.subSequence(surrogateStart, relEnd));
                 }
@@ -697,7 +697,7 @@ public class Parser extends RubyObject {
                 }
             }
             if (surrogateStart != -1) {
-                throw Utils.newException(context, Utils.M_PARSER_ERROR,
+                throw newException(Utils.M_PARSER_ERROR,
                     "partial character in source, but hit end near ",
                     (ByteList)byteList.subSequence(surrogateStart, relEnd));
             }
@@ -768,7 +768,7 @@ public class Parser extends RubyObject {
             int cs = EVIL;
 
             if (parser.maxNesting > 0 && currentNesting > parser.maxNesting) {
-                throw Utils.newException(context, Utils.M_NESTING_ERROR,
+                throw newException(Utils.M_NESTING_ERROR,
                     "nesting of " + currentNesting + " is too deep");
             }
 
@@ -802,7 +802,7 @@ public class Parser extends RubyObject {
                     fbreak;
                 }
                 else {
-                    result.op_aset(lastName, res.result);
+                    result.op_aset(context, lastName, res.result);
                     fexec res.p;
                 }
             }
@@ -839,7 +839,7 @@ public class Parser extends RubyObject {
             RubyString lastName = null;
 
             if (parser.maxNesting > 0 && currentNesting > parser.maxNesting) {
-                throw Utils.newException(context, Utils.M_NESTING_ERROR,
+                throw newException(Utils.M_NESTING_ERROR,
                     "nesting of " + currentNesting + " is too deep");
             }
 
@@ -952,7 +952,8 @@ public class Parser extends RubyObject {
          */
         private ByteList absSubSequence(int absStart, int absEnd) {
             int offset = byteList.begin();
-            return (ByteList)byteList.subSequence(absStart - offset, absEnd - offset);
+            return (ByteList)byteList.subSequence(absStart - offset,
+                                                  absEnd - offset);
         }
 
         /**
@@ -960,7 +961,21 @@ public class Parser extends RubyObject {
          * @param name The constant name
          */
         private IRubyObject getConstant(String name) {
-            return parser.info.mJson.getConstant(name);
+            return parser.info.jsonModule.getConstant(name);
+        }
+
+        private RaiseException newException(String className, String message) {
+            return Utils.newException(parser.info, context, className, message);
+        }
+
+        private RaiseException newException(String className, RubyString message) {
+            return Utils.newException(parser.info, context, className, message);
+        }
+
+        private RaiseException newException(String className,
+                String messageBegin, ByteList messageEnd) {
+            return newException(className,
+                    runtime.newString(messageBegin).cat(messageEnd));
         }
     }
 }

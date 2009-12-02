@@ -21,11 +21,13 @@ import org.jruby.runtime.load.BasicLibraryService;
 public class ParserService implements BasicLibraryService {
     public boolean basicLoad(Ruby runtime) throws IOException {
         runtime.getLoadService().require("json/common");
+        RuntimeInfo info = RuntimeInfo.initRuntime(runtime);
 
-        RubyModule jsonModule = runtime.defineModule("JSON");
-        RubyModule jsonExtModule = jsonModule.defineModuleUnder("Ext");
-        RubyClass parserClass = jsonExtModule.defineClassUnder("Parser", runtime.getObject(),
-                                                               Parser.ALLOCATOR);
+        info.jsonModule = runtime.defineModule("JSON");
+        RubyModule jsonExtModule = info.jsonModule.defineModuleUnder("Ext");
+        RubyClass parserClass =
+            jsonExtModule.defineClassUnder("Parser", runtime.getObject(),
+                                           Parser.ALLOCATOR);
         parserClass.defineAnnotatedMethods(Parser.class);
         return true;
     }

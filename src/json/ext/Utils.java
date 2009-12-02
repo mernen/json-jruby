@@ -64,25 +64,6 @@ final class Utils {
     }
 
     /**
-     * Safe {@link GeneratorState} type-checking.
-     * Returns the given object if it is a
-     * <code>JSON::Ext::Generator::State</code>, or throws an exception if not.
-     * @param object The object to test
-     * @return The given object if it is a <code>State</code>
-     * @throws RaiseException <code>TypeError</code> if the object is not
-     *                        of the expected type
-     */
-    static GeneratorState ensureState(IRubyObject object) {
-        if (object instanceof GeneratorState) return (GeneratorState)object;
-
-        Ruby runtime = object.getRuntime();
-        RubyClass generatorState =
-            (RubyClass)runtime.getClassFromPath("JSON::Ext::Generator::State");
-        assert generatorState.getAllocator() == GeneratorState.ALLOCATOR;
-        throw runtime.newTypeError(object, generatorState);
-    }
-
-    /**
      * Safe {@link RubyArray} type-checking.
      * Returns the given object if it is an <code>Array</code>,
      * or throws an exception if not.
@@ -99,19 +80,20 @@ final class Utils {
 
     static RaiseException newException(ThreadContext context, String className,
                                        String message) {
-        return newException(context, className,
+        Ruby runtime = context.getRuntime();
+        return newException(RuntimeInfo.forRuntime(runtime), context,
+                            className, runtime.newString(message));
+    }
+
+    static RaiseException newException(RuntimeInfo info, ThreadContext context,
+                                       String className, String message) {
+        return newException(info, context, className,
                             context.getRuntime().newString(message));
     }
 
-    static RaiseException newException(ThreadContext context, String className,
-            String messageBegin, ByteList messageEnd) {
-        RubyString msg = context.getRuntime().newString(messageBegin).cat(messageEnd);
-        return newException(context, className, msg);
-    }
-
-    static RaiseException newException(ThreadContext context, String className,
-                                       RubyString message) {
-        RubyClass klazz = context.getRuntime().getModule("JSON").getClass(className);
+    static RaiseException newException(RuntimeInfo info, ThreadContext context,
+                                       String className, RubyString message) {
+        RubyClass klazz = info.jsonModule.getClass(className);
         RubyException excptn =
             (RubyException)klazz.newInstance(context,
                 new IRubyObject[] {message}, Block.NULL_BLOCK);
@@ -128,7 +110,7 @@ final class Utils {
      */
     static RubyString toJson(ThreadContext context, IRubyObject object,
                              IRubyObject... args) {
-        Ruby runtime = object.getRuntime();
+        Ruby runtime = context.getRuntime();
         IRubyObject result = object.callMethod(context, "to_json", args);
         if (result instanceof RubyString) return (RubyString)result;
         throw runtime.newTypeError("to_json must return a String");
