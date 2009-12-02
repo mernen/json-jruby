@@ -134,43 +134,19 @@ public class Parser extends RubyObject {
 
     @JRubyMethod(required = 1, optional = 1, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
         RubyString source = convertEncoding(context, args[0].convertToString());
 
-        if (args.length > 1) {
-            RubyHash opts = args[1].convertToHash();
+        OptionsReader opts =
+            new OptionsReader(context, args.length > 1 ? args[1] : null);
 
-            IRubyObject maxNesting = Utils.fastGetSymItem(opts, "max_nesting");
-            if (maxNesting == null) {
-                this.maxNesting = DEFAULT_MAX_NESTING;
-            }
-            else if (!maxNesting.isTrue()) {
-                this.maxNesting = 0;
-            }
-            else {
-                this.maxNesting = RubyNumeric.fix2int(maxNesting);
-            }
-
-            IRubyObject allowNaN = Utils.fastGetSymItem(opts, "allow_nan");
-            this.allowNaN = allowNaN != null && allowNaN.isTrue();
-
-            IRubyObject createAdditions = Utils.fastGetSymItem(opts, "create_additions");
-            if (createAdditions == null || createAdditions.isTrue()) {
-                this.createId = getCreateId(context);
-            }
-            else {
-                this.createId = null;
-            }
-
-            this.objectClass = readRubyClassParameter(opts, "object_class", getRuntime().getHash());
-            this.arrayClass = readRubyClassParameter(opts, "array_class", getRuntime().getArray());
-        }
-        else {
-            this.maxNesting = DEFAULT_MAX_NESTING;
-            this.allowNaN = false;
-            this.createId = getCreateId(context);
-            this.objectClass = getRuntime().getHash();
-            this.arrayClass = getRuntime().getArray();
-        }
+        this.maxNesting = opts.getInt("max_nesting", DEFAULT_MAX_NESTING);
+        this.allowNaN = opts.getBool("allow_nan", false);
+        this.createId =
+            opts.getBool("create_additions", true) ? getCreateId(context)
+                                                   : null;
+        this.objectClass = opts.getClass("object_class", runtime.getHash());
+        this.arrayClass = opts.getClass("array_class", runtime.getArray());
 
         this.vSource = source;
         return this;
@@ -268,28 +244,6 @@ public class Parser extends RubyObject {
     private RubyString getCreateId(ThreadContext context) {
         IRubyObject v = info.jsonModule.callMethod(context, "create_id");
         return v.isTrue() ? v.convertToString() : null;
-    }
-
-    /**
-     * Reads the setting from the given options hash (using
-     * <code>key</code> as a Symbol key). If it is <code>nil</code> or
-     * undefined, returns the default value given.
-     * If not, ensures it is a RubyClass instance and shares the same
-     * allocator as the default value (i.e. for the basic types which have
-     * their specific allocators, this ensures the passed value is
-     * a subclass of them).
-     */
-    private RubyClass readRubyClassParameter(RubyHash opts, String key, RubyClass defaultClass) {
-        IRubyObject value = Utils.fastGetSymItem(opts, key);
-
-        if (value == null || value.isNil()) return defaultClass;
-
-        if (value instanceof RubyClass &&
-            ((RubyClass)value).getAllocator() == defaultClass.getAllocator()) {
-
-            return (RubyClass)value;
-        }
-        throw getRuntime().newTypeError(key + " option must be a subclass of " + defaultClass);
     }
 
     /**
@@ -749,7 +703,7 @@ public class Parser extends RubyObject {
             }
 
             // this is guaranteed to be a RubyArray due to the earlier
-            // allocator test at readRubyClassParameter
+            // allocator test at OptionsReader#getClass
             RubyArray result =
                 (RubyArray)parser.arrayClass.newInstance(context,
                     IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
@@ -820,7 +774,7 @@ public class Parser extends RubyObject {
             }
 
             // this is guaranteed to be a RubyHash due to the earlier
-            // allocator test at readRubyClassParameter
+            // allocator test at OptionsReader#getClass
             RubyHash result =
                 (RubyHash)parser.objectClass.newInstance(context,
                     IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);

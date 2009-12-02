@@ -36,27 +36,27 @@ public class GeneratorState extends RubyObject {
      * The indenting unit string. Will be repeated several times for larger
      * indenting levels.
      */
-    private RubyString indent;
+    private ByteList indent = ByteList.EMPTY_BYTELIST;
     /**
      * The spacing to be added after a semicolon on a JSON object.
      * @see #spaceBefore
      */
-    private RubyString space;
+    private ByteList space = ByteList.EMPTY_BYTELIST;
     /**
      * The spacing to be added before a semicolon on a JSON object.
      * @see #space
      */
-    private RubyString spaceBefore;
+    private ByteList spaceBefore = ByteList.EMPTY_BYTELIST;
     /**
      * Any suffix to be added after the comma for each element on a JSON object.
      * It is assumed to be a newline, if set.
      */
-    private RubyString objectNl;
+    private ByteList objectNl = ByteList.EMPTY_BYTELIST;
     /**
      * Any suffix to be added after the comma for each element on a JSON Array.
      * It is assumed to be a newline, if set.
      */
-    private RubyString arrayNl;
+    private ByteList arrayNl = ByteList.EMPTY_BYTELIST;
 
     /**
      * The maximum level of nesting of structures allowed.
@@ -154,20 +154,7 @@ public class GeneratorState extends RubyObject {
      */
     @JRubyMethod(rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = getRuntime();
-        indent = runtime.newString();
-        space = runtime.newString();
-        spaceBefore = runtime.newString();
-        arrayNl = runtime.newString();
-        objectNl = runtime.newString();
-        if (args.length == 0 || args[0].isNil()) {
-            allowNaN = false;
-            asciiOnly = false;
-            maxNesting = 19;
-        }
-        else {
-            configure(context, args[0]);
-        }
+        configure(context, args.length > 0 ? args[0] : null);
         return this;
     }
 
@@ -223,58 +210,78 @@ public class GeneratorState extends RubyObject {
         return false;
     }
 
+    public ByteList getIndent() {
+        return indent;
+    }
+
     @JRubyMethod(name = "indent")
     public RubyString indent_get() {
-        return indent;
+        return getRuntime().newString(indent);
     }
 
     @JRubyMethod(name = "indent=", required = 1)
     public IRubyObject indent_set(IRubyObject indent) {
-        this.indent = indent.convertToString();
+        this.indent = indent.convertToString().getByteList().dup();
         return indent;
+    }
+
+    public ByteList getSpace() {
+        return space;
     }
 
     @JRubyMethod(name = "space")
     public RubyString space_get() {
-        return space;
+        return getRuntime().newString(space);
     }
 
     @JRubyMethod(name = "space=", required = 1)
     public IRubyObject space_set(IRubyObject space) {
-        this.space = space.convertToString();
+        this.space = space.convertToString().getByteList().dup();
         return space;
+    }
+
+    public ByteList getSpaceBefore() {
+        return spaceBefore;
     }
 
     @JRubyMethod(name = "space_before")
     public RubyString space_before_get() {
-        return spaceBefore;
+        return getRuntime().newString(spaceBefore);
     }
 
     @JRubyMethod(name = "space_before=", required = 1)
     public IRubyObject space_before_set(IRubyObject spaceBefore) {
-        this.spaceBefore = spaceBefore.convertToString();
+        this.spaceBefore = spaceBefore.convertToString().getByteList().dup();
         return spaceBefore;
+    }
+
+    public ByteList getObjectNl() {
+        return objectNl;
     }
 
     @JRubyMethod(name = "object_nl")
     public RubyString object_nl_get() {
-        return objectNl;
+        return getRuntime().newString(objectNl);
     }
 
     @JRubyMethod(name = "object_nl=", required = 1)
     public IRubyObject object_nl_set(IRubyObject objectNl) {
-        this.objectNl = objectNl.convertToString();
+        this.objectNl = objectNl.convertToString().getByteList().dup();
         return objectNl;
+    }
+
+    public ByteList getArrayNl() {
+        return arrayNl;
     }
 
     @JRubyMethod(name = "array_nl")
     public RubyString array_nl_get() {
-        return arrayNl;
+        return getRuntime().newString(arrayNl);
     }
 
     @JRubyMethod(name = "array_nl=", required = 1)
     public IRubyObject array_nl_set(IRubyObject arrayNl) {
-        this.arrayNl = arrayNl.convertToString();
+        this.arrayNl = arrayNl.convertToString().getByteList().dup();
         return arrayNl;
     }
 
@@ -320,42 +327,26 @@ public class GeneratorState extends RubyObject {
      */
     @JRubyMethod(required = 1)
     public IRubyObject configure(ThreadContext context, IRubyObject vOpts) {
-        RubyHash opts;
-        if (vOpts.respondsTo("to_hash")) {
-            opts = vOpts.convertToHash();
-        }
-        else {
-            opts = vOpts.callMethod(context, "to_h").convertToHash();
-        }
+        OptionsReader opts = OptionsReader.withStrings(context, vOpts);
 
-        RubyString vIndent = Utils.fastGetSymString(opts, "indent");
-        if (vIndent != null) indent = vIndent;
+        ByteList indent = opts.getString("indent");
+        if (indent != null) this.indent = indent;
 
-        RubyString vSpace = Utils.fastGetSymString(opts, "space");
-        if (vSpace != null) space = vSpace;
+        ByteList space = opts.getString("space");
+        if (space != null) this.space = space;
 
-        RubyString vSpaceBefore = Utils.fastGetSymString(opts, "space_before");
-        if (vSpaceBefore != null) spaceBefore = vSpaceBefore;
+        ByteList spaceBefore = opts.getString("space_before");
+        if (spaceBefore != null) this.spaceBefore = spaceBefore;
 
-        RubyString vArrayNl = Utils.fastGetSymString(opts, "array_nl");
-        if (vArrayNl != null) arrayNl = vArrayNl;
+        ByteList arrayNl = opts.getString("array_nl");
+        if (arrayNl != null) this.arrayNl = arrayNl;
 
-        RubyString vObjectNl = Utils.fastGetSymString(opts, "object_nl");
-        if (vObjectNl != null) objectNl = vObjectNl;
+        ByteList objectNl = opts.getString("object_nl");
+        if (objectNl != null) this.objectNl = objectNl;
 
-        IRubyObject vMaxNesting = Utils.fastGetSymItem(opts, "max_nesting");
-        if (vMaxNesting != null) {
-            maxNesting = vMaxNesting.isTrue() ? RubyNumeric.fix2int(vMaxNesting) : 0;
-        }
-        else {
-            maxNesting = 19;
-        }
-
-        IRubyObject vAllowNaN = Utils.fastGetSymItem(opts, "allow_nan");
-        allowNaN = vAllowNaN != null && vAllowNaN.isTrue();
-
-        IRubyObject vAsciiOnly = Utils.fastGetSymItem(opts, "ascii_only");
-        asciiOnly = vAsciiOnly != null && vAsciiOnly.isTrue();
+        maxNesting = opts.getInt("max_nesting", 19);
+        allowNaN = opts.getBool("allow_nan", false);
+        asciiOnly = opts.getBool("ascii_only", false);
 
         return this;
     }

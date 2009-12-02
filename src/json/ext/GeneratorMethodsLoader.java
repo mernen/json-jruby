@@ -68,10 +68,10 @@ class GeneratorMethodsLoader {
         private RubyString transform(Ruby runtime, RubyHash self, final GeneratorState state, int depth) {
             final ThreadContext context = runtime.getCurrentContext();
 
-            final ByteList objectNl = state.object_nl_get().getByteList();
-            final byte[] indent = Utils.repeat(state.indent_get().getByteList(), depth + 1);
-            final ByteList spaceBefore = state.space_before_get().getByteList();
-            final ByteList space = state.space_get().getByteList();
+            final ByteList objectNl = state.getObjectNl();
+            final byte[] indent = Utils.repeat(state.getIndent(), depth + 1);
+            final ByteList spaceBefore = state.getSpaceBefore();
+            final ByteList space = state.getSpace();
             final RubyFixnum subDepth = runtime.newFixnum(depth + 1);
 
             // Basic estimative, just to get things started
@@ -150,10 +150,10 @@ class GeneratorMethodsLoader {
         private RubyString transform(Ruby runtime, RubyArray self, GeneratorState state, int depth) {
             ThreadContext context = runtime.getCurrentContext();
 
-            ByteList indentUnit = state.indent_get().getByteList();
+            ByteList indentUnit = state.getIndent();
             byte[] shift = Utils.repeat(indentUnit, depth + 1);
 
-            ByteList arrayNl = state.array_nl_get().getByteList();
+            ByteList arrayNl = state.getArrayNl();
             byte[] delim = new byte[1 + arrayNl.length()];
             delim[0] = ',';
             System.arraycopy(arrayNl.unsafeBytes(), arrayNl.begin(), delim, 1,
