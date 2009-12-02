@@ -150,4 +150,28 @@ final class Utils {
             '\\', 'u', HEX[(c >>> 12) & 0xf], HEX[(c >>> 8) & 0xf],
                        HEX[(c >>>  4) & 0xf], HEX[c & 0xf]};
     }
+
+    /**
+     * Converts a code point into an UTF-8 representation.
+     * @param code The character code point
+     * @return An array containing the UTF-8 bytes for the given code point
+     */
+    static byte[] getUTF8Bytes(long code) {
+        if (code < 0x80) {
+            return new byte[] {(byte)code};
+        }
+        if (code < 0x800) {
+            return new byte[] {(byte)(0xc0 | code >>> 6),
+                               (byte)(0x80 | code & 0x3f)};
+        }
+        if (code < 0x10000) {
+            return new byte[] {(byte)(0xe0 | code >>> 12),
+                               (byte)(0x80 | code >>> 6 & 0x3f),
+                               (byte)(0x80 | code & 0x3f)};
+        }
+        return new byte[] {(byte)(0xf0 | code >>> 18),
+                           (byte)(0x80 | code >>> 12 & 0x3f),
+                           (byte)(0x80 | code >>> 6 & 0x3f),
+                           (byte)(0x80 | code & 0x3f)};
+    }
 }

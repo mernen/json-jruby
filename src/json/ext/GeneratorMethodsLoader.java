@@ -20,6 +20,7 @@ import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -251,6 +252,10 @@ class GeneratorMethodsLoader {
             Ruby runtime = vSelf.getRuntime();
             ThreadContext context = runtime.getCurrentContext();
             RuntimeInfo info = RuntimeInfo.forRuntime(runtime);
+            GeneratorState state = args.length > 0
+                    ? GeneratorState.fromState(runtime, args[0])
+                    : null;
+            boolean asciiOnly = state != null && state.asciiOnly();
             // using convertToString as a safety guard measure
             char[] chars = decodeString(info, context, vSelf.convertToString());
             // For most apps, the vast majority of strings will be plain simple
@@ -261,7 +266,9 @@ class GeneratorMethodsLoader {
             RubyString result = runtime.newString(new ByteList(preSize));
             result.cat((byte)'"');
             final byte[] escapeSequence = new byte[] { '\\', 0 };
-            for (char c : chars) {
+            charLoop:
+            for (int i = 0; i < chars.length; i++) {
+                char c = chars[i];
                 switch (c) {
                     case '"':
                     case '\\':
@@ -286,15 +293,46 @@ class GeneratorMethodsLoader {
                         if (c >= 0x20 && c <= 0x7f) {
                             result.cat((byte)c);
                         }
-                        else {
+                        else if (asciiOnly || c < 0x20) {
                             result.cat(Utils.escapeUnicode(c));
+                            continue charLoop;
                         }
-                        continue;
+                        else if (Character.isHighSurrogate(c)) {
+                            // reconstruct characters outside of BMP if surrogates
+                            // are found
+                            if (chars.length <= i + 1) {
+                                // incomplete surrogate pair
+                                throw illegalUTF8(info, context);
+                            }
+                            char nextChar = chars[++i];
+                            if (!Character.isLowSurrogate(nextChar)) {
+                                // high surrogate without low surrogate
+                                throw illegalUTF8(info, context);
+                            }
+
+                            long fullCode = Character.toCodePoint(c, nextChar);
+                            result.cat(Utils.getUTF8Bytes(fullCode));
+                        }
+                        else if (Character.isLowSurrogate(c)) {
+                            // low surrogate without high surrogate
+                            throw illegalUTF8(info, context);
+                        }
+                        else {
+                            result.cat(Utils.getUTF8Bytes(c));
+                        }
+                        continue charLoop;
                 }
                 result.cat(escapeSequence);
             }
             result.cat((byte)'"');
             return result;
+        }
+
+        private RaiseException illegalUTF8(RuntimeInfo info,
+                                           ThreadContext context) {
+            throw Utils.newException(info, context,
+                    Utils.M_GENERATOR_ERROR,
+                    "source sequence is illegal/malformed utf-8");
         }
 
         private char[] decodeString(RuntimeInfo info, ThreadContext context,

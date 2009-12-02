@@ -70,6 +70,10 @@ public class GeneratorState extends RubyObject {
      * encountering one.
      */
     private boolean allowNaN;
+    /**
+     * XXX
+     */
+    private boolean asciiOnly;
     // Porting note: due to the use of inner anonymous classes in the generator
     // methods, the "memo", "depth" and "flag" fields are not needed
 
@@ -158,6 +162,7 @@ public class GeneratorState extends RubyObject {
         objectNl = runtime.newString();
         if (args.length == 0 || args[0].isNil()) {
             allowNaN = false;
+            asciiOnly = false;
             maxNesting = 19;
         }
         else {
@@ -296,6 +301,15 @@ public class GeneratorState extends RubyObject {
         return getRuntime().newBoolean(allowNaN);
     }
 
+    public boolean asciiOnly() {
+        return asciiOnly;
+    }
+
+    @JRubyMethod(name = "ascii_only?")
+    public RubyBoolean ascii_only_p() {
+        return getRuntime().newBoolean(asciiOnly);
+    }
+
     /**
      * <code>State#configure(opts)</code>
      * 
@@ -340,6 +354,9 @@ public class GeneratorState extends RubyObject {
         IRubyObject vAllowNaN = Utils.fastGetSymItem(opts, "allow_nan");
         allowNaN = vAllowNaN != null && vAllowNaN.isTrue();
 
+        IRubyObject vAsciiOnly = Utils.fastGetSymItem(opts, "ascii_only");
+        asciiOnly = vAsciiOnly != null && vAsciiOnly.isTrue();
+
         return this;
     }
 
@@ -361,6 +378,7 @@ public class GeneratorState extends RubyObject {
         result.op_aset(context, runtime.newSymbol("object_nl"), object_nl_get());
         result.op_aset(context, runtime.newSymbol("array_nl"), array_nl_get());
         result.op_aset(context, runtime.newSymbol("allow_nan"), allow_nan_p());
+        result.op_aset(context, runtime.newSymbol("ascii_only"), ascii_only_p());
         result.op_aset(context, runtime.newSymbol("max_nesting"), max_nesting_get());
         return result;
     }
