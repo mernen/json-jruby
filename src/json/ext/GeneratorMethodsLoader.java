@@ -29,8 +29,8 @@ import org.jruby.runtime.callback.Callback;
 import org.jruby.util.ByteList;
 
 /**
- * A class that populates the <code>Json::Ext::Generator::GeneratorMethods</code>
- * module.
+ * A class that populates the
+ * <code>Json::Ext::Generator::GeneratorMethods</code> module.
  * 
  * @author mernen
  */
@@ -49,11 +49,14 @@ class GeneratorMethodsLoader {
      * <p>Returns a JSON string containing a JSON object, that is unparsed from
      * this Hash instance.
      * <p><code>state</code> is a {@link GeneratorState JSON::State} object,
-     * that can also be used to configure the produced JSON string output further.
-     * <p><code>depth</code> is used to find the nesting depth, to indent accordingly.
+     * that can also be used to configure the produced JSON string output
+     * further.
+     * <p><code>depth</code> is used to find the nesting depth, to indent
+     * accordingly.
      */
     private static Callback HASH_TO_JSON = new OptionalArgsCallback() {
-        public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
+        public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args,
+                                   Block block) {
             RubyHash self = vSelf.convertToHash();
             Ruby runtime = self.getRuntime();
             args = Arity.scanArgs(runtime, args, 0, 2);
@@ -65,7 +68,8 @@ class GeneratorMethodsLoader {
             return transform(runtime, self, state, depth);
         }
 
-        private RubyString transform(Ruby runtime, RubyHash self, final GeneratorState state, int depth) {
+        private RubyString transform(Ruby runtime, RubyHash self,
+                final GeneratorState state, int depth) {
             final ThreadContext context = runtime.getCurrentContext();
 
             final ByteList objectNl = state.getObjectNl();
@@ -132,11 +136,14 @@ class GeneratorMethodsLoader {
      * <p>Returns a JSON string containing a JSON array, that is unparsed from
      * this Array instance.
      * <p><code>state</code> is a {@link GeneratorState JSON::State} object,
-     * that can also be used to configure the produced JSON string output further.
-     * <p><code>depth</code> is used to find the nesting depth, to indent accordingly.
+     * that can also be used to configure the produced JSON string output
+     * further.
+     * <p><code>depth</code> is used to find the nesting depth, to indent
+     * accordingly.
      */
     private static Callback ARRAY_TO_JSON = new OptionalArgsCallback() {
-        public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
+        public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args,
+                                   Block block) {
             RubyArray self = Utils.ensureArray(vSelf);
             Ruby runtime = self.getRuntime();
             args = Arity.scanArgs(runtime, args, 0, 2);
@@ -147,7 +154,8 @@ class GeneratorMethodsLoader {
             return transform(runtime, self, state, depth);
         }
 
-        private RubyString transform(Ruby runtime, RubyArray self, GeneratorState state, int depth) {
+        private RubyString transform(Ruby runtime, RubyArray self,
+                GeneratorState state, int depth) {
             ThreadContext context = runtime.getCurrentContext();
 
             ByteList indentUnit = state.getIndent();
@@ -202,8 +210,10 @@ class GeneratorMethodsLoader {
      * <p>Returns a JSON string representation for this Integer number.
      */
     private static Callback INTEGER_TO_JSON = new OptionalArgsCallback() {
-        public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-            return recv.callMethod(recv.getRuntime().getCurrentContext(), "to_s");
+        public IRubyObject execute(IRubyObject recv, IRubyObject[] args,
+                                   Block block) {
+            ThreadContext context = recv.getRuntime().getCurrentContext();
+            return recv.callMethod(context, "to_s");
         }
     };
 
@@ -215,7 +225,8 @@ class GeneratorMethodsLoader {
      * that can also be used to configure the produced JSON string output further.
      */
     private static Callback FLOAT_TO_JSON = new OptionalArgsCallback() {
-        public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
+        public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args,
+                                   Block block) {
             double value = RubyFloat.num2dbl(vSelf);
 
             if (Double.isInfinite(value) || Double.isNaN(value)) {
@@ -298,8 +309,8 @@ class GeneratorMethodsLoader {
                             continue charLoop;
                         }
                         else if (Character.isHighSurrogate(c)) {
-                            // reconstruct characters outside of BMP if surrogates
-                            // are found
+                            // reconstruct characters outside of BMP if
+                            // surrogates are found
                             if (chars.length <= i + 1) {
                                 // incomplete surrogate pair
                                 throw illegalUTF8(info, context);
@@ -347,22 +358,15 @@ class GeneratorMethodsLoader {
                 CharsetDecoder decoder = Charset.forName("UTF-8").newDecoder();
                 decoder.onMalformedInput(CodingErrorAction.REPORT);
                 decoder.onUnmappableCharacter(CodingErrorAction.REPORT);
-                ByteBuffer byteBuffer = ByteBuffer.wrap(byteList.unsafeBytes(), byteList.begin(), byteList.length());
+                ByteBuffer byteBuffer =
+                    ByteBuffer.wrap(byteList.unsafeBytes(), byteList.begin(),
+                                    byteList.length());
                 CharBuffer buffer = decoder.decode(byteBuffer);
                 char[] result = new char[buffer.length()];
-                System.arraycopy(buffer.array(), buffer.position(), result, 0, result.length);
+                System.arraycopy(buffer.array(), buffer.position(), result, 0,
+                                 result.length);
                 return result;
             } catch (CharacterCodingException e) {
-                // XXX DISABLED: Florian's library strictly only interprets UTF-8
-                /*
-                // a very naïve decoder, which just maps bytes
-                // XXX is this *really* equivalent to the ISO-8859-1 decoder?
-                char[] chars = new char[bytes.length];
-                for (int i = 0; i < bytes.length; i++) {
-                    chars[i] = (char)(bytes[i] & 0xff);
-                }
-                return chars;
-                */
                 throw Utils.newException(info, context, Utils.M_GENERATOR_ERROR,
                     "source sequence is illegal/malformed utf-8");
             }
@@ -376,8 +380,10 @@ class GeneratorMethodsLoader {
      * {@link STRING_TO_JSON_RAW_OBJECT to_json_raw_object} of this String.
      */
     private static Callback STRING_TO_JSON_RAW = new OptionalArgsCallback() {
-        public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
-            IRubyObject obj = STRING_TO_JSON_RAW_OBJECT.execute(vSelf, args, block);
+        public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args,
+                                   Block block) {
+            IRubyObject obj =
+                STRING_TO_JSON_RAW_OBJECT.execute(vSelf, args, block);
             return HASH_TO_JSON.execute(obj, args, block);
         }
     };
@@ -391,13 +397,15 @@ class GeneratorMethodsLoader {
      * strings, e.g. binary data.
      */
     private static Callback STRING_TO_JSON_RAW_OBJECT = new OptionalArgsCallback() {
-        public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
+        public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args,
+                                   Block block) {
             RubyString self = vSelf.convertToString();
             Ruby runtime = self.getRuntime();
+            ThreadContext context = runtime.getCurrentContext();
             RubyHash result = RubyHash.newHash(runtime);
 
             IRubyObject createId =
-                runtime.getModule("JSON").callMethod(runtime.getCurrentContext(), "create_id");
+                runtime.getModule("JSON").callMethod(context, "create_id");
             result.op_aset(createId, vSelf.getMetaClass().to_s());
 
             ByteList bl = self.getByteList();
@@ -423,12 +431,14 @@ class GeneratorMethodsLoader {
             return Arity.ONE_ARGUMENT;
         }
 
-        public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
+        public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args,
+                                   Block block) {
             Ruby runtime = vSelf.getRuntime();
             RubyHash o = args[0].convertToHash();
             IRubyObject rawData = o.fastARef(runtime.newString("raw"));
             if (rawData == null) {
-                throw runtime.newArgumentError("\"raw\" value not defined for encoded String");
+                throw runtime.newArgumentError("\"raw\" value not defined "
+                                               + "for encoded String");
             }
             RubyArray ary = Utils.ensureArray(rawData);
             byte[] bytes = new byte[ary.getLength()];
@@ -459,7 +469,8 @@ class GeneratorMethodsLoader {
             this.keyword = new ByteList(ByteList.plain(keyword), false);
         }
 
-        public IRubyObject execute(IRubyObject self, IRubyObject[] args, Block block) {
+        public IRubyObject execute(IRubyObject self, IRubyObject[] args,
+                                   Block block) {
             return RubyString.newStringShared(self.getRuntime(), keyword);
         }
     }
@@ -469,19 +480,19 @@ class GeneratorMethodsLoader {
      * 
      * <p>Returns a JSON string for <code>true</code>: <code>"true"</code>.
      */
-    private static Callback trueToJson = new KeywordJsonConverter("true");
+    private static Callback TRUE_TO_JSON = new KeywordJsonConverter("true");
     /**
      * <code>false.to_json(*)</code>
      * 
      * <p>Returns a JSON string for <code>false</code>: <code>"false"</code>.
      */
-    private static Callback falseToJson = new KeywordJsonConverter("false");
+    private static Callback FALSE_TO_JSON = new KeywordJsonConverter("false");
     /**
      * <code>nil.to_json(*)</code>
      * 
      * <p>Returns a JSON string for <code>nil</code>: <code>"null"</code>.
      */
-    private static Callback nilToJson = new KeywordJsonConverter("null");
+    private static Callback NIL_TO_JSON = new KeywordJsonConverter("null");
 
     /**
      * <code>{@link RubyObject Object}#to_json(*)</code>
@@ -492,7 +503,8 @@ class GeneratorMethodsLoader {
      * defined for some object.
      */
     private static Callback OBJECT_TO_JSON = new OptionalArgsCallback() {
-        public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
+        public IRubyObject execute(IRubyObject recv, IRubyObject[] args,
+                                   Block block) {
             return STRING_TO_JSON.execute(recv.asString(), args, block);
         }
     };
@@ -510,37 +522,35 @@ class GeneratorMethodsLoader {
      * Performs the generation of all submodules and methods.
      */
     void load() {
-        defineToJson("Object", OBJECT_TO_JSON);
+        defineToJson("Object",     OBJECT_TO_JSON);
+        defineToJson("Hash",       HASH_TO_JSON);
+        defineToJson("Array",      ARRAY_TO_JSON);
+        defineToJson("Integer",    INTEGER_TO_JSON);
+        defineToJson("Float",      FLOAT_TO_JSON);
 
-        defineToJson("Hash", HASH_TO_JSON);
-
-        defineToJson("Array", ARRAY_TO_JSON);
-
-        defineToJson("Integer", INTEGER_TO_JSON);
-
-        defineToJson("Float", FLOAT_TO_JSON);
+        defineToJson("TrueClass",  TRUE_TO_JSON);
+        defineToJson("FalseClass", FALSE_TO_JSON);
+        defineToJson("NilClass",   NIL_TO_JSON);
 
         defineToJson("String", STRING_TO_JSON);
         defineMethod("String", "to_json_raw", STRING_TO_JSON_RAW);
         defineMethod("String", "to_json_raw_object", STRING_TO_JSON_RAW_OBJECT);
 
         RubyModule stringModule = parentModule.defineModuleUnder("String");
-        final RubyModule stringExtend = stringModule.defineModuleUnder("Extend");
+        final RubyModule stringExtend =
+            stringModule.defineModuleUnder("Extend");
         stringModule.defineModuleFunction("included", new Callback() {
             public Arity getArity() {
                 return Arity.ONE_ARGUMENT;
             }
 
-            public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
+            public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args,
+                                       Block block) {
                 ThreadContext context = vSelf.getRuntime().getCurrentContext();
                 return args[0].callMethod(context, "extend", stringExtend);
             }
         });
         defineMethod(stringExtend, "json_create", stringExtendJsonCreate);
-
-        defineToJson("TrueClass", trueToJson);
-        defineToJson("FalseClass", falseToJson);
-        defineToJson("NilClass", nilToJson);
     }
 
     /**
@@ -558,17 +568,21 @@ class GeneratorMethodsLoader {
      * @param methodName
      * @param method
      */
-    private void defineMethod(String moduleName, String methodName, Callback method) {
-        defineMethod(parentModule.defineModuleUnder(moduleName), methodName, method);
+    private void defineMethod(String moduleName, String methodName,
+                              Callback method) {
+        defineMethod(parentModule.defineModuleUnder(moduleName), methodName,
+                     method);
     }
 
     /**
-     * Convenience methods for defining arbitrary methods on a module (by reference).
+     * Convenience methods for defining arbitrary methods on a module
+     * (by reference).
      * @param module
      * @param methodName
      * @param method
      */
-    private void defineMethod(RubyModule module, String methodName, Callback method) {
+    private void defineMethod(RubyModule module, String methodName,
+                              Callback method) {
         module.defineMethod(methodName, method);
     }
 }
