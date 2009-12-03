@@ -95,8 +95,7 @@ class GeneratorMethodsLoader {
                 public void visit(IRubyObject key, IRubyObject value) {
                     if (firstPair) {
                         firstPair = false;
-                    }
-                    else {
+                    } else {
                         result.cat((byte)',');
                         result.cat(objectNl);
                     }
@@ -182,8 +181,7 @@ class GeneratorMethodsLoader {
                 result.infectBy(element);
                 if (firstItem) {
                     firstItem = false;
-                }
-                else {
+                } else {
                     result.cat(delim);
                 }
                 result.cat(shift);
@@ -236,14 +234,12 @@ class GeneratorMethodsLoader {
                         : null;
                 if (state != null && state.allowNaN()) {
                     return vSelf.asString();
-                }
-                else {
+                } else {
                     throw Utils.newException(runtime.getCurrentContext(),
                             Utils.M_GENERATOR_ERROR,
                             vSelf + " not allowed in JSON");
                 }
-            }
-            else {
+            } else {
                 return vSelf.asString();
             }
         }
@@ -281,57 +277,53 @@ class GeneratorMethodsLoader {
             for (int i = 0; i < chars.length; i++) {
                 char c = chars[i];
                 switch (c) {
-                    case '"':
-                    case '\\':
-                        escapeSequence[1] = (byte)c;
-                        break;
-                    case '\n':
-                        escapeSequence[1] = 'n';
-                        break;
-                    case '\r':
-                        escapeSequence[1] = 'r';
-                        break;
-                    case '\t':
-                        escapeSequence[1] = 't';
-                        break;
-                    case '\f':
-                        escapeSequence[1] = 'f';
-                        break;
-                    case '\b':
-                        escapeSequence[1] = 'b';
-                        break;
-                    default:
-                        if (c >= 0x20 && c <= 0x7f) {
-                            result.cat((byte)c);
-                        }
-                        else if (asciiOnly || c < 0x20) {
-                            result.cat(Utils.escapeUnicode(c));
-                            continue charLoop;
-                        }
-                        else if (Character.isHighSurrogate(c)) {
-                            // reconstruct characters outside of BMP if
-                            // surrogates are found
-                            if (chars.length <= i + 1) {
-                                // incomplete surrogate pair
-                                throw illegalUTF8(info, context);
-                            }
-                            char nextChar = chars[++i];
-                            if (!Character.isLowSurrogate(nextChar)) {
-                                // high surrogate without low surrogate
-                                throw illegalUTF8(info, context);
-                            }
-
-                            long fullCode = Character.toCodePoint(c, nextChar);
-                            result.cat(Utils.getUTF8Bytes(fullCode));
-                        }
-                        else if (Character.isLowSurrogate(c)) {
-                            // low surrogate without high surrogate
+                case '"':
+                case '\\':
+                    escapeSequence[1] = (byte)c;
+                    break;
+                case '\n':
+                    escapeSequence[1] = 'n';
+                    break;
+                case '\r':
+                    escapeSequence[1] = 'r';
+                    break;
+                case '\t':
+                    escapeSequence[1] = 't';
+                    break;
+                case '\f':
+                    escapeSequence[1] = 'f';
+                    break;
+                case '\b':
+                    escapeSequence[1] = 'b';
+                    break;
+                default:
+                    if (c >= 0x20 && c <= 0x7f) {
+                        result.cat((byte)c);
+                    } else if (asciiOnly || c < 0x20) {
+                        result.cat(Utils.escapeUnicode(c));
+                        continue charLoop;
+                    } else if (Character.isHighSurrogate(c)) {
+                        // reconstruct characters outside of BMP if
+                        // surrogates are found
+                        if (chars.length <= i + 1) {
+                            // incomplete surrogate pair
                             throw illegalUTF8(info, context);
                         }
-                        else {
-                            result.cat(Utils.getUTF8Bytes(c));
+                        char nextChar = chars[++i];
+                        if (!Character.isLowSurrogate(nextChar)) {
+                            // high surrogate without low surrogate
+                            throw illegalUTF8(info, context);
                         }
-                        continue charLoop;
+
+                        long fullCode = Character.toCodePoint(c, nextChar);
+                        result.cat(Utils.getUTF8Bytes(fullCode));
+                    } else if (Character.isLowSurrogate(c)) {
+                        // low surrogate without high surrogate
+                        throw illegalUTF8(info, context);
+                    } else {
+                        result.cat(Utils.getUTF8Bytes(c));
+                    }
+                    continue charLoop;
                 }
                 result.cat(escapeSequence);
             }
@@ -446,8 +438,7 @@ class GeneratorMethodsLoader {
                 IRubyObject element = ary.eltInternal(i);
                 if (element instanceof RubyFixnum) {
                     bytes[i] = (byte)RubyNumeric.fix2long(element);
-                }
-                else {
+                } else {
                     throw runtime.newTypeError(element, runtime.getFixnum());
                 }
             }

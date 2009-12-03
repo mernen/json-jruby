@@ -30,8 +30,7 @@ class RuntimeInfo {
         if (encodingClass == null) { // 1.8 mode
             utf8 = ascii8bit = null;
             encodings = null;
-        }
-        else {
+        } else {
             ThreadContext context = runtime.getCurrentContext();
 
             utf8 = (RubyEncoding)RubyEncoding.find(context,

@@ -29,11 +29,9 @@ final class OptionsReader {
 
         if (vOpts == null || vOpts.isNil()) {
             opts = null;
-        }
-        else if (vOpts.respondsTo("to_hash")) {
+        } else if (vOpts.respondsTo("to_hash")) {
             opts = vOpts.convertToHash();
-        }
-        else {
+        } else {
             opts = vOpts.callMethod(context, "to_h").convertToHash();
         }
     }
