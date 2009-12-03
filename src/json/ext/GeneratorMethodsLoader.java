@@ -301,7 +301,6 @@ class GeneratorMethodsLoader {
                         result.cat((byte)c);
                     } else if (asciiOnly || c < 0x20) {
                         result.cat(Utils.escapeUnicode(c));
-                        continue charLoop;
                     } else if (Character.isHighSurrogate(c)) {
                         // reconstruct characters outside of BMP if
                         // surrogates are found
@@ -398,7 +397,7 @@ class GeneratorMethodsLoader {
 
             IRubyObject createId =
                 runtime.getModule("JSON").callMethod(context, "create_id");
-            result.op_aset(createId, vSelf.getMetaClass().to_s());
+            result.op_aset(context, createId, vSelf.getMetaClass().to_s());
 
             ByteList bl = self.getByteList();
             byte[] uBytes = bl.unsafeBytes();
@@ -407,7 +406,7 @@ class GeneratorMethodsLoader {
                 array.store(i, runtime.newFixnum(uBytes[i] & 0xff));
             }
 
-            result.op_aset(runtime.newString("raw"), array);
+            result.op_aset(context, runtime.newString("raw"), array);
             return result;
         }
     };
