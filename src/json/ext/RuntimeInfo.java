@@ -15,6 +15,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyModule;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 
 final class RuntimeInfo {
@@ -32,6 +33,8 @@ final class RuntimeInfo {
     RubyModule stringExtendModule;
     /** JSON::Ext::Generator::State */
     RubyClass generatorStateClass;
+    /** JSON::SAFE_STATE_PROTOTYPE */
+    GeneratorState safeStatePrototype;
 
     final RubyEncoding utf8;
     final RubyEncoding ascii8bit;
@@ -101,5 +104,16 @@ final class RuntimeInfo {
             }
             return encoding;
         }
+    }
+
+    public GeneratorState getSafeStatePrototype(ThreadContext context) {
+        if (safeStatePrototype == null) {
+            IRubyObject value = jsonModule.getConstant("SAFE_STATE_PROTOTYPE");
+            if (!(value instanceof GeneratorState)) {
+                throw context.getRuntime().newTypeError(value, generatorStateClass);
+            }
+            safeStatePrototype = (GeneratorState)value;
+        }
+        return safeStatePrototype;
     }
 }

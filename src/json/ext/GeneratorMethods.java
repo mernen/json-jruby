@@ -70,8 +70,7 @@ class GeneratorMethods {
 
 
     private static GeneratorState getState(ThreadContext context, IRubyObject[] args) {
-        if (args.length == 0) return GeneratorState.newInstance(context);
-        return GeneratorState.fromState(context, args[0]);
+        return GeneratorState.fromState(context, args.length == 0 ? null : args[0]);
     }
 
 

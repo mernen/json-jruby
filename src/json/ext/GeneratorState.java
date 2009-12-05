@@ -104,7 +104,7 @@ public class GeneratorState extends RubyObject {
     @JRubyMethod(required=1, meta = true)
     public static IRubyObject from_state(ThreadContext context,
             IRubyObject klass, IRubyObject opts, Block block) {
-        return fromState(context, (RubyClass)klass, opts);
+        return fromState(context, opts);
     }
 
     static GeneratorState fromState(ThreadContext context, IRubyObject opts) {
@@ -113,38 +113,20 @@ public class GeneratorState extends RubyObject {
 
     static GeneratorState fromState(ThreadContext context, RuntimeInfo info,
                                     IRubyObject opts) {
-        return fromState(context, info.generatorStateClass, opts);
-    }
-
-    private static GeneratorState fromState(ThreadContext context,
-            RubyClass klass, IRubyObject opts) {
+        RubyClass klass = info.generatorStateClass;
         if (opts != null) {
             // if the given parameter is a Generator::State, return itself
             if (klass.isInstance(opts)) return (GeneratorState)opts;
 
             // if the given parameter is a Hash, pass it to the instantiator
             if (context.getRuntime().getHash().isInstance(opts)) {
-                return newInstance(context, klass, new IRubyObject[] {opts});
+                return (GeneratorState)klass.newInstance(context,
+                        new IRubyObject[] {opts}, Block.NULL_BLOCK);
             }
         }
 
-        // ignore any other kinds of parameter
-        return newInstance(context, klass, NULL_ARRAY);
-    }
-
-    public static GeneratorState newInstance(ThreadContext context) {
-        RuntimeInfo info = RuntimeInfo.forRuntime(context.getRuntime());
-        return newInstance(context, info.generatorStateClass, NULL_ARRAY);
-    }
-
-    public static GeneratorState newInstance(ThreadContext context, RubyHash opts) {
-        RuntimeInfo info = RuntimeInfo.forRuntime(context.getRuntime());
-        return newInstance(context, info.generatorStateClass, new IRubyObject[] {opts});
-    }
-
-    private static GeneratorState newInstance(ThreadContext context,
-            RubyClass klass, IRubyObject[] args) {
-        return (GeneratorState)klass.newInstance(context, args, Block.NULL_BLOCK);
+        // for other values, return the safe prototype
+        return info.getSafeStatePrototype(context);
     }
 
     /**
@@ -176,6 +158,24 @@ public class GeneratorState extends RubyObject {
     @JRubyMethod(rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         configure(context, args.length > 0 ? args[0] : null);
+        return this;
+    }
+
+    @JRubyMethod
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject vOrig) {
+        Ruby runtime = context.getRuntime();
+        if (!(vOrig instanceof GeneratorState)) {
+            throw runtime.newTypeError(vOrig, getType());
+        }
+        GeneratorState orig = (GeneratorState)vOrig;
+        this.indent = orig.indent;
+        this.space = orig.space;
+        this.spaceBefore = orig.spaceBefore;
+        this.objectNl = orig.objectNl;
+        this.arrayNl = orig.arrayNl;
+        this.maxNesting = orig.maxNesting;
+        this.allowNaN = orig.allowNaN;
+        this.asciiOnly = orig.asciiOnly;
         return this;
     }
 
