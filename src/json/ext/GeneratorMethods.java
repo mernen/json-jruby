@@ -97,7 +97,7 @@ class GeneratorMethods {
             GeneratorState state = getState(context, args);
             int depth = args.length > 1 ? RubyNumeric.fix2int(args[1]) : 0;
 
-            state.checkMaxNesting(depth + 1);
+            state.checkMaxNesting(context, depth + 1);
             return transform(context, self, state, depth);
         }
 
@@ -180,7 +180,7 @@ class GeneratorMethods {
             GeneratorState state = getState(context, args);
             int depth = args.length > 1 ? RubyNumeric.fix2int(args[1]) : 0;
 
-            state.checkMaxNesting(depth + 1);
+            state.checkMaxNesting(context, depth + 1);
             return transform(context, self, state, depth);
         }
 

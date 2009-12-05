@@ -404,12 +404,13 @@ public class GeneratorState extends RubyObject {
 
     /**
      * Checks if the current depth is allowed as per this state's options.
+     * @param context
      * @param depth The corrent depth
      */
-    void checkMaxNesting(int depth) {
-        if (getMaxNesting() != 0 && depth > getMaxNesting()) {
-            throw Utils.newException(getRuntime().getCurrentContext(),
-                    Utils.M_NESTING_ERROR, "nesting of " + depth + " is too deep");
+    void checkMaxNesting(ThreadContext context, int depth) {
+        if (maxNesting != 0 && depth > maxNesting) {
+            throw Utils.newException(context, Utils.M_NESTING_ERROR,
+                    "nesting of " + depth + " is too deep");
         }
     }
 }
