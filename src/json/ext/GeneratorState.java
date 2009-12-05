@@ -21,6 +21,7 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -378,18 +379,18 @@ public class GeneratorState extends RubyObject {
      * @return
      */
     @JRubyMethod(name = "to_h")
-    public RubyHash to_h() {
+    public RubyHash to_h(ThreadContext context) {
         Ruby runtime = getRuntime();
         RubyHash result = RubyHash.newHash(runtime);
 
-        result.op_aset(runtime.newSymbol("indent"), indent_get());
-        result.op_aset(runtime.newSymbol("space"), space_get());
-        result.op_aset(runtime.newSymbol("space_before"), space_before_get());
-        result.op_aset(runtime.newSymbol("object_nl"), object_nl_get());
-        result.op_aset(runtime.newSymbol("array_nl"), array_nl_get());
-        result.op_aset(runtime.newSymbol("check_circular"), check_circular_p());
-        result.op_aset(runtime.newSymbol("allow_nan"), allow_nan_p());
-        result.op_aset(runtime.newSymbol("max_nesting"), max_nesting_get());
+        result.op_aset(context, runtime.newSymbol("indent"), indent_get());
+        result.op_aset(context, runtime.newSymbol("space"), space_get());
+        result.op_aset(context, runtime.newSymbol("space_before"), space_before_get());
+        result.op_aset(context, runtime.newSymbol("object_nl"), object_nl_get());
+        result.op_aset(context, runtime.newSymbol("array_nl"), array_nl_get());
+        result.op_aset(context, runtime.newSymbol("check_circular"), check_circular_p());
+        result.op_aset(context, runtime.newSymbol("allow_nan"), allow_nan_p());
+        result.op_aset(context, runtime.newSymbol("max_nesting"), max_nesting_get());
         return result;
     }
 

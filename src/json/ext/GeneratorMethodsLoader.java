@@ -452,6 +452,7 @@ class GeneratorMethodsLoader {
      * strings, e.g. binary data.
      */
     private static Callback STRING_TO_JSON_RAW_OBJECT = new OptionalArgsCallback() {
+        @SuppressWarnings("deprecation")
         public IRubyObject execute(IRubyObject vSelf, IRubyObject[] args, Block block) {
             RubyString self = vSelf.convertToString();
             Ruby runtime = self.getRuntime();

@@ -784,7 +784,7 @@ public class Parser extends RubyObject {
                     fhold;
                     fbreak;
                 } else {
-                    result.op_aset(lastName, res.result);
+                    result.op_aset(context, lastName, res.result);
                     fexec res.p;
                 }
             }
@@ -818,6 +818,7 @@ public class Parser extends RubyObject {
         ParserResult parseObject(int p, int pe) {
             int cs = EVIL;
             RubyString lastName = null;
+            ThreadContext context = runtime.getCurrentContext();
 
             if (parser.maxNesting > 0 && currentNesting > parser.maxNesting) {
                 throw Utils.newException(runtime, Utils.M_NESTING_ERROR,
@@ -828,8 +829,7 @@ public class Parser extends RubyObject {
             // allocator test at readRubyClassParameter
             RubyHash result =
                 (RubyHash)parser.objectClass.newInstance(
-                    runtime.getCurrentContext(), new IRubyObject[0],
-                    Block.NULL_BLOCK);
+                    context, new IRubyObject[0], Block.NULL_BLOCK);
 
             %% write init;
             %% write exec;
@@ -842,7 +842,7 @@ public class Parser extends RubyObject {
 
             // attempt to de-serialize object
             if (parser.createId != null) {
-                IRubyObject vKlassName = result.op_aref(runtime.getCurrentContext(), parser.createId);
+                IRubyObject vKlassName = result.op_aref(context, parser.createId);
                 if (!vKlassName.isNil()) {
                     String klassName = vKlassName.asJavaString();
                     RubyModule klass;
@@ -857,7 +857,6 @@ public class Parser extends RubyObject {
                             throw e;
                         }
                     }
-                    ThreadContext context = runtime.getCurrentContext();
                     if (klass.respondsTo("json_creatable?") &&
                         klass.callMethod(context, "json_creatable?").isTrue()) {
 
