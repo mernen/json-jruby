@@ -101,9 +101,9 @@ public class GeneratorState extends RubyObject {
      * @param block The block passed to the method
      * @return A <code>GeneratorState</code> as determined above
      */
-    @JRubyMethod(required=1, meta = true)
+    @JRubyMethod(meta=true)
     public static IRubyObject from_state(ThreadContext context,
-            IRubyObject klass, IRubyObject opts, Block block) {
+            IRubyObject klass, IRubyObject opts) {
         return fromState(context, opts);
     }
 
@@ -155,7 +155,7 @@ public class GeneratorState extends RubyObject {
      * thrown if these values are encountered.
      * This options defaults to <code>false</code>.
      */
-    @JRubyMethod(rest = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(optional=1, visibility=Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         configure(context, args.length > 0 ? args[0] : null);
         return this;
@@ -182,7 +182,7 @@ public class GeneratorState extends RubyObject {
     /**
      * XXX
      */
-    @JRubyMethod(required=1)
+    @JRubyMethod
     public IRubyObject generate(ThreadContext context, IRubyObject obj) {
         RubyString result = Utils.toJson(context, obj, this);
         if (!objectOrArrayLiteral(result)) {
@@ -240,7 +240,7 @@ public class GeneratorState extends RubyObject {
         return context.getRuntime().newString(indent);
     }
 
-    @JRubyMethod(name="indent=", required=1)
+    @JRubyMethod(name="indent=")
     public IRubyObject indent_set(IRubyObject indent) {
         this.indent = indent.convertToString().getByteList().dup();
         return indent;
@@ -255,7 +255,7 @@ public class GeneratorState extends RubyObject {
         return context.getRuntime().newString(space);
     }
 
-    @JRubyMethod(name="space=", required=1)
+    @JRubyMethod(name="space=")
     public IRubyObject space_set(IRubyObject space) {
         this.space = space.convertToString().getByteList().dup();
         return space;
@@ -270,7 +270,7 @@ public class GeneratorState extends RubyObject {
         return context.getRuntime().newString(spaceBefore);
     }
 
-    @JRubyMethod(name="space_before=", required=1)
+    @JRubyMethod(name="space_before=")
     public IRubyObject space_before_set(IRubyObject spaceBefore) {
         this.spaceBefore = spaceBefore.convertToString().getByteList().dup();
         return spaceBefore;
@@ -285,7 +285,7 @@ public class GeneratorState extends RubyObject {
         return context.getRuntime().newString(objectNl);
     }
 
-    @JRubyMethod(name="object_nl=", required=1)
+    @JRubyMethod(name="object_nl=")
     public IRubyObject object_nl_set(IRubyObject objectNl) {
         this.objectNl = objectNl.convertToString().getByteList().dup();
         return objectNl;
@@ -300,7 +300,7 @@ public class GeneratorState extends RubyObject {
         return context.getRuntime().newString(arrayNl);
     }
 
-    @JRubyMethod(name="array_nl=", required=1)
+    @JRubyMethod(name="array_nl=")
     public IRubyObject array_nl_set(IRubyObject arrayNl) {
         this.arrayNl = arrayNl.convertToString().getByteList().dup();
         return arrayNl;
@@ -311,7 +311,7 @@ public class GeneratorState extends RubyObject {
         return context.getRuntime().newFixnum(maxNesting);
     }
 
-    @JRubyMethod(name="max_nesting=", required=1)
+    @JRubyMethod(name="max_nesting=")
     public IRubyObject max_nesting_set(IRubyObject max_nesting) {
         maxNesting = RubyNumeric.fix2int(max_nesting);
         return max_nesting;
@@ -343,7 +343,7 @@ public class GeneratorState extends RubyObject {
      * @param vOpts The options hash
      * @return The receiver
      */
-    @JRubyMethod(required=1)
+    @JRubyMethod
     public IRubyObject configure(ThreadContext context, IRubyObject vOpts) {
         OptionsReader opts = OptionsReader.withStrings(context, vOpts);
 
