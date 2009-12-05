@@ -143,11 +143,9 @@ public class Parser extends RubyObject {
             IRubyObject maxNesting = Utils.fastGetSymItem(opts, "max_nesting");
             if (maxNesting == null) {
                 this.maxNesting = DEFAULT_MAX_NESTING;
-            }
-            else if (!maxNesting.isTrue()) {
+            } else if (!maxNesting.isTrue()) {
                 this.maxNesting = 0;
-            }
-            else {
+            } else {
                 this.maxNesting = RubyNumeric.fix2int(maxNesting);
             }
 
@@ -157,15 +155,13 @@ public class Parser extends RubyObject {
             IRubyObject createAdditions = Utils.fastGetSymItem(opts, "create_additions");
             if (createAdditions == null || createAdditions.isTrue()) {
                 this.createId = getCreateId(context);
-            }
-            else {
+            } else {
                 this.createId = null;
             }
 
             this.objectClass = readRubyClassParameter(opts, "object_class", getRuntime().getHash());
             this.arrayClass = readRubyClassParameter(opts, "array_class", getRuntime().getArray());
-        }
-        else {
+        } else {
             this.maxNesting = DEFAULT_MAX_NESTING;
             this.allowNaN = false;
             this.createId = getCreateId(context);
@@ -376,16 +372,14 @@ public class Parser extends RubyObject {
             action parse_nan {
                 if (parser.allowNaN) {
                     result = getConstant(CONST_NAN);
-                }
-                else {
+                } else {
                     throw unexpectedToken(p - 2, pe);
                 }
             }
             action parse_infinity {
                 if (parser.allowNaN) {
                     result = getConstant(CONST_INFINITY);
-                }
-                else {
+                } else {
                     throw unexpectedToken(p - 7, pe);
                 }
             }
@@ -398,8 +392,7 @@ public class Parser extends RubyObject {
                         fexec p + 10;
                         fhold;
                         fbreak;
-                    }
-                    else {
+                    } else {
                         throw unexpectedToken(p, pe);
                     }
                 }
@@ -421,8 +414,7 @@ public class Parser extends RubyObject {
                 if (res == null) {
                     fhold;
                     fbreak;
-                }
-                else {
+                } else {
                     result = res.result;
                     fexec res.p;
                 }
@@ -434,8 +426,7 @@ public class Parser extends RubyObject {
                 if (res == null) {
                     fhold;
                     fbreak;
-                }
-                else {
+                } else {
                     result = res.result;
                     fexec res.p;
                 }
@@ -447,8 +438,7 @@ public class Parser extends RubyObject {
                 if (res == null) {
                     fhold;
                     fbreak;
-                }
-                else {
+                } else {
                     result = res.result;
                     fexec res.p;
                 }
@@ -479,8 +469,7 @@ public class Parser extends RubyObject {
 
             if (cs >= JSON_value_first_final && result != null) {
                 return new ParserResult(result, p);
-            }
-            else {
+            } else {
                 return null;
             }
         }
@@ -564,8 +553,7 @@ public class Parser extends RubyObject {
                 if (result == null) {
                     fhold;
                     fbreak;
-                }
-                else {
+                } else {
                     fexec p + 1;
                 }
             }
@@ -594,8 +582,7 @@ public class Parser extends RubyObject {
 
             if (cs >= JSON_string_first_final && result != null) {
                 return new ParserResult(result, p + 1);
-            }
-            else {
+            } else {
                 return null;
             }
         }
@@ -655,8 +642,7 @@ public class Parser extends RubyObject {
                             i++;
                             if (i > relEnd - 4) {
                                 return null;
-                            }
-                            else {
+                            } else {
                                 String digits = byteList.subSequence(i, i + 4).toString();
                                 int code = Integer.parseInt(digits, 16);
                                 if (surrogateStart != -1) {
@@ -665,18 +651,15 @@ public class Parser extends RubyObject {
                                         result.cat(getUTF8Bytes(fullCode | 0L));
                                         surrogateStart = -1;
                                         surrogate = 0;
-                                    }
-                                    else {
+                                    } else {
                                         throw Utils.newException(runtime, Utils.M_PARSER_ERROR,
                                             "partial character in source, but hit end near ",
                                             (ByteList)byteList.subSequence(surrogateStart, relEnd));
                                     }
-                                }
-                                else if (Character.isHighSurrogate((char)code)) {
+                                } else if (Character.isHighSurrogate((char)code)) {
                                     surrogateStart = i - 2;
                                     surrogate = (char)code;
-                                }
-                                else {
+                                } else {
                                     result.cat(getUTF8Bytes(code));
                                 }
                                 i += 4;
@@ -686,13 +669,11 @@ public class Parser extends RubyObject {
                             result.cat((byte)c);
                             i++;
                     }
-                }
-                else if (surrogateStart != -1) {
+                } else if (surrogateStart != -1) {
                     throw Utils.newException(runtime, Utils.M_PARSER_ERROR,
                         "partial character in source, but hit end near ",
                         (ByteList)byteList.subSequence(surrogateStart, relEnd));
-                }
-                else {
+                } else {
                     int j = i;
                     while (j < relEnd && byteList.charAt(j) != '\\') j++;
                     result.cat(data, byteList.begin() + i, j - i);
@@ -742,8 +723,7 @@ public class Parser extends RubyObject {
                 if (res == null) {
                     fhold;
                     fbreak;
-                }
-                else {
+                } else {
                     result.append(res.result);
                     fexec res.p;
                 }
@@ -787,8 +767,7 @@ public class Parser extends RubyObject {
 
             if (cs >= JSON_array_first_final) {
                 return new ParserResult(result, p + 1);
-            }
-            else {
+            } else {
                 throw unexpectedToken(p, pe);
             }
         }
@@ -804,8 +783,7 @@ public class Parser extends RubyObject {
                 if (res == null) {
                     fhold;
                     fbreak;
-                }
-                else {
+                } else {
                     result.op_aset(lastName, res.result);
                     fexec res.p;
                 }
@@ -816,8 +794,7 @@ public class Parser extends RubyObject {
                 if (res == null) {
                     fhold;
                     fbreak;
-                }
-                else {
+                } else {
                     lastName = (RubyString)res.result;
                     fexec res.p;
                 }
@@ -871,13 +848,11 @@ public class Parser extends RubyObject {
                     RubyModule klass;
                     try {
                         klass = runtime.getClassFromPath(klassName);
-                    }
-                    catch (RaiseException e) {
+                    } catch (RaiseException e) {
                         if (runtime.getClass("NameError").isInstance(e.getException())) {
                             // invalid class path, but we're supposed to throw ArgumentError
                             throw runtime.newArgumentError("undefined class/module " + klassName);
-                        }
-                        else {
+                        } else {
                             // some other exception; let it propagate
                             throw e;
                         }
@@ -905,8 +880,7 @@ public class Parser extends RubyObject {
                 if (res == null) {
                     fhold;
                     fbreak;
-                }
-                else {
+                } else {
                     result = res.result;
                     fexec res.p;
                 }
@@ -918,8 +892,7 @@ public class Parser extends RubyObject {
                 if (res == null) {
                     fhold;
                     fbreak;
-                }
-                else {
+                } else {
                     result = res.result;
                     fexec res.p;
                 }
@@ -943,8 +916,7 @@ public class Parser extends RubyObject {
 
             if (cs >= JSON_first_final && p == pe) {
                 return result;
-            }
-            else {
+            } else {
                 throw unexpectedToken(p, pe);
             }
         }
