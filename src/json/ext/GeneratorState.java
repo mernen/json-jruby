@@ -241,8 +241,8 @@ public class GeneratorState extends RubyObject {
     }
 
     @JRubyMethod(name="indent=")
-    public IRubyObject indent_set(IRubyObject indent) {
-        this.indent = indent.convertToString().getByteList().dup();
+    public IRubyObject indent_set(ThreadContext context, IRubyObject indent) {
+        this.indent = prepareByteList(context, indent);
         return indent;
     }
 
@@ -256,8 +256,8 @@ public class GeneratorState extends RubyObject {
     }
 
     @JRubyMethod(name="space=")
-    public IRubyObject space_set(IRubyObject space) {
-        this.space = space.convertToString().getByteList().dup();
+    public IRubyObject space_set(ThreadContext context, IRubyObject space) {
+        this.space = prepareByteList(context, space);
         return space;
     }
 
@@ -271,8 +271,9 @@ public class GeneratorState extends RubyObject {
     }
 
     @JRubyMethod(name="space_before=")
-    public IRubyObject space_before_set(IRubyObject spaceBefore) {
-        this.spaceBefore = spaceBefore.convertToString().getByteList().dup();
+    public IRubyObject space_before_set(ThreadContext context,
+                                        IRubyObject spaceBefore) {
+        this.spaceBefore = prepareByteList(context, spaceBefore);
         return spaceBefore;
     }
 
@@ -286,8 +287,9 @@ public class GeneratorState extends RubyObject {
     }
 
     @JRubyMethod(name="object_nl=")
-    public IRubyObject object_nl_set(IRubyObject objectNl) {
-        this.objectNl = objectNl.convertToString().getByteList().dup();
+    public IRubyObject object_nl_set(ThreadContext context,
+                                     IRubyObject objectNl) {
+        this.objectNl = prepareByteList(context, objectNl);
         return objectNl;
     }
 
@@ -301,8 +303,9 @@ public class GeneratorState extends RubyObject {
     }
 
     @JRubyMethod(name="array_nl=")
-    public IRubyObject array_nl_set(IRubyObject arrayNl) {
-        this.arrayNl = arrayNl.convertToString().getByteList().dup();
+    public IRubyObject array_nl_set(ThreadContext context,
+                                    IRubyObject arrayNl) {
+        this.arrayNl = prepareByteList(context, arrayNl);
         return arrayNl;
     }
 
@@ -333,6 +336,18 @@ public class GeneratorState extends RubyObject {
     @JRubyMethod(name="ascii_only?")
     public RubyBoolean ascii_only_p(ThreadContext context) {
         return context.getRuntime().newBoolean(asciiOnly);
+    }
+
+    private ByteList prepareByteList(ThreadContext context, IRubyObject value) {
+        RubyString str = value.convertToString();
+        IRubyObject encoding = str.encoding(context);
+        if (encoding != null) {
+            RuntimeInfo info = RuntimeInfo.forRuntime(context.getRuntime());
+            if (encoding != info.utf8) {
+                str = (RubyString)str.encode(context, info.utf8);
+            }
+        }
+        return str.getByteList().dup();
     }
 
     /**
