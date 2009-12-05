@@ -35,7 +35,7 @@ public class GeneratorService implements BasicLibraryService {
 
         RubyModule generatorMethods =
             generatorModule.defineModuleUnder("GeneratorMethods");
-        new GeneratorMethodsLoader(generatorMethods).load();
+        GeneratorMethodsLoader.populate(info, generatorMethods);
 
         return true;
     }
