@@ -1,3 +1,9 @@
+/*
+ * This code is copyrighted work by Daniel Luz <dev at mernen dot com>.
+ *
+ * Distributed under the Ruby and GPLv2 licenses; see COPYING and GPL files
+ * for details.
+ */
 package json.ext;
 
 import java.util.HashMap;
