@@ -19,8 +19,6 @@ import org.jruby.util.ByteList;
 
 /**
  * Library of miscellaneous utility functions
- * 
- * @author mernen
  */
 final class Utils {
     public static final String M_GENERATOR_ERROR = "GeneratorError";
@@ -46,21 +44,15 @@ final class Utils {
         throw runtime.newTypeError(object, runtime.getArray());
     }
 
-    static RaiseException newException(ThreadContext context, String className,
-                                       String message) {
-        Ruby runtime = context.getRuntime();
-        return newException(RuntimeInfo.forRuntime(runtime), context,
-                            className, runtime.newString(message));
-    }
-
-    static RaiseException newException(RuntimeInfo info, ThreadContext context,
+    static RaiseException newException(ThreadContext context,
                                        String className, String message) {
-        return newException(info, context, className,
+        return newException(context, className,
                             context.getRuntime().newString(message));
     }
 
-    static RaiseException newException(RuntimeInfo info, ThreadContext context,
+    static RaiseException newException(ThreadContext context,
                                        String className, RubyString message) {
+        RuntimeInfo info = RuntimeInfo.forRuntime(context.getRuntime());
         RubyClass klazz = info.jsonModule.getClass(className);
         RubyException excptn =
             (RubyException)klazz.newInstance(context,
@@ -82,17 +74,6 @@ final class Utils {
         IRubyObject result = object.callMethod(context, "to_json", args);
         if (result instanceof RubyString) return (RubyString)result;
         throw runtime.newTypeError("to_json must return a String");
-    }
-
-    /**
-     * Repeats a sequence of bytes a determined number of times
-     * @param a The byte array to repeat
-     * @param n The number of times to repeat the sequence
-     * @return A new byte array, of length <code>bytes.length * times</code>,
-     *         with the given array repeated <code>n</code> times
-     */
-    static byte[] repeat(byte[] a, int n) {
-        return repeat(a, 0, a.length, n);
     }
 
     static byte[] repeat(ByteList a, int n) {
@@ -126,6 +107,8 @@ final class Utils {
      */
     static byte[] getUTF8Bytes(long code) {
         if (code < 0x80) {
+            // avoid passing through here, it's more efficient to just
+            // write this byte directly without allocating an array
             return new byte[] {(byte)code};
         }
         if (code < 0x800) {

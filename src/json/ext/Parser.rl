@@ -161,7 +161,7 @@ public class Parser extends RubyObject {
         ByteList bl = source.getByteList();
         int len = bl.length();
         if (len < 2) {
-            throw Utils.newException(info, context, Utils.M_PARSER_ERROR,
+            throw Utils.newException(context, Utils.M_PARSER_ERROR,
                 "A JSON text must at least contain two octets!");
         }
 
@@ -869,11 +869,11 @@ public class Parser extends RubyObject {
         }
 
         private RaiseException newException(String className, String message) {
-            return Utils.newException(parser.info, context, className, message);
+            return Utils.newException(context, className, message);
         }
 
         private RaiseException newException(String className, RubyString message) {
-            return Utils.newException(parser.info, context, className, message);
+            return Utils.newException(context, className, message);
         }
 
         private RaiseException newException(String className,

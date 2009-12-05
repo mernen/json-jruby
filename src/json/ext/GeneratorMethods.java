@@ -354,8 +354,7 @@ class GeneratorMethods {
 
         private static RaiseException illegalUTF8(ThreadContext context,
                 RuntimeInfo info) {
-            throw Utils.newException(info, context,
-                    Utils.M_GENERATOR_ERROR,
+            throw Utils.newException(context, Utils.M_GENERATOR_ERROR,
                     "source sequence is illegal/malformed utf-8");
         }
 
@@ -380,7 +379,7 @@ class GeneratorMethods {
                                  result.length);
                 return result;
             } catch (CharacterCodingException e) {
-                throw Utils.newException(info, context, Utils.M_GENERATOR_ERROR,
+                throw Utils.newException(context, Utils.M_GENERATOR_ERROR,
                     "source sequence is illegal/malformed utf-8");
             }
         }
