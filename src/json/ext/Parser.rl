@@ -255,6 +255,8 @@ public class Parser extends RubyObject {
      * {@link ByteList}, which in turn must still be bound to the same
      * <code>byte[]</code> value (and on the same offset).
      */
+    // Ragel uses lots of fall-through
+    @SuppressWarnings("fallthrough")
     private static class ParserSession {
         private final Parser parser;
         private final ThreadContext context;
