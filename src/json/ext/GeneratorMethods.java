@@ -92,7 +92,7 @@ class GeneratorMethods {
         @JRubyMethod(optional=2)
         public static IRubyObject to_json(ThreadContext context,
                 IRubyObject vSelf, IRubyObject[] args, Block block) {
-            RubyHash self = vSelf.convertToHash();
+            RubyHash self = Utils.ensureHash(vSelf);
 
             GeneratorState state = getState(context, args);
             int depth = args.length > 1 ? RubyNumeric.fix2int(args[1]) : 0;
@@ -242,7 +242,7 @@ class GeneratorMethods {
         @JRubyMethod(optional=2)
         public static IRubyObject to_json(ThreadContext context,
                 IRubyObject self, IRubyObject[] args, Block block) {
-            return self.callMethod(context, "to_s").checkStringType();
+            return Utils.ensureString(self.callMethod(context, "to_s"));
         }
     };
 
@@ -285,8 +285,7 @@ class GeneratorMethods {
             Ruby runtime = context.getRuntime();
             RuntimeInfo info = RuntimeInfo.forRuntime(runtime);
             boolean asciiOnly = args.length > 0 && getState(context, args).asciiOnly();
-            // using convertToString as a safety guard measure
-            char[] chars = decodeString(context, info, vSelf.convertToString());
+            char[] chars = decodeString(context, info, Utils.ensureString(vSelf));
             // For most apps, the vast majority of strings will be plain simple
             // ASCII strings with no characters that need escaping. So, we'll
             // preallocate just enough space for the entire string plus opening
@@ -407,7 +406,7 @@ class GeneratorMethods {
         @JRubyMethod(optional=2)
         public static IRubyObject to_json_raw_object(ThreadContext context,
                 IRubyObject vSelf, IRubyObject[] args, Block block) {
-            RubyString self = vSelf.convertToString();
+            RubyString self = Utils.ensureString(vSelf);
             Ruby runtime = context.getRuntime();
             RubyHash result = RubyHash.newHash(runtime);
 

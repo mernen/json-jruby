@@ -10,6 +10,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
+import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
@@ -42,6 +43,18 @@ final class Utils {
         if (object instanceof RubyArray) return (RubyArray)object;
         Ruby runtime = object.getRuntime();
         throw runtime.newTypeError(object, runtime.getArray());
+    }
+
+    static RubyHash ensureHash(IRubyObject object) throws RaiseException {
+        if (object instanceof RubyHash) return (RubyHash)object;
+        Ruby runtime = object.getRuntime();
+        throw runtime.newTypeError(object, runtime.getHash());
+    }
+
+    static RubyString ensureString(IRubyObject object) throws RaiseException {
+        if (object instanceof RubyString) return (RubyString)object;
+        Ruby runtime = object.getRuntime();
+        throw runtime.newTypeError(object, runtime.getString());
     }
 
     static RaiseException newException(ThreadContext context,
