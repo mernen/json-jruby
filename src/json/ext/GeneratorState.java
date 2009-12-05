@@ -73,8 +73,6 @@ public class GeneratorState extends RubyObject {
      * XXX
      */
     private boolean asciiOnly;
-    // Porting note: due to the use of inner anonymous classes in the generator
-    // methods, the "memo", "depth" and "flag" fields are not needed
 
     static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
@@ -100,7 +98,7 @@ public class GeneratorState extends RubyObject {
      * @param block The block passed to the method
      * @return A <code>GeneratorState</code> as determined above
      */
-    @JRubyMethod(required = 1, meta = true)
+    @JRubyMethod(required=1, meta = true)
     public static IRubyObject from_state(ThreadContext context,
             IRubyObject klass, IRubyObject opts, Block block) {
         return fromState(context, (RubyClass)klass, opts);
@@ -181,7 +179,7 @@ public class GeneratorState extends RubyObject {
     /**
      * XXX
      */
-    @JRubyMethod(required = 1)
+    @JRubyMethod(required=1)
     public IRubyObject generate(ThreadContext context, IRubyObject obj) {
         RubyString result = Utils.toJson(context, obj, this);
         if (!objectOrArrayLiteral(result)) {
@@ -234,12 +232,12 @@ public class GeneratorState extends RubyObject {
         return indent;
     }
 
-    @JRubyMethod(name = "indent")
-    public RubyString indent_get() {
-        return getRuntime().newString(indent);
+    @JRubyMethod(name="indent")
+    public RubyString indent_get(ThreadContext context) {
+        return context.getRuntime().newString(indent);
     }
 
-    @JRubyMethod(name = "indent=", required = 1)
+    @JRubyMethod(name="indent=", required=1)
     public IRubyObject indent_set(IRubyObject indent) {
         this.indent = indent.convertToString().getByteList().dup();
         return indent;
@@ -249,12 +247,12 @@ public class GeneratorState extends RubyObject {
         return space;
     }
 
-    @JRubyMethod(name = "space")
-    public RubyString space_get() {
-        return getRuntime().newString(space);
+    @JRubyMethod(name="space")
+    public RubyString space_get(ThreadContext context) {
+        return context.getRuntime().newString(space);
     }
 
-    @JRubyMethod(name = "space=", required = 1)
+    @JRubyMethod(name="space=", required=1)
     public IRubyObject space_set(IRubyObject space) {
         this.space = space.convertToString().getByteList().dup();
         return space;
@@ -264,12 +262,12 @@ public class GeneratorState extends RubyObject {
         return spaceBefore;
     }
 
-    @JRubyMethod(name = "space_before")
-    public RubyString space_before_get() {
-        return getRuntime().newString(spaceBefore);
+    @JRubyMethod(name="space_before")
+    public RubyString space_before_get(ThreadContext context) {
+        return context.getRuntime().newString(spaceBefore);
     }
 
-    @JRubyMethod(name = "space_before=", required = 1)
+    @JRubyMethod(name="space_before=", required=1)
     public IRubyObject space_before_set(IRubyObject spaceBefore) {
         this.spaceBefore = spaceBefore.convertToString().getByteList().dup();
         return spaceBefore;
@@ -279,12 +277,12 @@ public class GeneratorState extends RubyObject {
         return objectNl;
     }
 
-    @JRubyMethod(name = "object_nl")
-    public RubyString object_nl_get() {
-        return getRuntime().newString(objectNl);
+    @JRubyMethod(name="object_nl")
+    public RubyString object_nl_get(ThreadContext context) {
+        return context.getRuntime().newString(objectNl);
     }
 
-    @JRubyMethod(name = "object_nl=", required = 1)
+    @JRubyMethod(name="object_nl=", required=1)
     public IRubyObject object_nl_set(IRubyObject objectNl) {
         this.objectNl = objectNl.convertToString().getByteList().dup();
         return objectNl;
@@ -294,23 +292,23 @@ public class GeneratorState extends RubyObject {
         return arrayNl;
     }
 
-    @JRubyMethod(name = "array_nl")
-    public RubyString array_nl_get() {
-        return getRuntime().newString(arrayNl);
+    @JRubyMethod(name="array_nl")
+    public RubyString array_nl_get(ThreadContext context) {
+        return context.getRuntime().newString(arrayNl);
     }
 
-    @JRubyMethod(name = "array_nl=", required = 1)
+    @JRubyMethod(name="array_nl=", required=1)
     public IRubyObject array_nl_set(IRubyObject arrayNl) {
         this.arrayNl = arrayNl.convertToString().getByteList().dup();
         return arrayNl;
     }
 
-    @JRubyMethod(name = "max_nesting")
-    public RubyInteger max_nesting_get() {
-        return getRuntime().newFixnum(maxNesting);
+    @JRubyMethod(name="max_nesting")
+    public RubyInteger max_nesting_get(ThreadContext context) {
+        return context.getRuntime().newFixnum(maxNesting);
     }
 
-    @JRubyMethod(name = "max_nesting=", required = 1)
+    @JRubyMethod(name="max_nesting=", required=1)
     public IRubyObject max_nesting_set(IRubyObject max_nesting) {
         maxNesting = RubyNumeric.fix2int(max_nesting);
         return max_nesting;
@@ -320,21 +318,18 @@ public class GeneratorState extends RubyObject {
         return allowNaN;
     }
 
-    /**
-     * @see #allowNaN()
-     */
-    @JRubyMethod(name = "allow_nan?")
-    public RubyBoolean allow_nan_p() {
-        return getRuntime().newBoolean(allowNaN);
+    @JRubyMethod(name="allow_nan?")
+    public RubyBoolean allow_nan_p(ThreadContext context) {
+        return context.getRuntime().newBoolean(allowNaN);
     }
 
     public boolean asciiOnly() {
         return asciiOnly;
     }
 
-    @JRubyMethod(name = "ascii_only?")
-    public RubyBoolean ascii_only_p() {
-        return getRuntime().newBoolean(asciiOnly);
+    @JRubyMethod(name="ascii_only?")
+    public RubyBoolean ascii_only_p(ThreadContext context) {
+        return context.getRuntime().newBoolean(asciiOnly);
     }
 
     /**
@@ -345,7 +340,7 @@ public class GeneratorState extends RubyObject {
      * @param vOpts The options hash
      * @return The receiver
      */
-    @JRubyMethod(required = 1)
+    @JRubyMethod(required=1)
     public IRubyObject configure(ThreadContext context, IRubyObject vOpts) {
         OptionsReader opts = OptionsReader.withStrings(context, vOpts);
 
@@ -380,17 +375,17 @@ public class GeneratorState extends RubyObject {
      */
     @JRubyMethod
     public RubyHash to_h(ThreadContext context) {
-        Ruby runtime = getRuntime();
+        Ruby runtime = context.getRuntime();
         RubyHash result = RubyHash.newHash(runtime);
 
-        result.op_aset(context, runtime.newSymbol("indent"), indent_get());
-        result.op_aset(context, runtime.newSymbol("space"), space_get());
-        result.op_aset(context, runtime.newSymbol("space_before"), space_before_get());
-        result.op_aset(context, runtime.newSymbol("object_nl"), object_nl_get());
-        result.op_aset(context, runtime.newSymbol("array_nl"), array_nl_get());
-        result.op_aset(context, runtime.newSymbol("allow_nan"), allow_nan_p());
-        result.op_aset(context, runtime.newSymbol("ascii_only"), ascii_only_p());
-        result.op_aset(context, runtime.newSymbol("max_nesting"), max_nesting_get());
+        result.op_aset(context, runtime.newSymbol("indent"), indent_get(context));
+        result.op_aset(context, runtime.newSymbol("space"), space_get(context));
+        result.op_aset(context, runtime.newSymbol("space_before"), space_before_get(context));
+        result.op_aset(context, runtime.newSymbol("object_nl"), object_nl_get(context));
+        result.op_aset(context, runtime.newSymbol("array_nl"), array_nl_get(context));
+        result.op_aset(context, runtime.newSymbol("allow_nan"), allow_nan_p(context));
+        result.op_aset(context, runtime.newSymbol("ascii_only"), ascii_only_p(context));
+        result.op_aset(context, runtime.newSymbol("max_nesting"), max_nesting_get(context));
         return result;
     }
 
