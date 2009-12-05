@@ -33,7 +33,7 @@ import org.jruby.util.ByteList;
  * 
  * @author mernen
  */
-class GeneratorMethodsLoader {
+class GeneratorMethods {
     /**
      * Populates the given module with all modules and their methods
      * @param info
