@@ -6,6 +6,7 @@
  */
 package json.ext;
 
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -16,10 +17,13 @@ import org.jruby.RubyModule;
 import org.jruby.runtime.ThreadContext;
 
 
-class RuntimeInfo {
-    private static final Map<Ruby, RuntimeInfo> runtimes =
-            // most of the time there's just one single runtime
-            new WeakHashMap<Ruby, RuntimeInfo>(1);
+final class RuntimeInfo {
+    // since the vast majority of cases runs just one runtime,
+    // we optimize for that
+    private static WeakReference<Ruby> runtime1 = new WeakReference<Ruby>(null);
+    private static RuntimeInfo info1;
+    // store remaining runtimes here (does not include runtime1)
+    private static Map<Ruby, RuntimeInfo> runtimes;
 
     // these fields are filled by the service loaders
     /** JSON */
@@ -51,19 +55,32 @@ class RuntimeInfo {
     }
 
     static RuntimeInfo initRuntime(Ruby runtime) {
-        synchronized (runtimes) {
-            RuntimeInfo cache = runtimes.get(runtime);
-            if (cache == null) {
-                cache = new RuntimeInfo(runtime);
-                runtimes.put(runtime, cache);
+        synchronized (RuntimeInfo.class) {
+            if (runtime1.get() == runtime) {
+                return info1;
+            } else if (runtime1.get() == null) {
+                runtime1 = new WeakReference<Ruby>(runtime);
+                info1 = new RuntimeInfo(runtime);
+                return info1;
+            } else {
+                if (runtimes == null) {
+                    runtimes = new WeakHashMap<Ruby, RuntimeInfo>(1);
+                }
+                RuntimeInfo cache = runtimes.get(runtime);
+                if (cache == null) {
+                    cache = new RuntimeInfo(runtime);
+                    runtimes.put(runtime, cache);
+                }
+                return cache;
             }
-            return cache;
         }
     }
 
     public static RuntimeInfo forRuntime(Ruby runtime) {
-        synchronized (runtimes) {
-            RuntimeInfo cache = runtimes.get(runtime);
+        synchronized (RuntimeInfo.class) {
+            if (runtime1.get() == runtime) return info1;
+            RuntimeInfo cache = null;
+            if (runtimes != null) cache = runtimes.get(runtime);
             assert cache != null : "Runtime given has not initialized JSON::Ext";
             return cache;
         }
@@ -86,4 +103,3 @@ class RuntimeInfo {
         }
     }
 }
-
