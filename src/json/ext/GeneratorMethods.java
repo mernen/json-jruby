@@ -96,12 +96,13 @@ class GeneratorMethods {
             GeneratorState state = getState(context, args);
             int depth = args.length > 1 ? RubyNumeric.fix2int(args[1]) : 0;
 
-            state.checkMaxNesting(context, depth + 1);
-            return transform(context, self, state, depth);
+            return toJson(context, self, state, depth);
         }
 
-        private static RubyString transform(final ThreadContext context,
+        private static RubyString toJson(final ThreadContext context,
                 RubyHash self, final GeneratorState state, int depth) {
+            state.checkMaxNesting(context, depth + 1);
+
             Ruby runtime = context.getRuntime();
             final ByteList objectNl = state.getObjectNl();
             final byte[] indent = Utils.repeat(state.getIndent(), depth + 1);
@@ -181,12 +182,13 @@ class GeneratorMethods {
             GeneratorState state = getState(context, args);
             int depth = args.length > 1 ? RubyNumeric.fix2int(args[1]) : 0;
 
-            state.checkMaxNesting(context, depth + 1);
-            return transform(context, self, state, depth);
+            return toJson(context, self, state, depth);
         }
 
-        private static RubyString transform(ThreadContext context,
+        private static RubyString toJson(ThreadContext context,
                 RubyArray self, GeneratorState state, int depth) {
+            state.checkMaxNesting(context, depth + 1);
+
             Ruby runtime = context.getRuntime();
             ByteList indentUnit = state.getIndent();
             byte[] shift = Utils.repeat(indentUnit, depth + 1);
