@@ -1,6 +1,5 @@
 package json.ext;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -14,10 +13,12 @@ import org.jruby.runtime.ThreadContext;
 class RuntimeInfo {
     private static final Map<Ruby, RuntimeInfo> runtimes =
             // most of the time there's just one single runtime
-            Collections.synchronizedMap(new WeakHashMap<Ruby, RuntimeInfo>(1));
+            new WeakHashMap<Ruby, RuntimeInfo>(1);
 
     // these fields are filled by the service loaders
+    /** JSON */
     RubyModule jsonModule;
+    /** JSON::Ext::Generator::State */
     RubyClass generatorStateClass;
 
     final RubyEncoding utf8;
@@ -53,9 +54,11 @@ class RuntimeInfo {
     }
 
     public static RuntimeInfo forRuntime(Ruby runtime) {
-        RuntimeInfo cache = runtimes.get(runtime);
-        assert cache != null : "Runtime given has not initialized JSON::Ext";
-        return cache;
+        synchronized (runtimes) {
+            RuntimeInfo cache = runtimes.get(runtime);
+            assert cache != null : "Runtime given has not initialized JSON::Ext";
+            return cache;
+        }
     }
 
     public boolean encodingsSupported() {
