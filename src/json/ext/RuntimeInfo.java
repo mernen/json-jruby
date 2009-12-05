@@ -24,6 +24,8 @@ class RuntimeInfo {
     // these fields are filled by the service loaders
     /** JSON */
     RubyModule jsonModule;
+    /** JSON::Ext::Generator::GeneratorMethods::String::Extend */
+    RubyModule stringExtendModule;
     /** JSON::Ext::Generator::State */
     RubyClass generatorStateClass;
 
