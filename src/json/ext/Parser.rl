@@ -559,9 +559,7 @@ public class Parser extends RubyObject {
                 char c = byteList.charAt(i);
                 if (c == '\\') {
                     i++;
-                    if (i >= relEnd) {
-                        return null;
-                    }
+                    if (i >= relEnd) return null;
                     c = byteList.charAt(i);
                     if (surrogateStart != -1 && c != 'u') {
                         throw newException(Utils.M_PARSER_ERROR,
@@ -596,30 +594,29 @@ public class Parser extends RubyObject {
                             break;
                         case 'u':
                             i++;
-                            if (i > relEnd - 4) {
-                                return null;
-                            } else {
-                                String digits = byteList.subSequence(i, i + 4).toString();
-                                int code = Integer.parseInt(digits, 16);
-                                if (surrogateStart != -1) {
-                                    if (Character.isLowSurrogate((char)code)) {
-                                        int fullCode = Character.toCodePoint(surrogate, (char)code);
-                                        result.cat(Utils.getUTF8Bytes(fullCode | 0L));
-                                        surrogateStart = -1;
-                                        surrogate = 0;
-                                    } else {
-                                        throw newException(Utils.M_PARSER_ERROR,
-                                            "partial character in source, but hit end near ",
-                                            (ByteList)byteList.subSequence(surrogateStart, relEnd));
-                                    }
-                                } else if (Character.isHighSurrogate((char)code)) {
-                                    surrogateStart = i - 2;
-                                    surrogate = (char)code;
-                                } else {
-                                    result.cat(Utils.getUTF8Bytes(code));
+                            if (i > relEnd - 4) return null;
+
+                            int code = Utils.parseHex(byteList, i, 4);
+                            if (surrogateStart != -1) {
+                                if (!Character.isLowSurrogate((char)code)) {
+                                    throw newException(Utils.M_PARSER_ERROR,
+                                        "partial character in source, but hit end near ",
+                                        (ByteList)byteList.subSequence(surrogateStart, relEnd));
                                 }
-                                i += 4;
+
+                                int fullCode = Character.toCodePoint(surrogate, (char)code);
+                                result.cat(Utils.getUTF8Bytes(fullCode | 0L));
+                                surrogateStart = -1;
+                                surrogate = 0;
+                            } else if (Character.isHighSurrogate((char)code)) {
+                                surrogateStart = i - 2;
+                                surrogate = (char)code;
+                            } else if (code < 0x80) { // plain ASCII
+                                result.cat((char)code);
+                            } else {
+                                result.cat(Utils.getUTF8Bytes(code));
                             }
+                            i += 4;
                             break;
                         default:
                             result.cat((byte)c);

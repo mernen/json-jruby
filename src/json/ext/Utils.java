@@ -142,4 +142,31 @@ final class Utils {
                            (byte)(0x80 | code >>> 6 & 0x3f),
                            (byte)(0x80 | code & 0x3f)};
     }
+
+    /**
+     * Efficiently reads an unsigned hexadecimal number straight from a
+     * ByteList, without allocating additional objects.
+     */
+    static int parseHex(ByteList bl, int start, int length) {
+        int result = 0;
+        for (int i = start, countdown = length; countdown > 0; i++, countdown--) {
+            char digit = bl.charAt(i);
+            int digitValue;
+            if (digit >= '0' && digit <= '9') {
+                digitValue = digit - '0';
+            }
+            else if (digit >= 'a' && digit <= 'f') {
+                digitValue = 10 + digit - 'a';
+            }
+            else if (digit >= 'A' && digit <= 'F') {
+                digitValue = 10 + digit - 'A';
+            }
+            else {
+                throw new NumberFormatException("Invalid base 16 number "
+                        + bl.subSequence(start, start + length));
+            }
+            result = result * 16 + digitValue;
+        }
+        return result;
+    }
 }
