@@ -11,7 +11,6 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
-import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
@@ -103,27 +102,48 @@ public class GeneratorState extends RubyObject {
      */
     @JRubyMethod(required = 1, meta = true)
     public static IRubyObject from_state(ThreadContext context,
-            IRubyObject clazz, IRubyObject opts, Block block) {
-        return fromState(context, clazz.getRuntime(), (RubyClass)clazz, opts);
+            IRubyObject klass, IRubyObject opts, Block block) {
+        return fromState(context, (RubyClass)klass, opts);
     }
 
-    static GeneratorState fromState(Ruby runtime, IRubyObject opts) {
-        return fromState(runtime.getCurrentContext(), runtime,
-                RuntimeInfo.forRuntime(runtime).generatorStateClass, opts);
+    static GeneratorState fromState(ThreadContext context, IRubyObject opts) {
+        return fromState(context, RuntimeInfo.forRuntime(context.getRuntime()), opts);
+    }
+
+    static GeneratorState fromState(ThreadContext context, RuntimeInfo info,
+                                    IRubyObject opts) {
+        return fromState(context, info.generatorStateClass, opts);
     }
 
     private static GeneratorState fromState(ThreadContext context,
-            Ruby runtime, RubyClass clazz, IRubyObject opts) {
-        // if the given parameter is a Generator::State, return itself
-        if (clazz.isInstance(opts)) return (GeneratorState)opts;
+            RubyClass klass, IRubyObject opts) {
+        if (opts != null) {
+            // if the given parameter is a Generator::State, return itself
+            if (klass.isInstance(opts)) return (GeneratorState)opts;
 
-        // if the given parameter is a Hash, pass it to the instantiator
-        if (runtime.getHash().isInstance(opts)) {
-            return (GeneratorState)clazz.callMethod(context, "new", opts);
+            // if the given parameter is a Hash, pass it to the instantiator
+            if (context.getRuntime().getHash().isInstance(opts)) {
+                return newInstance(context, klass, new IRubyObject[] {opts});
+            }
         }
 
         // ignore any other kinds of parameter
-        return (GeneratorState)clazz.callMethod(context, "new");
+        return newInstance(context, klass, NULL_ARRAY);
+    }
+
+    public static GeneratorState newInstance(ThreadContext context) {
+        RuntimeInfo info = RuntimeInfo.forRuntime(context.getRuntime());
+        return newInstance(context, info.generatorStateClass, NULL_ARRAY);
+    }
+
+    public static GeneratorState newInstance(ThreadContext context, RubyHash opts) {
+        RuntimeInfo info = RuntimeInfo.forRuntime(context.getRuntime());
+        return newInstance(context, info.generatorStateClass, new IRubyObject[] {opts});
+    }
+
+    private static GeneratorState newInstance(ThreadContext context,
+            RubyClass klass, IRubyObject[] args) {
+        return (GeneratorState)klass.newInstance(context, args, Block.NULL_BLOCK);
     }
 
     /**
