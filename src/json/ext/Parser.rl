@@ -46,6 +46,7 @@ public class Parser extends RubyObject {
     private RubyString createId;
     private int maxNesting;
     private boolean allowNaN;
+    private boolean symbolizeNames;
     private RubyClass objectClass;
     private RubyClass arrayClass;
 
@@ -110,6 +111,10 @@ public class Parser extends RubyObject {
      * <dd>If set to <code>true</code>, allow <code>NaN</code>,
      * <code>Infinity</code> and <code>-Infinity</code> in defiance of RFC 4627
      * to be parsed by the Parser. This option defaults to <code>false</code>.
+     *
+     * <dt><code>:symbolize_names</code>
+     * <dd>If set to <code>true</code>, returns symbols for the names (keys) in
+     * a JSON object. Otherwise strings are returned, which is also the default.
      * 
      * <dt><code>:create_additions</code>
      * <dd>If set to <code>false</code>, the Parser doesn't create additions
@@ -151,6 +156,9 @@ public class Parser extends RubyObject {
 
             IRubyObject allowNaN = Utils.fastGetSymItem(opts, "allow_nan");
             this.allowNaN = allowNaN != null && allowNaN.isTrue();
+
+            IRubyObject symbolizeNames = Utils.fastGetSymItem(opts, "symbolize_names");
+            this.symbolizeNames = symbolizeNames != null && symbolizeNames.isTrue();
 
             IRubyObject createAdditions = Utils.fastGetSymItem(opts, "create_additions");
             if (createAdditions == null || createAdditions.isTrue()) {
@@ -795,7 +803,13 @@ public class Parser extends RubyObject {
                     fhold;
                     fbreak;
                 } else {
-                    lastName = (RubyString)res.result;
+                    RubyString name = (RubyString)res.result;
+                    if (parser.symbolizeNames) {
+                        lastName = runtime.is1_9() ? name.intern19()
+                                                   : name.intern();
+                    } else {
+                        lastName = name;
+                    }
                     fexec res.p;
                 }
             }
@@ -817,7 +831,7 @@ public class Parser extends RubyObject {
 
         ParserResult parseObject(int p, int pe) {
             int cs = EVIL;
-            RubyString lastName = null;
+            IRubyObject lastName = null;
             ThreadContext context = runtime.getCurrentContext();
 
             if (parser.maxNesting > 0 && currentNesting > parser.maxNesting) {
