@@ -115,11 +115,14 @@ class GeneratorMethods {
             final int preSize = Math.max(0,
                     2 + self.size() * (12 + indent.length +
                                        spaceBefore.length() + space.length()));
-            final RubyString result = runtime.newString(new ByteList(preSize));
+            // we know the ByteList won't get shared, so it's safe to work
+            // directly on it
+            final ByteList out = new ByteList(preSize);
+            final RubyString result = runtime.newString(out);
             result.infectBy(self);
 
-            result.cat((byte)'{');
-            result.cat(objectNl);
+            out.append((byte)'{');
+            out.append(objectNl);
             self.visitAll(new RubyHash.Visitor() {
                 private boolean firstPair = true;
 
@@ -128,34 +131,34 @@ class GeneratorMethods {
                     if (firstPair) {
                         firstPair = false;
                     } else {
-                        result.cat((byte)',');
-                        result.cat(objectNl);
+                        out.append((byte)',');
+                        out.append(objectNl);
                     }
-                    if (objectNl.length() != 0) result.cat(indent);
+                    if (objectNl.length() != 0) out.append(indent);
 
                     RubyString keyJson = Utils.toJson(context, key.asString(),
                             state, subDepth);
-                    result.cat(keyJson.getByteList());
+                    out.append(keyJson.getByteList());
                     result.infectBy(keyJson);
-                    result.cat(spaceBefore);
-                    result.cat((byte)':');
-                    result.cat(space);
+                    out.append(spaceBefore);
+                    out.append((byte)':');
+                    out.append(space);
 
                     RubyString valueJson = Utils.toJson(context, value, state,
                             subDepth);
-                    result.cat(valueJson.getByteList());
+                    out.append(valueJson.getByteList());
                     result.infectBy(valueJson);
                 }
             });
             if (objectNl.length() != 0) {
-                result.cat(objectNl);
+                out.append(objectNl);
                 if (indent.length != 0) {
                     for (int i = 0; i < depth; i++) {
-                        result.cat(indent);
+                        out.append(indent);
                     }
                 }
             }
-            result.cat((byte)'}');
+            out.append((byte)'}');
 
             return result;
         }
@@ -200,11 +203,12 @@ class GeneratorMethods {
             // Math.max() is just being careful with overflowing
             int preSize = Math.max(0,
                     2 + self.size() * (4 + shift.length + delim.length));
-            final RubyString result = runtime.newString(new ByteList(preSize));
+            final ByteList out = new ByteList(preSize);
+            final RubyString result = runtime.newString(out);
             result.infectBy(self);
 
-            result.cat((byte)'[');
-            result.cat(arrayNl);
+            out.append((byte)'[');
+            out.append(arrayNl);
             boolean firstItem = true;
             for (int i = 0, t = self.getLength(); i < t; i++) {
                 IRubyObject element = self.eltInternal(i);
@@ -212,21 +216,21 @@ class GeneratorMethods {
                 if (firstItem) {
                     firstItem = false;
                 } else {
-                    result.cat(delim);
+                    out.append(delim);
                 }
-                result.cat(shift);
+                out.append(shift);
                 RubyString elemJson = Utils.toJson(context, element, state,
                         RubyNumeric.int2fix(runtime, depth + 1));
-                result.cat(elemJson.getByteList());
+                out.append(elemJson.getByteList());
                 result.infectBy(elemJson);
             }
 
             if (arrayNl.length() != 0) {
-                result.cat(arrayNl);
-                result.cat(shift, 0, depth * indentUnit.length());
+                out.append(arrayNl);
+                out.append(shift, 0, depth * indentUnit.length());
             }
 
-            result.cat((byte)']');
+            out.append((byte)']');
 
             return result;
         }
@@ -290,10 +294,10 @@ class GeneratorMethods {
             // ASCII strings with no characters that need escaping. So, we'll
             // preallocate just enough space for the entire string plus opening
             // and closing quotes
-            int preSize = 2 + chars.length;
-            RubyString result = runtime.newString(new ByteList(preSize));
-            result.cat((byte)'"');
+            ByteList out = new ByteList(2 + chars.length);
+
             final byte[] escapeSequence = new byte[] { '\\', 0 };
+            out.append((byte)'"');
             charLoop:
             for (int i = 0; i < chars.length; i++) {
                 char c = chars[i];
@@ -319,9 +323,9 @@ class GeneratorMethods {
                     break;
                 default:
                     if (c >= 0x20 && c <= 0x7f) {
-                        result.cat((byte)c);
+                        out.append((byte)c);
                     } else if (asciiOnly || c < 0x20) {
-                        result.cat(Utils.escapeUnicode(c));
+                        out.append(Utils.escapeUnicode(c));
                     } else if (Character.isHighSurrogate(c)) {
                         // reconstruct characters outside of BMP if
                         // surrogates are found
@@ -336,19 +340,19 @@ class GeneratorMethods {
                         }
 
                         long fullCode = Character.toCodePoint(c, nextChar);
-                        result.cat(Utils.getUTF8Bytes(fullCode));
+                        out.append(Utils.getUTF8Bytes(fullCode));
                     } else if (Character.isLowSurrogate(c)) {
                         // low surrogate without high surrogate
                         throw illegalUTF8(context, info);
                     } else {
-                        result.cat(Utils.getUTF8Bytes(c));
+                        out.append(Utils.getUTF8Bytes(c));
                     }
                     continue charLoop;
                 }
-                result.cat(escapeSequence);
+                out.append(escapeSequence);
             }
-            result.cat((byte)'"');
-            return result;
+            out.append((byte)'"');
+            return runtime.newString(out);
         }
 
         private static RaiseException illegalUTF8(ThreadContext context,

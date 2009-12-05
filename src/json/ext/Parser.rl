@@ -546,8 +546,7 @@ public class Parser extends RubyObject {
         }
 
         private RubyString stringUnescape(int start, int end) {
-            int len = end - start;
-            RubyString result = getRuntime().newString(new ByteList(len));
+            ByteList out = new ByteList(end - start);
 
             int relStart = start - byteList.begin();
             int relEnd = end - byteList.begin();
@@ -569,27 +568,27 @@ public class Parser extends RubyObject {
                     switch (c) {
                         case '"':
                         case '\\':
-                            result.cat((byte)c);
+                            out.append((byte)c);
                             i++;
                             break;
                         case 'b':
-                            result.cat((byte)'\b');
+                            out.append((byte)'\b');
                             i++;
                             break;
                         case 'f':
-                            result.cat((byte)'\f');
+                            out.append((byte)'\f');
                             i++;
                             break;
                         case 'n':
-                            result.cat((byte)'\n');
+                            out.append((byte)'\n');
                             i++;
                             break;
                         case 'r':
-                            result.cat((byte)'\r');
+                            out.append((byte)'\r');
                             i++;
                             break;
                         case 't':
-                            result.cat((byte)'\t');
+                            out.append((byte)'\t');
                             i++;
                             break;
                         case 'u':
@@ -605,21 +604,21 @@ public class Parser extends RubyObject {
                                 }
 
                                 int fullCode = Character.toCodePoint(surrogate, (char)code);
-                                result.cat(Utils.getUTF8Bytes(fullCode | 0L));
+                                out.append(Utils.getUTF8Bytes(fullCode | 0L));
                                 surrogateStart = -1;
                                 surrogate = 0;
                             } else if (Character.isHighSurrogate((char)code)) {
                                 surrogateStart = i - 2;
                                 surrogate = (char)code;
                             } else if (code < 0x80) { // plain ASCII
-                                result.cat((char)code);
+                                out.append((char)code);
                             } else {
-                                result.cat(Utils.getUTF8Bytes(code));
+                                out.append(Utils.getUTF8Bytes(code));
                             }
                             i += 4;
                             break;
                         default:
-                            result.cat((byte)c);
+                            out.append((byte)c);
                             i++;
                     }
                 } else if (surrogateStart != -1) {
@@ -629,7 +628,7 @@ public class Parser extends RubyObject {
                 } else {
                     int j = i;
                     while (j < relEnd && byteList.charAt(j) != '\\') j++;
-                    result.cat(data, byteList.begin() + i, j - i);
+                    out.append(byteList, i, j - i);
                     i = j;
                 }
             }
@@ -638,7 +637,7 @@ public class Parser extends RubyObject {
                     "partial character in source, but hit end near ",
                     (ByteList)byteList.subSequence(surrogateStart, relEnd));
             }
-            return result;
+            return getRuntime().newString(out);
         }
 
         %%{
