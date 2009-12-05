@@ -61,18 +61,21 @@ public class GeneratorState extends RubyObject {
      * The maximum level of nesting of structures allowed.
      * <code>0</code> means disabled.
      */
-    private int maxNesting;
+    private int maxNesting = DEFAULT_MAX_NESTING;
+    static final int DEFAULT_MAX_NESTING = 19;
     /**
      * Whether special float values (<code>NaN</code>, <code>Infinity</code>,
      * <code>-Infinity</code>) are accepted.
      * If set to <code>false</code>, an exception will be thrown upon
      * encountering one.
      */
-    private boolean allowNaN;
+    private boolean allowNaN = DEFAULT_ALLOW_NAN;
+    static final boolean DEFAULT_ALLOW_NAN = false;
     /**
      * XXX
      */
-    private boolean asciiOnly;
+    private boolean asciiOnly = DEFAULT_ASCII_ONLY;
+    static final boolean DEFAULT_ASCII_ONLY = false;
 
     static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
@@ -359,9 +362,9 @@ public class GeneratorState extends RubyObject {
         ByteList objectNl = opts.getString("object_nl");
         if (objectNl != null) this.objectNl = objectNl;
 
-        maxNesting = opts.getInt("max_nesting", 19);
-        allowNaN = opts.getBool("allow_nan", false);
-        asciiOnly = opts.getBool("ascii_only", false);
+        maxNesting = opts.getInt("max_nesting", DEFAULT_MAX_NESTING);
+        allowNaN   = opts.getBool("allow_nan",  DEFAULT_ALLOW_NAN);
+        asciiOnly  = opts.getBool("ascii_only", DEFAULT_ASCII_ONLY);
 
         return this;
     }
