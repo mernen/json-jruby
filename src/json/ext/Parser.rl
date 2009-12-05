@@ -257,7 +257,6 @@ public class Parser extends RubyObject {
      */
     private static class ParserSession {
         private final Parser parser;
-        private final Ruby runtime;
         private final ThreadContext context;
         private final ByteList byteList;
         private final byte[] data;
@@ -269,18 +268,20 @@ public class Parser extends RubyObject {
 
         private ParserSession(Parser parser, ThreadContext context) {
             this.parser = parser;
-            runtime = parser.getRuntime();
             this.context = context;
-            byteList = parser.vSource.getByteList();
-            data = byteList.unsafeBytes();
+            this.byteList = parser.vSource.getByteList();
+            this.data = byteList.unsafeBytes();
         }
 
         private RaiseException unexpectedToken(int absStart, int absEnd) {
-            RubyString msg =
-                runtime.newString("unexpected token at '")
-                       .cat(data, absStart, absEnd - absStart)
-                       .cat((byte)'\'');
+            RubyString msg = getRuntime().newString("unexpected token at '")
+                    .cat(data, absStart, absEnd - absStart)
+                    .cat((byte)'\'');
             return newException(Utils.M_PARSER_ERROR, msg);
+        }
+
+        private Ruby getRuntime() {
+            return context.getRuntime();
         }
 
         %%{
@@ -318,13 +319,13 @@ public class Parser extends RubyObject {
             write data;
 
             action parse_null {
-                result = runtime.getNil();
+                result = getRuntime().getNil();
             }
             action parse_false {
-                result = runtime.getFalse();
+                result = getRuntime().getFalse();
             }
             action parse_true {
-                result = runtime.getTrue();
+                result = getRuntime().getTrue();
             }
             action parse_nan {
                 if (parser.allowNaN) {
@@ -458,8 +459,8 @@ public class Parser extends RubyObject {
             ByteList num = absSubSequence(memo, p);
             // note: this is actually a shared string, but since it is temporary and
             //       read-only, it doesn't really matter
-            RubyString expr = RubyString.newStringLight(runtime, num);
-            RubyInteger number = RubyNumeric.str2inum(runtime, expr, 10, true);
+            RubyString expr = RubyString.newStringLight(getRuntime(), num);
+            RubyInteger number = RubyNumeric.str2inum(getRuntime(), expr, 10, true);
             return new ParserResult(number, p + 1);
         }
 
@@ -494,8 +495,8 @@ public class Parser extends RubyObject {
             ByteList num = absSubSequence(memo, p);
             // note: this is actually a shared string, but since it is temporary and
             //       read-only, it doesn't really matter
-            RubyString expr = RubyString.newStringLight(runtime, num);
-            RubyFloat number = RubyNumeric.str2fnum(runtime, expr, true);
+            RubyString expr = RubyString.newStringLight(getRuntime(), num);
+            RubyFloat number = RubyNumeric.str2fnum(getRuntime(), expr, true);
             return new ParserResult(number, p + 1);
         }
 
@@ -546,7 +547,7 @@ public class Parser extends RubyObject {
 
         private RubyString stringUnescape(int start, int end) {
             int len = end - start;
-            RubyString result = runtime.newString(new ByteList(len));
+            RubyString result = getRuntime().newString(new ByteList(len));
 
             int relStart = start - byteList.begin();
             int relEnd = end - byteList.begin();
@@ -773,6 +774,7 @@ public class Parser extends RubyObject {
             if (parser.createId != null) {
                 IRubyObject vKlassName = result.op_aref(context, parser.createId);
                 if (!vKlassName.isNil()) {
+                    Ruby runtime = getRuntime();
                     String klassName = vKlassName.asJavaString();
                     RubyModule klass;
                     try {
@@ -881,7 +883,7 @@ public class Parser extends RubyObject {
         private RaiseException newException(String className,
                 String messageBegin, ByteList messageEnd) {
             return newException(className,
-                    runtime.newString(messageBegin).cat(messageEnd));
+                    getRuntime().newString(messageBegin).cat(messageEnd));
         }
     }
 }
