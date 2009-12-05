@@ -6,22 +6,17 @@
  */
 package json.ext;
 
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CodingErrorAction;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
+import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -68,13 +63,6 @@ class GeneratorMethods {
     }
 
 
-
-    private static GeneratorState getState(ThreadContext context, IRubyObject[] args) {
-        return GeneratorState.fromState(context, args.length == 0 ? null : args[0]);
-    }
-
-
-
     public static class RbHash {
         /**
          * <code>{@link RubyHash Hash}#to_json(state = nil, depth = 0)</code>
@@ -90,75 +78,8 @@ class GeneratorMethods {
         @JRubyMethod(rest=true)
         public static IRubyObject to_json(ThreadContext context,
                 IRubyObject vSelf, IRubyObject[] args) {
-            RubyHash self = Utils.ensureHash(vSelf);
-
-            GeneratorState state = getState(context, args);
-            int depth = args.length > 1 ? RubyNumeric.fix2int(args[1]) : 0;
-
-            return toJson(context, self, state, depth);
-        }
-
-        private static RubyString toJson(final ThreadContext context,
-                RubyHash self, final GeneratorState state, int depth) {
-            state.checkMaxNesting(context, depth + 1);
-
-            Ruby runtime = context.getRuntime();
-            final ByteList objectNl = state.getObjectNl();
-            final byte[] indent = Utils.repeat(state.getIndent(), depth + 1);
-            final ByteList spaceBefore = state.getSpaceBefore();
-            final ByteList space = state.getSpace();
-            final RubyFixnum subDepth = runtime.newFixnum(depth + 1);
-
-            // Basic estimative, just to get things started
-            final int preSize =
-                    2 + self.size() * (12 + indent.length + spaceBefore.length()
-                                       + space.length());
-            // we know the ByteList won't get shared, so it's safe to work
-            // directly on it
-            final ByteList out = new ByteList(Math.max(preSize, 0));
-            final RubyString result = runtime.newString(out);
-            result.infectBy(self);
-
-            out.append((byte)'{');
-            out.append(objectNl);
-            self.visitAll(new RubyHash.Visitor() {
-                private boolean firstPair = true;
-
-                @Override
-                public void visit(IRubyObject key, IRubyObject value) {
-                    if (firstPair) {
-                        firstPair = false;
-                    } else {
-                        out.append((byte)',');
-                        out.append(objectNl);
-                    }
-                    if (objectNl.length() != 0) out.append(indent);
-
-                    RubyString keyJson = Utils.toJson(context, key.asString(),
-                            state, subDepth);
-                    out.append(keyJson.getByteList());
-                    result.infectBy(keyJson);
-                    out.append(spaceBefore);
-                    out.append((byte)':');
-                    out.append(space);
-
-                    RubyString valueJson = Utils.toJson(context, value, state,
-                            subDepth);
-                    out.append(valueJson.getByteList());
-                    result.infectBy(valueJson);
-                }
-            });
-            if (objectNl.length() != 0) {
-                out.append(objectNl);
-                if (indent.length != 0) {
-                    for (int i = 0; i < depth; i++) {
-                        out.append(indent);
-                    }
-                }
-            }
-            out.append((byte)'}');
-
-            return result;
+            return Generator.generateJson(context, Utils.ensureHash(vSelf),
+                    Generator.HASH_HANDLER, args);
         }
     };
 
@@ -177,59 +98,8 @@ class GeneratorMethods {
         @JRubyMethod(rest=true)
         public static IRubyObject to_json(ThreadContext context,
                 IRubyObject vSelf, IRubyObject[] args) {
-            RubyArray self = Utils.ensureArray(vSelf);
-            GeneratorState state = getState(context, args);
-            int depth = args.length > 1 ? RubyNumeric.fix2int(args[1]) : 0;
-
-            return toJson(context, self, state, depth);
-        }
-
-        private static RubyString toJson(ThreadContext context,
-                RubyArray self, GeneratorState state, int depth) {
-            state.checkMaxNesting(context, depth + 1);
-
-            Ruby runtime = context.getRuntime();
-            ByteList indentUnit = state.getIndent();
-            byte[] shift = Utils.repeat(indentUnit, depth + 1);
-
-            ByteList arrayNl = state.getArrayNl();
-            byte[] delim = new byte[1 + arrayNl.length()];
-            delim[0] = ',';
-            System.arraycopy(arrayNl.unsafeBytes(), arrayNl.begin(), delim, 1,
-                    arrayNl.length());
-
-            // Basic estimative, doesn't take much into account
-            int preSize = 2 + self.size() * (4 + shift.length + delim.length);
-            ByteList out = new ByteList(Math.max(preSize, 0));
-            RubyString result = runtime.newString(out);
-            result.infectBy(self);
-
-            out.append((byte)'[');
-            out.append(arrayNl);
-            boolean firstItem = true;
-            for (int i = 0, t = self.getLength(); i < t; i++) {
-                IRubyObject element = self.eltInternal(i);
-                result.infectBy(element);
-                if (firstItem) {
-                    firstItem = false;
-                } else {
-                    out.append(delim);
-                }
-                out.append(shift);
-                RubyString elemJson = Utils.toJson(context, element, state,
-                        RubyNumeric.int2fix(runtime, depth + 1));
-                out.append(elemJson.getByteList());
-                result.infectBy(elemJson);
-            }
-
-            if (arrayNl.length() != 0) {
-                out.append(arrayNl);
-                out.append(shift, 0, depth * indentUnit.length());
-            }
-
-            out.append((byte)']');
-
-            return result;
+            return Generator.generateJson(context, Utils.ensureArray(vSelf),
+                    Generator.ARRAY_HANDLER, args);
         }
     };
 
@@ -241,8 +111,9 @@ class GeneratorMethods {
          */
         @JRubyMethod(rest=true)
         public static IRubyObject to_json(ThreadContext context,
-                IRubyObject self, IRubyObject[] args) {
-            return Utils.ensureString(self.callMethod(context, "to_s"));
+                IRubyObject vSelf, IRubyObject[] args) {
+            return Generator.generateJson(context, (RubyInteger)vSelf,
+                    Generator.INTEGER_HANDLER, args);
         }
     };
 
@@ -258,14 +129,8 @@ class GeneratorMethods {
         @JRubyMethod(rest=true)
         public static IRubyObject to_json(ThreadContext context,
                 IRubyObject vSelf, IRubyObject[] args) {
-            double value = RubyFloat.num2dbl(vSelf);
-
-            if ((Double.isInfinite(value) || Double.isNaN(value)) &&
-                    (args.length == 0 || !getState(context, args).allowNaN())) {
-                throw Utils.newException(context, Utils.M_GENERATOR_ERROR,
-                        vSelf + " not allowed in JSON");
-            }
-            return vSelf.asString();
+            return Generator.generateJson(context, (RubyFloat)vSelf,
+                    Generator.FLOAT_HANDLER, args);
         }
     };
 
@@ -282,104 +147,8 @@ class GeneratorMethods {
         @JRubyMethod(rest=true)
         public static IRubyObject to_json(ThreadContext context,
                 IRubyObject vSelf, IRubyObject[] args) {
-            Ruby runtime = context.getRuntime();
-            RuntimeInfo info = RuntimeInfo.forRuntime(runtime);
-            boolean asciiOnly = args.length > 0 && getState(context, args).asciiOnly();
-            char[] chars = decodeString(context, info, Utils.ensureString(vSelf));
-            // For most apps, the vast majority of strings will be plain simple
-            // ASCII strings with no characters that need escaping. So, we'll
-            // preallocate just enough space for the entire string plus opening
-            // and closing quotes
-            ByteList out = new ByteList(2 + chars.length);
-
-            final byte[] escapeSequence = new byte[] { '\\', 0 };
-            out.append((byte)'"');
-            charLoop:
-            for (int i = 0; i < chars.length; i++) {
-                char c = chars[i];
-                switch (c) {
-                case '"':
-                case '\\':
-                    escapeSequence[1] = (byte)c;
-                    break;
-                case '\n':
-                    escapeSequence[1] = 'n';
-                    break;
-                case '\r':
-                    escapeSequence[1] = 'r';
-                    break;
-                case '\t':
-                    escapeSequence[1] = 't';
-                    break;
-                case '\f':
-                    escapeSequence[1] = 'f';
-                    break;
-                case '\b':
-                    escapeSequence[1] = 'b';
-                    break;
-                default:
-                    if (c >= 0x20 && c <= 0x7f) {
-                        out.append((byte)c);
-                    } else if (asciiOnly || c < 0x20) {
-                        out.append(Utils.escapeUnicode(c));
-                    } else if (Character.isHighSurrogate(c)) {
-                        // reconstruct characters outside of BMP if
-                        // surrogates are found
-                        if (chars.length <= i + 1) {
-                            // incomplete surrogate pair
-                            throw illegalUTF8(context);
-                        }
-                        char nextChar = chars[++i];
-                        if (!Character.isLowSurrogate(nextChar)) {
-                            // high surrogate without low surrogate
-                            throw illegalUTF8(context);
-                        }
-
-                        long fullCode = Character.toCodePoint(c, nextChar);
-                        out.append(Utils.getUTF8Bytes(fullCode));
-                    } else if (Character.isLowSurrogate(c)) {
-                        // low surrogate without high surrogate
-                        throw illegalUTF8(context);
-                    } else {
-                        out.append(Utils.getUTF8Bytes(c));
-                    }
-                    continue charLoop;
-                }
-                out.append(escapeSequence);
-            }
-            out.append((byte)'"');
-            return runtime.newString(out);
-        }
-
-        private static RaiseException illegalUTF8(ThreadContext context) {
-            throw Utils.newException(context, Utils.M_GENERATOR_ERROR,
-                    "source sequence is illegal/malformed utf-8");
-        }
-
-        private static char[] decodeString(ThreadContext context,
-                RuntimeInfo info, RubyString string) {
-            if (info.encodingsSupported() &&
-                    string.encoding(context) != info.utf8) {
-                string = (RubyString)string.encode(context, info.utf8);
-            }
-
-            ByteList byteList = string.getByteList();
-            try { // attempt to interpret string as UTF-8
-                CharsetDecoder decoder = Charset.forName("UTF-8").newDecoder();
-                decoder.onMalformedInput(CodingErrorAction.REPORT);
-                decoder.onUnmappableCharacter(CodingErrorAction.REPORT);
-                ByteBuffer byteBuffer =
-                    ByteBuffer.wrap(byteList.unsafeBytes(), byteList.begin(),
-                                    byteList.length());
-                CharBuffer buffer = decoder.decode(byteBuffer);
-                char[] result = new char[buffer.length()];
-                System.arraycopy(buffer.array(), buffer.position(), result, 0,
-                                 result.length);
-                return result;
-            } catch (CharacterCodingException e) {
-                throw Utils.newException(context, Utils.M_GENERATOR_ERROR,
-                    "source sequence is illegal/malformed utf-8");
-            }
+            return Generator.generateJson(context, Utils.ensureString(vSelf),
+                    Generator.STRING_HANDLER, args);
         }
 
         /**
@@ -391,8 +160,9 @@ class GeneratorMethods {
         @JRubyMethod(rest=true)
         public static IRubyObject to_json_raw(ThreadContext context,
                 IRubyObject vSelf, IRubyObject[] args) {
-            IRubyObject obj = to_json_raw_object(context, vSelf, args);
-            return RbHash.to_json(context, obj, args);
+            RubyHash obj = toJsonRawObject(context, Utils.ensureString(vSelf));
+            return Generator.generateJson(context, obj,
+                    Generator.HASH_HANDLER, args);
         }
 
         /**
@@ -406,13 +176,17 @@ class GeneratorMethods {
         @JRubyMethod(rest=true)
         public static IRubyObject to_json_raw_object(ThreadContext context,
                 IRubyObject vSelf, IRubyObject[] args) {
-            RubyString self = Utils.ensureString(vSelf);
+            return toJsonRawObject(context, Utils.ensureString(vSelf));
+        }
+
+        private static RubyHash toJsonRawObject(ThreadContext context,
+                                                RubyString self) {
             Ruby runtime = context.getRuntime();
             RubyHash result = RubyHash.newHash(runtime);
 
             IRubyObject createId = RuntimeInfo.forRuntime(runtime)
                     .jsonModule.callMethod(context, "create_id");
-            result.op_aset(context, createId, vSelf.getMetaClass().to_s());
+            result.op_aset(context, createId, self.getMetaClass().to_s());
 
             ByteList bl = self.getByteList();
             byte[] uBytes = bl.unsafeBytes();
@@ -465,57 +239,39 @@ class GeneratorMethods {
         }
     };
 
-    protected static ByteList buildKw(String keyword) {
-        return new ByteList(ByteList.plain(keyword));
-    }
-
-    protected static RubyString generateKw(ThreadContext context,
-            ByteList keyword) {
-        return RubyString.newStringShared(context.getRuntime(), keyword);
-    }
-
     public static class RbTrue {
-        private static ByteList keyword = buildKw("true");
-
         /**
          * <code>true.to_json(*)</code>
-         *
-         * <p>Returns a JSON string for <code>true</code>: <code>"true"</code>.
          */
         @JRubyMethod(rest=true)
         public static IRubyObject to_json(ThreadContext context,
                 IRubyObject vSelf, IRubyObject[] args) {
-            return generateKw(context, keyword);
+            return Generator.generateJson(context, (RubyBoolean)vSelf,
+                    Generator.TRUE_HANDLER, args);
         }
     }
 
     public static class RbFalse {
-        private static ByteList keyword = buildKw("false");
-
         /**
          * <code>false.to_json(*)</code>
-         *
-         * <p>Returns a JSON string for <code>false</code>: <code>"false"</code>.
          */
         @JRubyMethod(rest=true)
         public static IRubyObject to_json(ThreadContext context,
                 IRubyObject vSelf, IRubyObject[] args) {
-            return generateKw(context, keyword);
+            return Generator.generateJson(context, (RubyBoolean)vSelf,
+                    Generator.FALSE_HANDLER, args);
         }
     }
 
     public static class RbNil {
-        private static ByteList keyword = buildKw("null");
-
         /**
          * <code>nil.to_json(*)</code>
-         *
-         * <p>Returns a JSON string for <code>nil</code>: <code>"null"</code>.
          */
         @JRubyMethod(rest=true)
         public static IRubyObject to_json(ThreadContext context,
                 IRubyObject vSelf, IRubyObject[] args) {
-            return generateKw(context, keyword);
+            return Generator.generateJson(context, vSelf,
+                    Generator.NIL_HANDLER, args);
         }
     }
 

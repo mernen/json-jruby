@@ -184,7 +184,7 @@ public class GeneratorState extends RubyObject {
      */
     @JRubyMethod
     public IRubyObject generate(ThreadContext context, IRubyObject obj) {
-        RubyString result = Utils.toJson(context, obj, this);
+        RubyString result = Generator.generateJson(context, obj, this, 0);
         if (!objectOrArrayLiteral(result)) {
             throw Utils.newException(context, Utils.M_GENERATOR_ERROR,
                     "only generation of JSON objects or arrays allowed");

@@ -73,22 +73,6 @@ final class Utils {
         return new RaiseException(excptn);
     }
 
-    /**
-     * Invokes <code>to_json</code> on the given object and ensures
-     * it returns a RubyString
-     * @param object The object to convert to JSON
-     * @param args Parameters to pass to the method call
-     * @return The {@link RubyString String} containing the
-     *         JSON representation of the object
-     */
-    static RubyString toJson(ThreadContext context, IRubyObject object,
-                             IRubyObject... args) {
-        Ruby runtime = context.getRuntime();
-        IRubyObject result = object.callMethod(context, "to_json", args);
-        if (result instanceof RubyString) return (RubyString)result;
-        throw runtime.newTypeError("to_json must return a String");
-    }
-
     static byte[] repeat(ByteList a, int n) {
         return repeat(a.unsafeBytes(), a.begin(), a.length(), n);
     }
