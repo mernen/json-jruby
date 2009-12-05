@@ -154,14 +154,11 @@ final class Utils {
             int digitValue;
             if (digit >= '0' && digit <= '9') {
                 digitValue = digit - '0';
-            }
-            else if (digit >= 'a' && digit <= 'f') {
+            } else if (digit >= 'a' && digit <= 'f') {
                 digitValue = 10 + digit - 'a';
-            }
-            else if (digit >= 'A' && digit <= 'F') {
+            } else if (digit >= 'A' && digit <= 'F') {
                 digitValue = 10 + digit - 'A';
-            }
-            else {
+            } else {
                 throw new NumberFormatException("Invalid base 16 number "
                         + bl.subSequence(start, start + length));
             }

@@ -111,13 +111,12 @@ class GeneratorMethods {
             final RubyFixnum subDepth = runtime.newFixnum(depth + 1);
 
             // Basic estimative, just to get things started
-            // Math.max() is just being careful with overflowing
-            final int preSize = Math.max(0,
-                    2 + self.size() * (12 + indent.length +
-                                       spaceBefore.length() + space.length()));
+            final int preSize =
+                    2 + self.size() * (12 + indent.length + spaceBefore.length()
+                                       + space.length());
             // we know the ByteList won't get shared, so it's safe to work
             // directly on it
-            final ByteList out = new ByteList(preSize);
+            final ByteList out = new ByteList(Math.max(preSize, 0));
             final RubyString result = runtime.newString(out);
             result.infectBy(self);
 
@@ -200,11 +199,9 @@ class GeneratorMethods {
                     arrayNl.length());
 
             // Basic estimative, doesn't take much into account
-            // Math.max() is just being careful with overflowing
-            int preSize = Math.max(0,
-                    2 + self.size() * (4 + shift.length + delim.length));
-            final ByteList out = new ByteList(preSize);
-            final RubyString result = runtime.newString(out);
+            int preSize = 2 + self.size() * (4 + shift.length + delim.length);
+            ByteList out = new ByteList(Math.max(preSize, 0));
+            RubyString result = runtime.newString(out);
             result.infectBy(self);
 
             out.append((byte)'[');
