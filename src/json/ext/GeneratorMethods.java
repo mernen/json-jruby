@@ -328,19 +328,19 @@ class GeneratorMethods {
                         // surrogates are found
                         if (chars.length <= i + 1) {
                             // incomplete surrogate pair
-                            throw illegalUTF8(context, info);
+                            throw illegalUTF8(context);
                         }
                         char nextChar = chars[++i];
                         if (!Character.isLowSurrogate(nextChar)) {
                             // high surrogate without low surrogate
-                            throw illegalUTF8(context, info);
+                            throw illegalUTF8(context);
                         }
 
                         long fullCode = Character.toCodePoint(c, nextChar);
                         out.append(Utils.getUTF8Bytes(fullCode));
                     } else if (Character.isLowSurrogate(c)) {
                         // low surrogate without high surrogate
-                        throw illegalUTF8(context, info);
+                        throw illegalUTF8(context);
                     } else {
                         out.append(Utils.getUTF8Bytes(c));
                     }
@@ -352,8 +352,7 @@ class GeneratorMethods {
             return runtime.newString(out);
         }
 
-        private static RaiseException illegalUTF8(ThreadContext context,
-                RuntimeInfo info) {
+        private static RaiseException illegalUTF8(ThreadContext context) {
             throw Utils.newException(context, Utils.M_GENERATOR_ERROR,
                     "source sequence is illegal/malformed utf-8");
         }
