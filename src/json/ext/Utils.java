@@ -87,16 +87,6 @@ final class Utils {
         return result;
     }
 
-    private static final byte[] HEX =
-            new byte[] {'0', '1', '2', '3', '4', '5', '6', '7',
-                        '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-
-    static byte[] escapeUnicode(char c) {
-        return new byte[] {
-            '\\', 'u', HEX[(c >>> 12) & 0xf], HEX[(c >>> 8) & 0xf],
-                       HEX[(c >>>  4) & 0xf], HEX[c & 0xf]};
-    }
-
     /**
      * Converts a code point into an UTF-8 representation.
      * @param code The character code point

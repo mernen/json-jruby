@@ -6,12 +6,6 @@
  */
 package json.ext;
 
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CodingErrorAction;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
@@ -20,7 +14,6 @@ import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -351,98 +344,19 @@ public final class Generator {
             @Override
             void generate(Session session, RubyString object, ByteList buffer,
                           int depth) {
-                boolean asciiOnly = session.getState().asciiOnly();
-                char[] chars = decodeString(session, object);
-                final byte[] escapeSequence = new byte[] { '\\', 0 };
-                buffer.append((byte)'"');
-
-                charLoop:
-                for (int i = 0; i < chars.length; i++) {
-                    char c = chars[i];
-                    switch (c) {
-                    case '"':
-                    case '\\':
-                        escapeSequence[1] = (byte)c;
-                        break;
-                    case '\n':
-                        escapeSequence[1] = 'n';
-                        break;
-                    case '\r':
-                        escapeSequence[1] = 'r';
-                        break;
-                    case '\t':
-                        escapeSequence[1] = 't';
-                        break;
-                    case '\f':
-                        escapeSequence[1] = 'f';
-                        break;
-                    case '\b':
-                        escapeSequence[1] = 'b';
-                        break;
-                    default:
-                        if (c >= 0x20 && c <= 0x7f) {
-                            buffer.append((byte)c);
-                        } else if (asciiOnly || c < 0x20) {
-                            buffer.append(Utils.escapeUnicode(c));
-                        } else if (Character.isHighSurrogate(c)) {
-                            // reconstruct characters outside of BMP if
-                            // surrogates are found
-                            if (chars.length <= i + 1) {
-                                // incomplete surrogate pair
-                                throw illegalUTF8(session);
-                            }
-                            char nextChar = chars[++i];
-                            if (!Character.isLowSurrogate(nextChar)) {
-                                // high surrogate without low surrogate
-                                throw illegalUTF8(session);
-                            }
-
-                            long fullCode = Character.toCodePoint(c, nextChar);
-                            buffer.append(Utils.getUTF8Bytes(fullCode));
-                        } else if (Character.isLowSurrogate(c)) {
-                            // low surrogate without high surrogate
-                            throw illegalUTF8(session);
-                        } else {
-                            buffer.append(Utils.getUTF8Bytes(c));
-                        }
-                        continue charLoop;
-                    }
-                    buffer.append(escapeSequence);
-                }
-                buffer.append((byte)'"');
-            }
-
-            private char[] decodeString(Session session, RubyString string) {
                 RuntimeInfo info = session.getInfo();
+                RubyString src;
+
                 if (info.encodingsSupported() &&
-                        string.encoding(session.getContext()) != info.utf8) {
-                    string = (RubyString)string.encode(session.getContext(), info.utf8);
+                        object.encoding(session.getContext()) != info.utf8) {
+                    src = (RubyString)object.encode(session.getContext(),
+                                                    info.utf8);
+                } else {
+                    src = object;
                 }
 
-                ByteList byteList = string.getByteList();
-                try { // attempt to interpret string as UTF-8
-                    CharsetDecoder decoder = Charset.forName("UTF-8").newDecoder();
-                    decoder.onMalformedInput(CodingErrorAction.REPORT);
-                    decoder.onUnmappableCharacter(CodingErrorAction.REPORT);
-                    ByteBuffer byteBuffer =
-                        ByteBuffer.wrap(byteList.unsafeBytes(), byteList.begin(),
-                                        byteList.length());
-                    CharBuffer buffer = decoder.decode(byteBuffer);
-                    char[] result = new char[buffer.length()];
-                    System.arraycopy(buffer.array(), buffer.position(), result,
-                                     0, result.length);
-                    return result;
-                } catch (CharacterCodingException e) {
-                    throw Utils.newException(session.getContext(),
-                            Utils.M_GENERATOR_ERROR,
-                            "source sequence is illegal/malformed utf-8");
-                }
-            }
-
-            private RaiseException illegalUTF8(Session session) {
-                throw Utils.newException(session.getContext(),
-                        Utils.M_GENERATOR_ERROR,
-                        "source sequence is illegal/malformed utf-8");
+                StringEncoder.encode(session.getContext(), src.getByteList(),
+                                     buffer, session.getState().asciiOnly());
             }
         };
 
