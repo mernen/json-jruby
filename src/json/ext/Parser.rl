@@ -262,6 +262,7 @@ public class Parser extends RubyObject {
         private final ThreadContext context;
         private final ByteList byteList;
         private final byte[] data;
+        private final StringDecoder decoder;
         private int currentNesting = 0;
 
         // initialization value for all state variables.
@@ -273,6 +274,7 @@ public class Parser extends RubyObject {
             this.context = context;
             this.byteList = parser.vSource.getByteList();
             this.data = byteList.unsafeBytes();
+            this.decoder = new StringDecoder(context);
         }
 
         private RaiseException unexpectedToken(int absStart, int absEnd) {
@@ -509,7 +511,10 @@ public class Parser extends RubyObject {
             write data;
 
             action parse_string {
-                result = stringUnescape(memo + 1, p);
+                int offset = byteList.begin();
+                ByteList decoded = decoder.decode(byteList, memo + 1 - offset,
+                                                  p - offset);
+                result = getRuntime().newString(decoded);
                 if (result == null) {
                     fhold;
                     fbreak;
@@ -545,101 +550,6 @@ public class Parser extends RubyObject {
             } else {
                 return null;
             }
-        }
-
-        private RubyString stringUnescape(int start, int end) {
-            ByteList out = new ByteList(end - start);
-
-            int relStart = start - byteList.begin();
-            int relEnd = end - byteList.begin();
-
-            int surrogateStart = -1;
-            char surrogate = 0;
-
-            for (int i = relStart; i < relEnd; ) {
-                char c = byteList.charAt(i);
-                if (c == '\\') {
-                    i++;
-                    if (i >= relEnd) return null;
-                    c = byteList.charAt(i);
-                    if (surrogateStart != -1 && c != 'u') {
-                        throw newException(Utils.M_PARSER_ERROR,
-                            "partial character in source, but hit end near ",
-                            (ByteList)byteList.subSequence(surrogateStart, relEnd));
-                    }
-                    switch (c) {
-                        case '"':
-                        case '\\':
-                            out.append((byte)c);
-                            i++;
-                            break;
-                        case 'b':
-                            out.append((byte)'\b');
-                            i++;
-                            break;
-                        case 'f':
-                            out.append((byte)'\f');
-                            i++;
-                            break;
-                        case 'n':
-                            out.append((byte)'\n');
-                            i++;
-                            break;
-                        case 'r':
-                            out.append((byte)'\r');
-                            i++;
-                            break;
-                        case 't':
-                            out.append((byte)'\t');
-                            i++;
-                            break;
-                        case 'u':
-                            i++;
-                            if (i > relEnd - 4) return null;
-
-                            int code = Utils.parseHex(byteList, i, 4);
-                            if (surrogateStart != -1) {
-                                if (!Character.isLowSurrogate((char)code)) {
-                                    throw newException(Utils.M_PARSER_ERROR,
-                                        "partial character in source, but hit end near ",
-                                        (ByteList)byteList.subSequence(surrogateStart, relEnd));
-                                }
-
-                                int fullCode = Character.toCodePoint(surrogate, (char)code);
-                                out.append(Utils.getUTF8Bytes(fullCode | 0L));
-                                surrogateStart = -1;
-                                surrogate = 0;
-                            } else if (Character.isHighSurrogate((char)code)) {
-                                surrogateStart = i - 2;
-                                surrogate = (char)code;
-                            } else if (code < 0x80) { // plain ASCII
-                                out.append((char)code);
-                            } else {
-                                out.append(Utils.getUTF8Bytes(code));
-                            }
-                            i += 4;
-                            break;
-                        default:
-                            out.append((byte)c);
-                            i++;
-                    }
-                } else if (surrogateStart != -1) {
-                    throw newException(Utils.M_PARSER_ERROR,
-                        "partial character in source, but hit end near ",
-                        (ByteList)byteList.subSequence(surrogateStart, relEnd));
-                } else {
-                    int j = i;
-                    while (j < relEnd && byteList.charAt(j) != '\\') j++;
-                    out.append(byteList, i, j - i);
-                    i = j;
-                }
-            }
-            if (surrogateStart != -1) {
-                throw newException(Utils.M_PARSER_ERROR,
-                    "partial character in source, but hit end near ",
-                    (ByteList)byteList.subSequence(surrogateStart, relEnd));
-            }
-            return getRuntime().newString(out);
         }
 
         %%{

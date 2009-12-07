@@ -17,7 +17,7 @@ abstract class ByteListReader {
     protected final ThreadContext context;
 
     protected ByteList src;
-    private int srcEnd;
+    protected int srcEnd;
     /** Position where the last read character started */
     protected int charStart;
     /** Position of the next character to read */

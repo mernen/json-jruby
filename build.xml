@@ -41,9 +41,11 @@
         </jar>
         <jar destfile="${parser.jar}">
             <fileset dir="${build.classes.dir}">
+                <include name="json/ext/ByteListReader*.class"/>
                 <include name="json/ext/OptionsReader*.class"/>
                 <include name="json/ext/Parser*.class"/>
                 <include name="json/ext/RuntimeInfo*.class"/>
+                <include name="json/ext/StringDecoder*.class"/>
                 <include name="json/ext/Utils*.class"/>
             </fileset>
         </jar>
