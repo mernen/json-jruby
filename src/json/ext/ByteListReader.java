@@ -101,7 +101,7 @@ abstract class ByteListReader {
      * many bytes left.
      */
     protected void ensureMin(int n) {
-        if (pos + n > srcEnd) throw invalidUtf8();
+        if (pos + n > srcEnd) throw incompleteUtf8();
     }
 
     /**
@@ -118,4 +118,8 @@ abstract class ByteListReader {
     }
 
     protected abstract RaiseException invalidUtf8();
+
+    protected RaiseException incompleteUtf8() {
+        return invalidUtf8();
+    }
 }
