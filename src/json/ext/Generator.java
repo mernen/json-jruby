@@ -86,6 +86,7 @@ public final class Generator {
         private GeneratorState state;
         private IRubyObject possibleState;
         private RuntimeInfo info;
+        private StringEncoder stringEncoder;
 
         private boolean tainted = false;
         private boolean untrusted = false;
@@ -119,6 +120,13 @@ public final class Generator {
         public RuntimeInfo getInfo() {
             if (info == null) info = RuntimeInfo.forRuntime(getRuntime());
             return info;
+        }
+
+        public StringEncoder getStringEncoder() {
+            if (stringEncoder == null) {
+                stringEncoder = new StringEncoder(context, getState().asciiOnly());
+            }
+            return stringEncoder;
         }
 
         public void infectBy(IRubyObject object) {
@@ -355,8 +363,7 @@ public final class Generator {
                     src = object;
                 }
 
-                StringEncoder.encode(session.getContext(), src.getByteList(),
-                                     buffer, session.getState().asciiOnly());
+                session.getStringEncoder().encode(src.getByteList(), buffer);
             }
         };
 

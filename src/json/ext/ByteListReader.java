@@ -15,24 +15,34 @@ import org.jruby.util.ByteList;
  */
 abstract class ByteListReader {
     protected final ThreadContext context;
-    protected final ByteList src;
-    private final int srcLength;
+
+    protected ByteList src;
+    private int srcEnd;
     /** Position where the last read character started */
     protected int charStart;
     /** Position of the next character to read */
     protected int pos;
 
-    protected ByteListReader(ThreadContext context, ByteList src) {
+    protected ByteListReader(ThreadContext context) {
         this.context = context;
+    }
+
+    protected void init(ByteList src) {
+        this.init(src, 0, src.length());
+    }
+
+    protected void init(ByteList src, int start, int end) {
         this.src = src;
-        this.srcLength = src.length();
+        this.pos = start;
+        this.charStart = start;
+        this.srcEnd = end;
     }
 
     /**
      * Returns whether there are any characters left to be read.
      */
     protected boolean hasNext() {
-        return pos < srcLength;
+        return pos < srcEnd;
     }
 
     /**
@@ -87,7 +97,7 @@ abstract class ByteListReader {
      * many bytes left.
      */
     protected void ensureMin(int n) {
-        if (pos + n > srcLength) throw invalidUtf8();
+        if (pos + n > srcEnd) throw invalidUtf8();
     }
 
     /**

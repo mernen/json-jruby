@@ -10,8 +10,8 @@ import org.jruby.util.ByteList;
  * for UTF-8 validity, and throws a GeneratorError if any problem is found.
  */
 final class StringEncoder extends ByteListReader {
-    private final ByteList out;
     private final boolean asciiOnly;
+    private ByteList out;
     /**
      * When a character that can be copied straight into the output is found,
      * its index is stored on this variable, and copying is delayed until
@@ -43,19 +43,14 @@ final class StringEncoder extends ByteListReader {
             new byte[] {'0', '1', '2', '3', '4', '5', '6', '7',
                         '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
-    static void encode(ThreadContext context, ByteList src, ByteList out,
-                       boolean asciiOnly) {
-        new StringEncoder(context, src, out, asciiOnly).encode();
-    }
-
-    private StringEncoder(ThreadContext context, ByteList src, ByteList out,
-                          boolean asciiOnly) {
-        super(context, src);
-        this.out = out;
+    StringEncoder(ThreadContext context, boolean asciiOnly) {
+        super(context);
         this.asciiOnly = asciiOnly;
     }
 
-    private void encode() {
+    void encode(ByteList src, ByteList out) {
+        init(src);
+        this.out = out;
         out.append('"');
         while (hasNext()) {
             handleChar(readUtf8Char());
