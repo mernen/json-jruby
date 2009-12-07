@@ -70,14 +70,18 @@ abstract class ByteListReader {
         }
         if (head <= 0xdf) { // 0b110xxxxx
             ensureMin(1);
-            return ((head  & 0x1f) << 6)
-                   | nextPart();
+            int cp = ((head  & 0x1f) << 6)
+                     | nextPart();
+            if (cp < 0x0080) throw invalidUtf8();
+            return cp;
         }
         if (head <= 0xef) { // 0b1110xxxx
             ensureMin(2);
-            return ((head & 0x0f) << 12)
-                   | (nextPart()  << 6)
-                   | nextPart();
+            int cp = ((head & 0x0f) << 12)
+                     | (nextPart()  << 6)
+                     | nextPart();
+            if (cp < 0x0800) throw invalidUtf8();
+            return cp;
         }
         if (head <= 0xf7) { // 0b11110xxx
             ensureMin(3);
