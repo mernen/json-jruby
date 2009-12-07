@@ -31,6 +31,7 @@
         </delete>
         <jar destfile="${generator.jar}">
             <fileset dir="${build.classes.dir}">
+                <include name="json/ext/ByteListReader*.class"/>
                 <include name="json/ext/Generator*.class"/>
                 <include name="json/ext/OptionsReader*.class"/>
                 <include name="json/ext/RuntimeInfo*.class"/>
