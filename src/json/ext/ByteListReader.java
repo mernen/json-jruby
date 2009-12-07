@@ -17,7 +17,10 @@ abstract class ByteListReader {
     protected final ThreadContext context;
     protected final ByteList src;
     private final int srcLength;
-    protected int pos = 0;
+    /** Position where the last read character started */
+    protected int charStart;
+    /** Position of the next character to read */
+    protected int pos;
 
     protected ByteListReader(ThreadContext context, ByteList src) {
         this.context = context;
@@ -25,41 +28,48 @@ abstract class ByteListReader {
         this.srcLength = src.length();
     }
 
+    /**
+     * Returns whether there are any characters left to be read.
+     */
     protected boolean hasNext() {
         return pos < srcLength;
     }
 
-    protected char next() {
-        pos++;
-        return src.charAt(pos);
+    /**
+     * Returns the next character in the buffer.
+     */
+    private char next() {
+        return src.charAt(pos++);
     }
 
     /**
      * Reads an UTF-8 character from the input and returns its code point,
      * while advancing the input position.
      *
-     * <p>Raises a GeneratorError if an invalid byte is found.
-     *
-     * @param head The first byte (which was already read)
+     * <p>Raises an {@link #invalidUtf8()} exception if an invalid byte
+     * is found.
      */
-    protected int readUtf8Char(char head) {
-        if (head <= 0x7f) return head;
-        if (head <= 0xbf) throw invalidUtf8(); // tail byte with no head
-        if (head <= 0xdf) {
-            // 0b110xxxxx
+    protected int readUtf8Char() {
+        charStart = pos;
+        char head = next();
+        if (head <= 0x7f) { // 0b0xxxxxxx (ASCII)
+            return head;
+        }
+        if (head <= 0xbf) { // 0b10xxxxxx
+            throw invalidUtf8(); // tail byte with no head
+        }
+        if (head <= 0xdf) { // 0b110xxxxx
             ensureMin(1);
             return ((head  & 0x1f) << 6)
                    | nextPart();
         }
-        if (head <= 0xef) {
-            // 0b1110xxxx
+        if (head <= 0xef) { // 0b1110xxxx
             ensureMin(2);
             return ((head & 0x0f) << 12)
                    | (nextPart()  << 6)
                    | nextPart();
         }
-        if (head <= 0xf7) {
-            // 0b11110xxx
+        if (head <= 0xf7) { // 0b11110xxx
             ensureMin(3);
             int cp = ((head & 0x07) << 18)
                      | (nextPart()  << 12)
@@ -77,7 +87,7 @@ abstract class ByteListReader {
      * many bytes left.
      */
     protected void ensureMin(int n) {
-        if (pos + n >= srcLength) throw invalidUtf8();
+        if (pos + n > srcLength) throw invalidUtf8();
     }
 
     /**

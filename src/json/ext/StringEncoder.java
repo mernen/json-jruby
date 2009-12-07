@@ -58,18 +58,17 @@ final class StringEncoder extends ByteListReader {
     private void encode() {
         out.append('"');
         while (hasNext()) {
-            handleChar(src.charAt(pos));
-            pos++;
+            handleChar(readUtf8Char());
         }
-        quoteStop();
+        quoteStop(pos);
         out.append('"');
     }
 
-    private void handleChar(char c) {
+    private void handleChar(int c) {
         switch (c) {
         case '"':
         case '\\':
-            escapeChar(c);
+            escapeChar((char)c);
             break;
         case '\n':
             escapeChar('n');
@@ -87,22 +86,18 @@ final class StringEncoder extends ByteListReader {
             escapeChar('b');
             break;
         default:
-            if (c >= 0x20 && c <= 0x7f) {
-                if (quoteStart == -1) quoteStart = pos;
-            } else if (c >= 0x80 && !asciiOnly) {
-                if (quoteStart == -1) quoteStart = pos;
-                // read anyway, to skip its other bytes and ensure it's valid
-                readUtf8Char(c);
+            if (c >= 0x20 && c <= 0x7f ||
+                    (c >= 0x80 && !asciiOnly)) {
+                if (quoteStart == -1) quoteStart = charStart;
             } else {
-                quoteStop();
-                int codePoint = readUtf8Char(c);
-                escapeUtf8Char(codePoint);
+                quoteStop(charStart);
+                escapeUtf8Char(c);
             }
         }
     }
 
     private void escapeChar(char c) {
-        quoteStop();
+        quoteStop(charStart);
         aux[ESCAPE_CHAR_OFFSET + 1] = (byte)c;
         out.append(aux, ESCAPE_CHAR_OFFSET, 2);
     }
@@ -111,9 +106,9 @@ final class StringEncoder extends ByteListReader {
      * When in a sequence of characters that can be copied directly,
      * interrupts the sequence and copies it to the output buffer.
      */
-    private void quoteStop() {
+    private void quoteStop(int endPos) {
         if (quoteStart != -1) {
-            out.append(src, quoteStart, pos - quoteStart);
+            out.append(src, quoteStart, endPos - quoteStart);
             quoteStart = -1;
         }
     }
