@@ -11,20 +11,19 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ByteList;
 
 /**
- * A decoder that reads a JSON-encoded string from the given UTF-8 ByteList and
+ * A decoder that reads a JSON-encoded string from the given sources and
  * returns its decoded form on a new ByteList. The source string is fully
- * checked for UTF-8 validity, and throws a GeneratorError if any problem is
+ * checked for UTF-8 validity, and throws a ParserError if any problem is
  * found.
  */
-final class StringDecoder extends ByteListReader {
-    private ByteList out;
-    private int quoteStart = -1;
+final class StringDecoder extends ByteListTranscoder {
     /**
      * Stores the offset of the high surrogate when reading a surrogate pair,
      * or -1 when not.
      */
     private int surrogatePairStart = -1;
 
+    // Array used for writing multi-byte characters into the buffer at once
     private final byte[] aux = new byte[4];
 
     StringDecoder(ThreadContext context) {
@@ -32,8 +31,8 @@ final class StringDecoder extends ByteListReader {
     }
 
     ByteList decode(ByteList src, int start, int end) {
-        init(src, start, end);
-        out = new ByteList(end - start);
+        ByteList out = new ByteList(end - start);
+        init(src, start, end, out);
         while (hasNext()) {
             handleChar(readUtf8Char());
         }
@@ -52,7 +51,7 @@ final class StringDecoder extends ByteListReader {
             // low surrogate with no high surrogate
             throw invalidUtf8();
         } else {
-            if (quoteStart == -1) quoteStart = charStart;
+            quoteStart();
         }
     }
 
@@ -61,19 +60,19 @@ final class StringDecoder extends ByteListReader {
         int c = readUtf8Char();
         switch (c) {
         case 'b':
-            out.append('\b');
+            append('\b');
             break;
         case 'f':
-            out.append('\f');
+            append('\f');
             break;
         case 'n':
-            out.append('\n');
+            append('\n');
             break;
         case 'r':
-            out.append('\r');
+            append('\r');
             break;
         case 't':
-            out.append('\t');
+            append('\t');
             break;
         case 'u':
             ensureMin(4);
@@ -88,7 +87,7 @@ final class StringDecoder extends ByteListReader {
             }
             break;
         default: // '\\', '"', '/'...
-            quoteStart = charStart;
+            quoteStart();
         }
     }
 
@@ -114,38 +113,27 @@ final class StringDecoder extends ByteListReader {
 
     private void writeUtf8Char(int codePoint) {
         if (codePoint < 0x80) {
-            out.append(codePoint);
+            append(codePoint);
         } else if (codePoint < 0x800) {
             aux[0] = (byte)(0xc0 | (codePoint >>> 6));
             aux[1] = tailByte(codePoint & 0x3f);
-            out.append(aux, 0, 2);
+            append(aux, 0, 2);
         } else if (codePoint < 0x10000) {
             aux[0] = (byte)(0xe0 | (codePoint >>> 12));
             aux[1] = tailByte(codePoint >>> 6);
             aux[2] = tailByte(codePoint);
-            out.append(aux, 0, 3);
+            append(aux, 0, 3);
         } else {
             aux[0] = (byte)(0xf0 | codePoint >>> 18);
             aux[1] = tailByte(codePoint >>> 12);
             aux[2] = tailByte(codePoint >>> 6);
             aux[3] = tailByte(codePoint);
-            out.append(aux, 0, 4);
+            append(aux, 0, 4);
         }
     }
 
     private byte tailByte(int value) {
         return (byte)(0x80 | (value & 0x3f));
-    }
-
-    /**
-     * When in a sequence of characters that can be copied directly,
-     * interrupts the sequence and copies it to the output buffer.
-     */
-    private void quoteStop(int endPos) {
-        if (quoteStart != -1) {
-            out.append(src, quoteStart, endPos - quoteStart);
-            quoteStart = -1;
-        }
     }
 
     /**

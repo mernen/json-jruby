@@ -5,26 +5,15 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ByteList;
 
 /**
- * An encoder that reads from the given UTF-8 ByteList and outputs its
- * representation to another ByteList. The source string is fully checked
- * for UTF-8 validity, and throws a GeneratorError if any problem is found.
+ * An encoder that reads from the given source and outputs its representation
+ * to another ByteList. The source string is fully checked for UTF-8 validity,
+ * and throws a GeneratorError if any problem is found.
  */
-final class StringEncoder extends ByteListReader {
+final class StringEncoder extends ByteListTranscoder {
     private final boolean asciiOnly;
-    private ByteList out;
-    /**
-     * When a character that can be copied straight into the output is found,
-     * its index is stored on this variable, and copying is delayed until
-     * the sequence of characters that can be copied ends.
-     * 
-     * <p>The variable stores -1 when not in a plain sequence.
-     */
-    private int quoteStart = -1;
 
-    /**
-     * Escaped characters will reuse this array, to avoid new allocations
-     * or appending them byte-by-byte
-     */
+    // Escaped characters will reuse this array, to avoid new allocations
+    // or appending them byte-by-byte
     private final byte[] aux =
         new byte[] {/* First unicode character */
                     '\\', 'u', 0, 0, 0, 0,
@@ -49,14 +38,13 @@ final class StringEncoder extends ByteListReader {
     }
 
     void encode(ByteList src, ByteList out) {
-        init(src);
-        this.out = out;
-        out.append('"');
+        init(src, out);
+        append('"');
         while (hasNext()) {
             handleChar(readUtf8Char());
         }
         quoteStop(pos);
-        out.append('"');
+        append('"');
     }
 
     private void handleChar(int c) {
@@ -83,7 +71,7 @@ final class StringEncoder extends ByteListReader {
         default:
             if (c >= 0x20 && c <= 0x7f ||
                     (c >= 0x80 && !asciiOnly)) {
-                if (quoteStart == -1) quoteStart = charStart;
+                quoteStart();
             } else {
                 quoteStop(charStart);
                 escapeUtf8Char(c);
@@ -94,25 +82,14 @@ final class StringEncoder extends ByteListReader {
     private void escapeChar(char c) {
         quoteStop(charStart);
         aux[ESCAPE_CHAR_OFFSET + 1] = (byte)c;
-        out.append(aux, ESCAPE_CHAR_OFFSET, 2);
-    }
-
-    /**
-     * When in a sequence of characters that can be copied directly,
-     * interrupts the sequence and copies it to the output buffer.
-     */
-    private void quoteStop(int endPos) {
-        if (quoteStart != -1) {
-            out.append(src, quoteStart, endPos - quoteStart);
-            quoteStart = -1;
-        }
+        append(aux, ESCAPE_CHAR_OFFSET, 2);
     }
 
     private void escapeUtf8Char(int codePoint) {
         int numChars = Character.toChars(codePoint, utf16, 0);
         escapeCodeUnit(utf16[0], ESCAPE_UNI1_OFFSET + 2);
         if (numChars > 1) escapeCodeUnit(utf16[1], ESCAPE_UNI2_OFFSET + 2);
-        out.append(aux, ESCAPE_UNI1_OFFSET, 6 * numChars);
+        append(aux, ESCAPE_UNI1_OFFSET, 6 * numChars);
     }
 
     private void escapeCodeUnit(char c, int auxOffset) {

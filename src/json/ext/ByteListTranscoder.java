@@ -11,9 +11,10 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ByteList;
 
 /**
- * A class specialized in reading UTF-8 ByteLists.
+ * A class specialized in transcoding a certain String format into another,
+ * using UTF-8 ByteLists as both input and output.
  */
-abstract class ByteListReader {
+abstract class ByteListTranscoder {
     protected final ThreadContext context;
 
     protected ByteList src;
@@ -23,19 +24,30 @@ abstract class ByteListReader {
     /** Position of the next character to read */
     protected int pos;
 
-    protected ByteListReader(ThreadContext context) {
+    private ByteList out;
+    /**
+     * When a character that can be copied straight into the output is found,
+     * its index is stored on this variable, and copying is delayed until
+     * the sequence of characters that can be copied ends.
+     *
+     * <p>The variable stores -1 when not in a plain sequence.
+     */
+    private int quoteStart = -1;
+
+    protected ByteListTranscoder(ThreadContext context) {
         this.context = context;
     }
 
-    protected void init(ByteList src) {
-        this.init(src, 0, src.length());
+    protected void init(ByteList src, ByteList out) {
+        this.init(src, 0, src.length(), out);
     }
 
-    protected void init(ByteList src, int start, int end) {
+    protected void init(ByteList src, int start, int end, ByteList out) {
         this.src = src;
         this.pos = start;
         this.charStart = start;
         this.srcEnd = end;
+        this.out = out;
     }
 
     /**
@@ -116,6 +128,36 @@ abstract class ByteListReader {
         if ((c & 0xc0) != 0x80) throw invalidUtf8();
         return c & 0x3f;
     }
+
+
+    protected void quoteStart() {
+        if (quoteStart == -1) quoteStart = charStart;
+    }
+
+    /**
+     * When in a sequence of characters that can be copied directly,
+     * interrupts the sequence and copies it to the output buffer.
+     *
+     * @param endPos The offset until which the direct character quoting should
+     *               occur. You may pass {@link #pos} to quote until the most
+     *               recently read character, or {@link #charStart} to quote
+     *               until the character before it.
+     */
+    protected void quoteStop(int endPos) {
+        if (quoteStart != -1) {
+            out.append(src, quoteStart, endPos - quoteStart);
+            quoteStart = -1;
+        }
+    }
+
+    protected void append(int b) {
+        out.append(b);
+    }
+
+    protected void append(byte[] origin, int start, int length) {
+        out.append(origin, start, length);
+    }
+
 
     protected abstract RaiseException invalidUtf8();
 
