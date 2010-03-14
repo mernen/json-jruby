@@ -231,6 +231,15 @@ public class GeneratorState extends RubyObject {
         return false;
     }
 
+    @JRubyMethod(name="[]", required=1)
+    public IRubyObject op_aref(ThreadContext context, IRubyObject vName) {
+        String name = vName.asJavaString();
+        if (getMetaClass().isMethodBound(name, true)) {
+            return send(context, vName, Block.NULL_BLOCK);
+        }
+        return context.getRuntime().getNil();
+    }
+
     public ByteList getIndent() {
         return indent;
     }
@@ -307,6 +316,11 @@ public class GeneratorState extends RubyObject {
                                     IRubyObject arrayNl) {
         this.arrayNl = prepareByteList(context, arrayNl);
         return arrayNl;
+    }
+
+    @JRubyMethod(name="check_circular?")
+    public RubyBoolean check_circular_p(ThreadContext context) {
+        return context.getRuntime().newBoolean(maxNesting != 0);
     }
 
     @JRubyMethod(name="max_nesting")
