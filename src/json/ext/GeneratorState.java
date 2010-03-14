@@ -177,6 +177,15 @@ public class GeneratorState extends RubyObject {
         return this;
     }
 
+    @JRubyMethod(name = "[]", required = 1)
+    public IRubyObject op_aref(ThreadContext context, IRubyObject vName) {
+        String name = vName.asJavaString();
+        if (getMetaClass().isMethodBound(name, true)) {
+            return send(context, vName, Block.NULL_BLOCK);
+        }
+        return context.getRuntime().getNil();
+    }
+
     @JRubyMethod(name = "indent")
     public RubyString indent_get() {
         return indent;
