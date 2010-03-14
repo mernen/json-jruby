@@ -46,6 +46,7 @@ public class Parser extends RubyObject {
     private RubyString createId;
     private int maxNesting;
     private boolean allowNaN;
+    private boolean symbolizeNames;
     private RubyClass objectClass;
     private RubyClass arrayClass;
 
@@ -110,6 +111,10 @@ public class Parser extends RubyObject {
      * <dd>If set to <code>true</code>, allow <code>NaN</code>,
      * <code>Infinity</code> and <code>-Infinity</code> in defiance of RFC 4627
      * to be parsed by the Parser. This option defaults to <code>false</code>.
+     *
+     * <dt><code>:symbolize_names</code>
+     * <dd>If set to <code>true</code>, returns symbols for the names (keys) in
+     * a JSON object. Otherwise strings are returned, which is also the default.
      * 
      * <dt><code>:create_additions</code>
      * <dd>If set to <code>false</code>, the Parser doesn't create additions
@@ -142,6 +147,7 @@ public class Parser extends RubyObject {
 
         this.maxNesting = opts.getInt("max_nesting", DEFAULT_MAX_NESTING);
         this.allowNaN = opts.getBool("allow_nan", false);
+        this.symbolizeNames = opts.getBool("symbolize_names", false);
         this.createId =
             opts.getBool("create_additions", true) ? getCreateId(context)
                                                    : null;
@@ -634,7 +640,14 @@ public class Parser extends RubyObject {
                     fhold;
                     fbreak;
                 } else {
-                    lastName = (RubyString)res.result;
+                    RubyString name = (RubyString)res.result;
+                    if (parser.symbolizeNames) {
+                        lastName = context.getRuntime().is1_9()
+                                       ? name.intern19()
+                                       : name.intern();
+                    } else {
+                        lastName = name;
+                    }
                     fexec res.p;
                 }
             }
@@ -656,7 +669,7 @@ public class Parser extends RubyObject {
 
         ParserResult parseObject(int p, int pe) {
             int cs = EVIL;
-            RubyString lastName = null;
+            IRubyObject lastName = null;
 
             if (parser.maxNesting > 0 && currentNesting > parser.maxNesting) {
                 throw newException(Utils.M_NESTING_ERROR,
