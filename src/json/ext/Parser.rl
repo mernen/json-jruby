@@ -858,19 +858,9 @@ public class Parser extends RubyObject {
             if (parser.createId != null) {
                 IRubyObject vKlassName = result.op_aref(context, parser.createId);
                 if (!vKlassName.isNil()) {
-                    String klassName = vKlassName.asJavaString();
-                    RubyModule klass;
-                    try {
-                        klass = runtime.getClassFromPath(klassName);
-                    } catch (RaiseException e) {
-                        if (runtime.getClass("NameError").isInstance(e.getException())) {
-                            // invalid class path, but we're supposed to throw ArgumentError
-                            throw runtime.newArgumentError("undefined class/module " + klassName);
-                        } else {
-                            // some other exception; let it propagate
-                            throw e;
-                        }
-                    }
+                    // might throw ArgumentError, we let it propagate
+                    IRubyObject klass = parser.info.mJson.
+                            callMethod(context, "deep_const_get", vKlassName);
                     if (klass.respondsTo("json_creatable?") &&
                         klass.callMethod(context, "json_creatable?").isTrue()) {
 
