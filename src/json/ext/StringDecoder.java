@@ -57,8 +57,7 @@ final class StringDecoder extends ByteListTranscoder {
 
     private void handleEscapeSequence() {
         ensureMin(1);
-        int c = readUtf8Char();
-        switch (c) {
+        switch (readUtf8Char()) {
         case 'b':
             append('\b');
             break;
