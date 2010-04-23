@@ -18,7 +18,7 @@ The latest version is available from the
 Compiling
 =========
 
-You'll need JRuby version 1.1.6 or greater to build JSON-JRuby.
+You'll need JRuby version 1.2 or greater to build JSON-JRuby.
 Its path must be set on the `jruby.dir` property of
 `nbproject/project.properties` (defaults to `../jruby`).
 
