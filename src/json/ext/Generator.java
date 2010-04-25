@@ -8,6 +8,7 @@ package json.ext;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
@@ -58,6 +59,7 @@ public final class Generator {
         if (object instanceof RubyHash)    return (Handler)HASH_HANDLER;
         if (object instanceof RubyArray)   return (Handler)ARRAY_HANDLER;
         if (object instanceof RubyString)  return (Handler)STRING_HANDLER;
+        if (object instanceof RubyBignum)  return (Handler)BIGNUM_HANDLER;
         if (object instanceof RubyInteger) return (Handler)INTEGER_HANDLER;
         if (object.isNil())                return (Handler)NIL_HANDLER;
         if (object instanceof RubyBoolean) {
@@ -193,6 +195,16 @@ public final class Generator {
 
 
     /* Handlers */
+
+    // JRUBY-4751: RubyBignum.to_s() returns generic object representation
+    static final Handler<RubyBignum> BIGNUM_HANDLER =
+        new Handler<RubyBignum>() {
+            @Override
+            void generate(Session session, RubyBignum object, ByteList buffer,
+                          int depth) {
+                buffer.append(((RubyString)object.to_s(IRubyObject.NULL_ARRAY)).getByteList());
+            }
+        };
 
     static final Handler<RubyInteger> INTEGER_HANDLER =
         new Handler<RubyInteger>() {
