@@ -45,7 +45,7 @@ public final class Generator {
             generateJson(ThreadContext context, T object,
                          GeneratorState config, int depth) {
         Session session = new Session(context, config);
-        Handler<? super T> handler = getHandlerFor(object);
+        Handler<? super T> handler = getHandlerFor(context.getRuntime(), object);
         return handler.generateNew(session, object, depth);
     }
 
@@ -56,8 +56,7 @@ public final class Generator {
     // the best I could get and ignore the warnings
     @SuppressWarnings("unchecked")
     private static <T extends IRubyObject>
-            Handler<? super T> getHandlerFor(T object) {
-        Ruby runtime = object.getRuntime();
+            Handler<? super T> getHandlerFor(Ruby runtime, T object) {
         RubyClass metaClass = object.getMetaClass();
         if (metaClass == runtime.getString()) return (Handler)STRING_HANDLER;
         if (metaClass == runtime.getFixnum()) return (Handler)FIXNUM_HANDLER;
@@ -252,8 +251,10 @@ public final class Generator {
             @Override
             void generate(Session session, RubyArray object, ByteList buffer,
                           int depth) {
+                ThreadContext context = session.getContext();
+                Ruby runtime = context.getRuntime();
                 GeneratorState state = session.getState();
-                state.checkMaxNesting(session.getContext(), depth + 1);
+                state.checkMaxNesting(context, depth + 1);
 
                 ByteList indentUnit = state.getIndent();
                 byte[] shift = Utils.repeat(indentUnit, depth + 1);
@@ -278,7 +279,7 @@ public final class Generator {
                         buffer.append(delim);
                     }
                     buffer.append(shift);
-                    Handler<IRubyObject> handler = getHandlerFor(element);
+                    Handler<IRubyObject> handler = getHandlerFor(runtime, element);
                     handler.generate(session, element, buffer, depth + 1);
                 }
 
@@ -307,8 +308,10 @@ public final class Generator {
             @Override
             void generate(final Session session, RubyHash object,
                           final ByteList buffer, final int depth) {
+                ThreadContext context = session.getContext();
+                final Ruby runtime = context.getRuntime();
                 final GeneratorState state = session.getState();
-                state.checkMaxNesting(session.getContext(), depth + 1);
+                state.checkMaxNesting(context, depth + 1);
 
                 final ByteList objectNl = state.getObjectNl();
                 final byte[] indent = Utils.repeat(state.getIndent(), depth + 1);
@@ -338,7 +341,7 @@ public final class Generator {
                         buffer.append((byte)':');
                         buffer.append(space);
 
-                        Handler<IRubyObject> valueHandler = getHandlerFor(value);
+                        Handler<IRubyObject> valueHandler = getHandlerFor(runtime, value);
                         valueHandler.generate(session, value, buffer, depth + 1);
                         session.infectBy(value);
                     }
