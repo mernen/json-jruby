@@ -10,9 +10,10 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
+import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
-import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.runtime.ThreadContext;
@@ -32,7 +33,7 @@ public final class Generator {
                          Handler<? super T> handler, IRubyObject[] args) {
         Session session = new Session(context, args.length > 0 ? args[0]
                                                                : null);
-        int depth = args.length > 1 ? RubyInteger.fix2int(args[1]) : 0;
+        int depth = args.length > 1 ? RubyNumeric.fix2int(args[1]) : 0;
         return session.infect(handler.generateNew(session, object, depth));
     }
 
@@ -56,16 +57,17 @@ public final class Generator {
     @SuppressWarnings("unchecked")
     private static <T extends IRubyObject>
             Handler<? super T> getHandlerFor(T object) {
-        if (object instanceof RubyHash)    return (Handler)HASH_HANDLER;
-        if (object instanceof RubyArray)   return (Handler)ARRAY_HANDLER;
-        if (object instanceof RubyString)  return (Handler)STRING_HANDLER;
-        if (object instanceof RubyBignum)  return (Handler)BIGNUM_HANDLER;
-        if (object instanceof RubyInteger) return (Handler)INTEGER_HANDLER;
-        if (object.isNil())                return (Handler)NIL_HANDLER;
-        if (object instanceof RubyBoolean) {
-            return (Handler)(object.isTrue() ? TRUE_HANDLER : FALSE_HANDLER);
-        }
-        if (object instanceof RubyFloat)   return (Handler)FLOAT_HANDLER;
+        Ruby runtime = object.getRuntime();
+        RubyClass metaClass = object.getMetaClass();
+        if (metaClass == runtime.getHash())   return (Handler)HASH_HANDLER;
+        if (metaClass == runtime.getArray())  return (Handler)ARRAY_HANDLER;
+        if (metaClass == runtime.getString()) return (Handler)STRING_HANDLER;
+        if (metaClass == runtime.getBignum()) return (Handler)BIGNUM_HANDLER;
+        if (metaClass == runtime.getFixnum()) return (Handler)FIXNUM_HANDLER;
+        if (object.isNil())                   return (Handler)NIL_HANDLER;
+        if (object == runtime.getTrue())      return (Handler)TRUE_HANDLER;
+        if (object == runtime.getFalse())     return (Handler)FALSE_HANDLER;
+        if (metaClass == runtime.getFloat())  return (Handler)FLOAT_HANDLER;
         return GENERIC_HANDLER;
     }
 
@@ -196,22 +198,24 @@ public final class Generator {
 
     /* Handlers */
 
-    // JRUBY-4751: RubyBignum.to_s() returns generic object representation
     static final Handler<RubyBignum> BIGNUM_HANDLER =
         new Handler<RubyBignum>() {
             @Override
             void generate(Session session, RubyBignum object, ByteList buffer,
                           int depth) {
+                // JRUBY-4751: RubyBignum.to_s() returns generic object
+                // representation (fixed in 1.5, but we maintain backwards
+                // compatibility; call to_s(IRubyObject[]) then
                 buffer.append(((RubyString)object.to_s(IRubyObject.NULL_ARRAY)).getByteList());
             }
         };
 
-    static final Handler<RubyInteger> INTEGER_HANDLER =
-        new Handler<RubyInteger>() {
+    static final Handler<RubyFixnum> FIXNUM_HANDLER =
+        new Handler<RubyFixnum>() {
             @Override
-            void generate(Session session, RubyInteger object, ByteList buffer,
+            void generate(Session session, RubyFixnum object, ByteList buffer,
                           int depth) {
-                buffer.append(((RubyString)object.to_s()).getByteList());
+                buffer.append(object.to_s().getByteList());
             }
         };
 
