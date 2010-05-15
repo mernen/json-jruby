@@ -64,51 +64,24 @@ class GeneratorMethods {
 
 
     public static class RbHash {
-        /**
-         * <code>{@link RubyHash Hash}#to_json(state = nil, depth = 0)</code>
-         *
-         * <p>Returns a JSON string containing a JSON object, that is unparsed
-         * from this Hash instance.
-         * <p><code>state</code> is a {@link GeneratorState JSON::State}
-         * object, that can also be used to configure the produced JSON string
-         * output further.
-         * <p><code>depth</code> is used to find the nesting depth, to indent
-         * accordingly.
-         */
         @JRubyMethod(rest=true)
         public static IRubyObject to_json(ThreadContext context,
                 IRubyObject vSelf, IRubyObject[] args) {
-            return Generator.generateJson(context, Utils.ensureHash(vSelf),
+            return Generator.generateJson(context, (RubyHash)vSelf,
                     Generator.HASH_HANDLER, args);
         }
     };
 
     public static class RbArray {
-        /**
-         * <code>{@link RubyArray Array}#to_json(state = nil, depth = 0)</code>
-         *
-         * <p>Returns a JSON string containing a JSON array, that is unparsed
-         * from this Array instance.
-         * <p><code>state</code> is a {@link GeneratorState JSON::State}
-         * object, that can also be used to configure the produced JSON string
-         * output further.
-         * <p><code>depth</code> is used to find the nesting depth, to indent
-         * accordingly.
-         */
         @JRubyMethod(rest=true)
         public static IRubyObject to_json(ThreadContext context,
                 IRubyObject vSelf, IRubyObject[] args) {
-            return Generator.generateJson(context, Utils.ensureArray(vSelf),
+            return Generator.generateJson(context, (RubyArray)vSelf,
                     Generator.ARRAY_HANDLER, args);
         }
     };
 
     public static class RbInteger {
-        /**
-         * <code>{@link RubyInteger Integer}#to_json(*)</code>
-         *
-         * <p>Returns a JSON string representation for this Integer number.
-         */
         @JRubyMethod(rest=true)
         public static IRubyObject to_json(ThreadContext context,
                 IRubyObject vSelf, IRubyObject[] args) {
@@ -118,14 +91,6 @@ class GeneratorMethods {
     };
 
     public static class RbFloat {
-        /**
-         * <code>{@link RubyFloat Float}#to_json(state = nil, *)</code>
-         *
-         * <p>Returns a JSON string representation for this Float number.
-         * <p><code>state</code> is a {@link GeneratorState JSON::State}
-         * object, that can also be used to configure the produced JSON string
-         * output further.
-         */
         @JRubyMethod(rest=true)
         public static IRubyObject to_json(ThreadContext context,
                 IRubyObject vSelf, IRubyObject[] args) {
@@ -135,19 +100,10 @@ class GeneratorMethods {
     };
 
     public static class RbString {
-        /**
-         * <code>{@link RubyString String}#to_json(*)</code>
-         *
-         * <p>Returns a JSON string representation for this String.
-         * <p>The string must be encoded in UTF-8. All non-ASCII characters
-         * will be escaped as <code>\\u????</code> escape sequences.
-         * Characters outside the Basic Multilingual Plane range are encoded
-         * as a pair of surrogates.
-         */
         @JRubyMethod(rest=true)
         public static IRubyObject to_json(ThreadContext context,
                 IRubyObject vSelf, IRubyObject[] args) {
-            return Generator.generateJson(context, Utils.ensureString(vSelf),
+            return Generator.generateJson(context, (RubyString)vSelf,
                     Generator.STRING_HANDLER, args);
         }
 
@@ -240,9 +196,6 @@ class GeneratorMethods {
     };
 
     public static class RbTrue {
-        /**
-         * <code>true.to_json(*)</code>
-         */
         @JRubyMethod(rest=true)
         public static IRubyObject to_json(ThreadContext context,
                 IRubyObject vSelf, IRubyObject[] args) {
@@ -252,9 +205,6 @@ class GeneratorMethods {
     }
 
     public static class RbFalse {
-        /**
-         * <code>false.to_json(*)</code>
-         */
         @JRubyMethod(rest=true)
         public static IRubyObject to_json(ThreadContext context,
                 IRubyObject vSelf, IRubyObject[] args) {
@@ -264,9 +214,6 @@ class GeneratorMethods {
     }
 
     public static class RbNil {
-        /**
-         * <code>nil.to_json(*)</code>
-         */
         @JRubyMethod(rest=true)
         public static IRubyObject to_json(ThreadContext context,
                 IRubyObject vSelf, IRubyObject[] args) {
@@ -276,14 +223,6 @@ class GeneratorMethods {
     }
 
     public static class RbObject {
-        /**
-         * <code>{@link RubyObject Object}#to_json(*)</code>
-         *
-         * <p>Converts this object to a string (calling <code>#to_s</code>),
-         * converts it to a JSON string, and returns the result.
-         * This is a fallback, if no special method <code>#to_json</code> was
-         * defined for some object.
-         */
         @JRubyMethod(rest=true)
         public static IRubyObject to_json(ThreadContext context,
                 IRubyObject self, IRubyObject[] args) {
