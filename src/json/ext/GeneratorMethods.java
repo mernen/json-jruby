@@ -85,8 +85,7 @@ class GeneratorMethods {
         @JRubyMethod(rest=true)
         public static IRubyObject to_json(ThreadContext context,
                 IRubyObject vSelf, IRubyObject[] args) {
-            return Generator.generateJson(context, vSelf,
-                    Generator.GENERIC_HANDLER, args);
+            return Generator.generateJson(context, vSelf, args);
         }
     };
 

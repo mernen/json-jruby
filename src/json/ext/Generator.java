@@ -38,6 +38,16 @@ public final class Generator {
     }
 
     /**
+     * Encodes the given object as a JSON string, detecting the appropriate handler
+     * for the given object.
+     */
+    static <T extends IRubyObject> RubyString
+            generateJson(ThreadContext context, T object, IRubyObject[] args) {
+        Handler<? super T> handler = getHandlerFor(context.getRuntime(), object);
+        return generateJson(context, object, handler, args);
+    }
+
+    /**
      * Encodes the given object as a JSON string, using the appropriate
      * handler if one is found or calling #to_json if not.
      */
