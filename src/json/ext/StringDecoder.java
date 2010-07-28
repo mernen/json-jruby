@@ -12,9 +12,8 @@ import org.jruby.util.ByteList;
 
 /**
  * A decoder that reads a JSON-encoded string from the given sources and
- * returns its decoded form on a new ByteList. The source string is fully
- * checked for UTF-8 validity, and throws a ParserError if any problem is
- * found.
+ * returns its decoded form on a new ByteList. Escaped Unicode characters
+ * are encoded as UTF-8.
  */
 final class StringDecoder extends ByteListTranscoder {
     /**
@@ -44,12 +43,6 @@ final class StringDecoder extends ByteListTranscoder {
         if (c == '\\') {
             quoteStop(charStart);
             handleEscapeSequence();
-        } else if (Character.isHighSurrogate((char)c)) {
-            quoteStop(charStart);
-            handleLowSurrogate((char)c);
-        } else if (Character.isLowSurrogate((char)c)) {
-            // low surrogate with no high surrogate
-            throw invalidUtf8();
         } else {
             quoteStart();
         }
