@@ -1,9 +1,1 @@
-/build
-/lib/json/ext/*.jar
-/nbproject/private
-/*.gem
-/.classpath
-/.project
-/.settings
-/.externalToolBuilders
-/src/json/ext/Parser.java
+/pkg
